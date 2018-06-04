@@ -27,6 +27,7 @@ State expand (State s, Determinization d) {
 
 /** Returns if the state is terminal */
 boolean isTerminal (State s, Determinization d) {
+	boolean result = false;
 	if (s.getDrawDeckSize() == 0) {
 		return true;
 	} else {
