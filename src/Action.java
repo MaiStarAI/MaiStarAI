@@ -50,6 +50,7 @@ public class Action {
                 System.out.println("Error in applyAction: there is no such name of action");
 
         }
+
         state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
