@@ -52,6 +52,8 @@ public class Action {
         }
 
         state.turnPlayerIndex = state.getNextPlayer();
+
+        return state;
     }
 
     private void applyGuest(Player turnPlayer) {
