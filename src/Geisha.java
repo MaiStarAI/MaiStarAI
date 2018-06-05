@@ -11,6 +11,12 @@ public class Geisha {
         this.numberEffect = numberEffect;
     }
 
+    Geisha(Geisha anotherGeisha){
+        this.name = anotherGeisha.name;
+        this.abilities = anotherGeisha.abilities;
+        this.numberEffect = anotherGeisha.numberEffect;
+    }
+
     public void isApplicaableEffect(Action currentAction){
 
     }

@@ -33,8 +33,9 @@ public class Action {
     }
 
     public State applyAction(State currentState) {
-        State state = currentState;
+        State state = new State(currentState);
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
+
         switch (this.name) {
             case Guest:
                 this.applyGuest(turnPlayer);
@@ -51,7 +52,13 @@ public class Action {
 
         }
 
+        state.parent = currentState;
+        state.children = null;
         state.turnPlayerIndex = state.getNextPlayer();
+        state.appliedAction = this;
+        state.drawDeck = state.cards.size();
+        currentState.children.add(state);
+
         return state;
     }
 
@@ -90,6 +97,10 @@ public class Action {
 
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
+    }
+
+    private boolean isApplicableAction(State currentState){
+
     }
 
 }

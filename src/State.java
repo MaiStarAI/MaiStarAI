@@ -27,6 +27,19 @@ public class State {
         this.appliedAction = appliedAction;
     }
 
+    State(State anotherState){
+        this.players = anotherState.players;
+        this.cards = anotherState.cards;
+        this.drawDeck = anotherState.drawDeck;
+        this.turnPlayerIndex = anotherState.turnPlayerIndex;
+        victories = anotherState.victories;
+        visits = anotherState.visits;
+        availability = anotherState.availability;
+        this.parent = anotherState.parent;
+        children = anotherState.children;
+        this.appliedAction = anotherState.appliedAction;
+    }
+
     public int getNextPlayer(){
         if(turnPlayerIndex == players.size() - 1){
             return 0;

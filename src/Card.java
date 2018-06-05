@@ -15,6 +15,14 @@ public class Card {
         this.advReward = advReward;
     }
 
+    Card(Card anotherCard){
+        this.name = anotherCard.name;
+        this.color = anotherCard.color;
+        this.requirement = anotherCard.requirement;
+        this.guestReward = anotherCard.guestReward;
+        this.advReward = anotherCard.advReward;
+    }
+
     public void applyEffect(State state, Action action){
         
     }

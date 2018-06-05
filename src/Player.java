@@ -21,6 +21,17 @@ public class Player {
         specialEffects = new ArrayList<>();
     }
 
+    Player(Player anotherPlayer){
+        this.name = anotherPlayer.name;
+        this.hand = anotherPlayer.hand;
+        this.geisha = anotherPlayer.geisha;
+        cardsNumber = anotherPlayer.cardsNumber;
+        score = anotherPlayer.score;
+        guests = anotherPlayer.guests;
+        advertisers = anotherPlayer.advertisers;
+        specialEffects = anotherPlayer.specialEffects;
+    }
+
     public void updateSpecialEffect(CardsNames cardName){
         switch (cardName){
             case Ronin:
