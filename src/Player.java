@@ -10,7 +10,7 @@ public class Player {
     ArrayList<Card> advertisers;
     ArrayList<CardsNames> specialEffects;
 
-    Player(String name, ArrayList<Card> hand, Geisha geisha){
+    Player(String name, ArrayList<Card> hand, Geisha geisha) {
         this.name = name;
         this.hand = hand;
         this.geisha = geisha;
@@ -21,7 +21,7 @@ public class Player {
         specialEffects = new ArrayList<>();
     }
 
-    Player(Player anotherPlayer){
+    Player(Player anotherPlayer) {
         this.name = anotherPlayer.name;
         this.hand = anotherPlayer.hand;
         this.geisha = anotherPlayer.geisha;
@@ -32,32 +32,30 @@ public class Player {
         specialEffects = anotherPlayer.specialEffects;
     }
 
-    public void updateSpecialEffect(CardsNames cardName){
-        switch (cardName){
+    public void updateSpecialEffect(CardsNames cardName) {
+        switch (cardName) {
             case Ronin:
                 for (int i = 0; i < specialEffects.size(); i++) {
-                    if(specialEffects.get(i) == CardsNames.Ronin){
+                    if (specialEffects.get(i) == CardsNames.Ronin) {
                         specialEffects.remove(i);
-                        //Delete from state
                     }
                 }
 
                 for (int i = 0; i < guests.size(); i++) {
-                    if(guests.get(i).name == CardsNames.Ronin){
+                    if (guests.get(i).name == CardsNames.Ronin) {
                         guests.remove(i);
                     }
                 }
 
             case District_Kanryou:
                 for (int i = 0; i < specialEffects.size(); i++) {
-                    if(specialEffects.get(i) == CardsNames.District_Kanryou){
+                    if (specialEffects.get(i) == CardsNames.District_Kanryou) {
                         specialEffects.remove(i);
-                        //Delete from state
                     }
                 }
 
                 for (int i = 0; i < guests.size(); i++) {
-                    if(guests.get(i).name == CardsNames.District_Kanryou){
+                    if (guests.get(i).name == CardsNames.District_Kanryou) {
                         guests.remove(i);
                     }
                 }

@@ -1,14 +1,18 @@
+import java.util.ArrayList;
+
 public class Action {
     ActionsNames name;
     Card firstCard;
     Card secondCard;
     boolean usedEffect;
+    boolean played;
 
     Action(Card firstCard, boolean usedEffect) {
         this.name = ActionsNames.Guest;
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = usedEffect;
+        this.played = false;
     }
 
     Action(Card firstCard) {
@@ -16,6 +20,7 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = false;
+        this.played = false;
     }
 
     Action(ActionsNames name, Card firstCard, Card secondCard) {
@@ -23,6 +28,7 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = secondCard;
         this.usedEffect = false;
+        this.played = false;
     }
 
     Action() {
@@ -30,6 +36,16 @@ public class Action {
         this.firstCard = null;
         this.secondCard = null;
         this.usedEffect = false;
+        this.played = false;
+    }
+
+    public ArrayList<State> applyEffect(State currentState) {
+        ArrayList<State> states = new ArrayList<>();
+        if (this.name == ActionsNames.Guest && this.played && usedEffect) {
+            State state = new State(currentState);
+            states = firstCard.applyEffect(state);
+        }
+        return states;
     }
 
     public State applyAction(State currentState) {
@@ -89,8 +105,9 @@ public class Action {
 
     private void applyIntroduce(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
-        turnPlayer.hand.remove(secondCard);
-        for (int i = 0; i < 1; i++) {
+        turnPlayer.hand.add(state.getRandomCard());
+        if (turnPlayer.hand.size() > 1) {
+            turnPlayer.hand.remove(secondCard);
             turnPlayer.hand.add(state.getRandomCard());
         }
     }
@@ -99,8 +116,33 @@ public class Action {
         turnPlayer.hand.add(state.getRandomCard());
     }
 
-    private boolean isApplicableAction(State currentState){
-
+    public boolean isApplicableAction(State currentState) {
+        Player turnPlayer = currentState.players.get(currentState.turnPlayerIndex);
+        switch (this.name) {
+            case Guest:
+                if (firstCard.color != Colors.Black && firstCard.requirement <= turnPlayer.geisha.abilities.get(firstCard.color)) {
+                    return true;
+                } else {
+                    if (firstCard.color == Colors.Black) {
+                        for (int value : turnPlayer.geisha.abilities.values()) {
+                            if (value >= firstCard.requirement) {
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+                }
+            case Advertiser:
+                return true;
+            case Exchange:
+                return !turnPlayer.advertisers.isEmpty();
+            case Introduce:
+                return true;
+            case Search:
+                return true;
+            default:
+                return false;
+        }
     }
 
 }
