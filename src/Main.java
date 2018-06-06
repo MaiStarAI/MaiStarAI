@@ -56,9 +56,9 @@ public class Main {
         double bestValue = Double.MIN_VALUE;
         while (u(selected).size() == 0 /* && !selected.isTerminal() */) { // TODO: implement 'isTerminal()' function
             for (State s : s0.children) {
-                double u = uct(s);
-                if (bestValue < u) {
-                    bestValue = u;
+                double value = uct(s);
+                if (bestValue < value) {
+                    bestValue = value;
                     selected = s;
                 }
             }
@@ -69,7 +69,7 @@ public class Main {
     /** Expansion stage */
     private static State expand (State s) {
         Random rand = new Random();
-        s.children.add( u(s).get( rand.nextInt( u(s).size() ) ).applyAction(s) );
+        s.children.add( u(s).get( rand.nextInt( u(s).size() ) ) );
         return s;
     }
 
@@ -85,21 +85,62 @@ public class Main {
 
     /** Returns all possible actions of state 's'
      *  that are not in the tree yet. */
-    private static ArrayList<Action> u (State s) {
-        ArrayList<Action> allActions = c(s);
-        ArrayList<Action> actionsToAdd = new ArrayList<>();
-        for (Action allAction : allActions) {
-            State possibleChild = allAction.applyAction(s);
-            if (!s.children.contains(possibleChild)) {
-                actionsToAdd.add(possibleChild.appliedAction);
+    private static ArrayList<State> u (State s) {
+        ArrayList<State> allStates = c(s);
+        ArrayList<State> statesToAdd = new ArrayList<>();
+        for (State state : allStates) {
+            if (!s.children.contains(state)) {
+                statesToAdd.add(state);
             }
         }
-        return actionsToAdd;
+        return statesToAdd;
     }
 
     /** Returns all possible actions of state 's'. */
-    private static ArrayList<Action> c (State s) {
-        return new ArrayList<>();
+    private static ArrayList<State> c (State s) {
+        ArrayList<State> list = new ArrayList<>();
+
+        // Guest actions without effects
+        for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+            Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+            if (guest.isApplicableAction(s)) list.add(guest.applyAction(s));
+        }
+
+        // TODO: guest actions with effects
+
+        // Advertiser actions
+        for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+            Action advertiser = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
+            if (advertiser.isApplicableAction(s)) list.add(advertiser.applyAction(s));
+        }
+
+        // Exchange action
+        for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+            for (int j = 0; j < s.players.get(s.turnPlayerIndex).advertisers.size(); ++j) {
+                Action exchange = new Action(ActionsNames.Exchange,
+                        s.players.get(s.turnPlayerIndex).hand.get(i),
+                        s.players.get(s.turnPlayerIndex).advertisers.get(j));
+                if (exchange.isApplicableAction(s)) list.add(exchange.applyAction(s));
+            }
+        }
+
+        // Introduce action
+        for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+            for (int j = i + 1; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                Action introduce = new Action(ActionsNames.Introduce,
+                        s.players.get(s.turnPlayerIndex).hand.get(i),
+                        s.players.get(s.turnPlayerIndex).hand.get(j));
+                if (introduce.isApplicableAction(s)) list.add(introduce.applyAction(s));
+            }
+        }
+
+        // Search action
+        Action search = new Action();
+        if (search.isApplicableAction(s)) list.add(search.applyAction(s));
+
+        // TODO: geisha's effects
+
+        return list;
     }
 
 }
