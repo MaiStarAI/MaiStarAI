@@ -86,7 +86,15 @@ public class Main {
     /** Returns all possible actions of state 's'
      *  that are not in the tree yet. */
     private static ArrayList<Action> u (State s) {
-        return new ArrayList<>();
+        ArrayList<Action> allActions = c(s);
+        ArrayList<Action> actionsToAdd = new ArrayList<>();
+        for (Action allAction : allActions) {
+            State possibleChild = allAction.applyAction(s);
+            if (!s.children.contains(possibleChild)) {
+                actionsToAdd.add(possibleChild.appliedAction);
+            }
+        }
+        return actionsToAdd;
     }
 
     /** Returns all possible actions of state 's'. */
