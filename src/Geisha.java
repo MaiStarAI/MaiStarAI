@@ -1,32 +1,47 @@
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class Geisha {
     GeishasName name;
     HashMap<Colors, Integer> abilities;
-    int numberEffect;
 
-    Geisha(GeishasName name, HashMap<Colors, Integer> abilities, int numberEffect){
+    Geisha(GeishasName name, HashMap<Colors, Integer> abilities) {
         this.name = name;
         this.abilities = abilities;
-        this.numberEffect = numberEffect;
     }
 
-    Geisha(Geisha anotherGeisha){
+    Geisha(Geisha anotherGeisha) {
         this.name = anotherGeisha.name;
         this.abilities = anotherGeisha.abilities;
-        this.numberEffect = anotherGeisha.numberEffect;
     }
 
-    public void isApplicaableEffect(Action currentAction){
+    public void isApplicaableEffect(Action currentAction) {
 
     }
 
-    public void NatsumiEffect(State state, Card blueCard){
+    public ArrayList<State> NatsumiEffect(State state) {
+        ArrayList<State> states = new ArrayList<>();
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.guests.add(blueCard);
-        turnPlayer.hand.remove(blueCard);
-        turnPlayer.score = turnPlayer.score + blueCard.guestReward;
-        //Apply card effect or not
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).color == Colors.Blue) {
+
+                //Apply effect one time without card effect
+                Action action = new Action(turnPlayer.hand.get(i), true);
+                State newState = action.applyAction(state);
+                states.add(newState);
+
+                //Apply effect one time with card effect
+                ArrayList<State> effects = action.applyEffect(newState);
+                for (int j = 0; j < effects.size(); j++) {
+                    states.add(effects.get(j));
+                }
+                
+            }
+        }
+        for (int i = 0; i < ; i++) {
+            
+        }
+        return states;
     }
 
 }

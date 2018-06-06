@@ -24,7 +24,7 @@ public class Card {
         this.advReward = anotherCard.advReward;
     }
 
-    public ArrayList<State> applyEffect(State state) {
+    public State applyEffect(State state) {
         return null;
     }
 
@@ -52,55 +52,49 @@ public class Card {
         return state;
     }
 
-    public ArrayList<State> OkaasanEffect(State state) {
-        ArrayList<State> states = new ArrayList();
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        for (int i = 0; i < turnPlayer.hand.size(); i++) {
-            Action action = new Action(turnPlayer.hand.get(i));
-            State newState = action.applyAction(state);
-            states.add(newState);
-        }
-        return states;
+    public State OkaasanEffect(State state, Card card) {
+        Action action = new Action(card);
+        State newState = action.applyAction(state);
+
+        newState.parent = state.parent;
+        state.children.remove(newState);
+        newState.turnPlayerIndex = state.turnPlayerIndex;
+
+        return newState;
     }
 
-    public ArrayList<State> SumoWrestlerEffect(State state) {
-        ArrayList<State> states = new ArrayList();
-        for (int i = 0; i < state.players.size(); i++) {
-            for (int j = 0; j < state.players.get(i).hand.size(); j++) {
-                State newState = new State(state);
-                newState.players.get(i).hand.remove(j);
-                states.add(newState);
-            }
-        }
-        return states;
+    public State SumoWrestlerEffect(State state, int targetPlayer, Card card) {
+        State newState = new State(state);
+        newState.players.get(targetPlayer).hand.remove(card);
+
+        return newState;
     }
 
-    public ArrayList<State> EmissaryEffect(State state) {
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            if (!state.players.get(i).advertisers.isEmpty()) {
-                State newState = new State(state);
-                Card removed = newState.players.get(i).advertisers.remove(newState.players.get(i).advertisers.size() - 1);
-                Action action = new Action(removed);
-                newState = action.applyAction(newState);
-                states.add(newState);
-            }
-        }
-        return states;
+    public State EmissaryEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        Card removed = newState.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+        Action action = new Action(removed);
+        newState = action.applyAction(newState);
+
+        newState.parent = state.parent;
+        state.children.remove(newState);
+        newState.turnPlayerIndex = state.turnPlayerIndex;
+
+
+        return newState;
     }
 
-    public ArrayList<State> SamuraiEffect(State state) {
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            if (!state.players.get(i).guests.isEmpty()) {
-                State newState = new State(state);
-                Card removed = newState.players.get(i).guests.remove(newState.players.get(i).guests.size() - 1);
-                Action action = new Action(removed, false);
-                newState = action.applyAction(newState);
-                states.add(newState);
-            }
-        }
-        return states;
+    public State SamuraiEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        Card removed = newState.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        Action action = new Action(removed, false);
+        newState = action.applyAction(newState);
+
+        newState.parent = state.parent;
+        state.children.remove(newState);
+        newState.turnPlayerIndex = state.turnPlayerIndex;
+
+        return newState;
     }
 
     public State DaimyoEffect(State currentState) {
@@ -126,65 +120,46 @@ public class Card {
         return currentState;
     }
 
-    public ArrayList<State> ThiefEffect(State state) {
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            if (!state.players.get(i).guests.isEmpty()) {
-                State newState = new State(state);
-                state.players.get(i).guests.remove(newState.players.get(i).guests.size() - 1);
-                states.add(newState);
-            }
-        }
-        return states;
+    public State ThiefEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+
+        return newState;
     }
 
-    public ArrayList<State> YakuzaEffect(State state) {
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            if (!state.players.get(i).advertisers.isEmpty()) {
-                State newState = new State(state);
-                state.players.get(i).advertisers.remove(newState.players.get(i).advertisers.size() - 1);
-            }
-        }
-        return states;
+    public State YakuzaEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+
+        return newState;
     }
 
-    public ArrayList<State> CourtierEffect(State state) {
-        ArrayList<State> states = new ArrayList<>();
+    public State CourtierEffect(State state, Card card, boolean withEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        for (int i = 0; i < turnPlayer.hand.size(); i++) {
-            Action action = new Action(turnPlayer.hand.get(i));
-            if (turnPlayer.hand.get(i).color == this.color && action.isApplicableAction(state)) {
-                State newState = action.applyAction(state);
-                states.add(newState);
-                ArrayList<State> effects = action.applyEffect(newState);
-                for (int j = 0; j < effects.size(); j++) {
-                    states.add(effects.get(j));
-                }
+        State newState = null;
+        Action action = new Action(card);
+        if (card.color == this.color && action.isApplicableAction(state)) {
+            newState = action.applyAction(state);
+            if (withEffect) {
+                newState = action.applyEffect(newState);
             }
         }
-        return states;
+        return newState;
     }
 
-    public ArrayList<State> MerchantEffect(State state){
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            State newState = new State(state);
-            newState.players.get(i).hand.add(newState.getRandomCard());
-            newState.players.get(i).hand.add(newState.getRandomCard());
-            states.add(newState);
-        }
-        return states;
+    public State MerchantEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+
+        return newState;
     }
 
-    public ArrayList<State> ScholarEffect(State state){
-        ArrayList<State> states = new ArrayList<>();
-        for (int i = 0; i < state.players.size(); i++) {
-            State newState = new State(state);
-            newState.players.get(i).hand.add(newState.getRandomCard());
-            states.add(newState);
-        }
-        return states;
+    public State ScholarEffect(State state, int targetPlayer) {
+        State newState = new State(state);
+        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+
+        return newState;
     }
 
 }

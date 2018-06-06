@@ -50,7 +50,7 @@ public class State {
     }
 
     public Card getRandomCard(){
-        int random = 0 + (int) (Math.random() * drawDeck);
+        int random = (int) (Math.random() * drawDeck);
         Card randomCard = new Card(cards.get(random).name, cards.get(random).color, cards.get(random).requirement,
                 cards.get(random).guestReward, cards.get(random).advReward);
         cards.remove(cards.get(random));

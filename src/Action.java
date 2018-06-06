@@ -4,8 +4,11 @@ public class Action {
     ActionsNames name;
     Card firstCard;
     Card secondCard;
-    boolean usedEffect;
     boolean played;
+
+    boolean usedEffect;
+    Card firstEffectCard;
+    Player targetEffect;
 
     Action(Card firstCard, boolean usedEffect) {
         this.name = ActionsNames.Guest;
@@ -13,6 +16,8 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = usedEffect;
         this.played = false;
+        this.firstEffectCard = null;
+        this.targetEffect = null;
     }
 
     Action(Card firstCard) {
@@ -21,6 +26,8 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = false;
         this.played = false;
+        this.firstEffectCard = null;
+        this.targetEffect = null;
     }
 
     Action(ActionsNames name, Card firstCard, Card secondCard) {
@@ -29,6 +36,8 @@ public class Action {
         this.secondCard = secondCard;
         this.usedEffect = false;
         this.played = false;
+        this.firstEffectCard = null;
+        this.targetEffect = null;
     }
 
     Action() {
@@ -37,15 +46,17 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = false;
         this.played = false;
+        this.firstEffectCard = null;
+        this.targetEffect = null;
     }
 
-    public ArrayList<State> applyEffect(State currentState) {
+    public State applyEffect(State currentState) {
         ArrayList<State> states = new ArrayList<>();
         if (this.name == ActionsNames.Guest && this.played && usedEffect) {
             State state = new State(currentState);
-            states = firstCard.applyEffect(state);
+            //states = firstCard.applyEffect(state);
         }
-        return states;
+        return null;
     }
 
     public State applyAction(State currentState) {
