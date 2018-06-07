@@ -67,7 +67,7 @@ public class Action {
             case Guest:
                 this.applyGuest(turnPlayer);
             case Advertiser:
-                this.applyAdvertiser(turnPlayer);
+                this.applyAdvertiser(state, turnPlayer);
             case Exchange:
                 this.applyExchange(turnPlayer);
             case Introduce:
@@ -95,7 +95,7 @@ public class Action {
         turnPlayer.score += firstCard.guestReward;
     }
 
-    private void applyAdvertiser(Player turnPlayer) {
+    private void applyAdvertiser(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.advertisers.add(firstCard);
 
@@ -105,6 +105,8 @@ public class Action {
         turnPlayer.geisha.abilities.put(Colors.Blue, firstCard.advReward.get(Colors.Blue) + n);
         n = turnPlayer.geisha.abilities.get(Colors.Green);
         turnPlayer.geisha.abilities.put(Colors.Green, firstCard.advReward.get(Colors.Green) + n);
+
+        turnPlayer.hand.add(state.getRandomCard());
     }
 
     private void applyExchange(Player turnPlayer) {

@@ -9,6 +9,7 @@ public class Player {
     ArrayList<Card> guests;
     ArrayList<Card> advertisers;
     ArrayList<CardsNames> specialEffects;
+    int geishaEffect;
 
     Player(String name, ArrayList<Card> hand, Geisha geisha) {
         this.name = name;
@@ -19,6 +20,7 @@ public class Player {
         guests = new ArrayList<>();
         advertisers = new ArrayList<>();
         specialEffects = new ArrayList<>();
+        this.geishaEffect = geisha.numberEffect;
     }
 
     Player(Player anotherPlayer) {
@@ -30,6 +32,7 @@ public class Player {
         guests = anotherPlayer.guests;
         advertisers = anotherPlayer.advertisers;
         specialEffects = anotherPlayer.specialEffects;
+        this.geishaEffect = anotherPlayer.geishaEffect;
     }
 
     public void updateSpecialEffect(CardsNames cardName) {

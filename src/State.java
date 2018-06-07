@@ -25,6 +25,13 @@ public class State {
         this.parent = parent;
         children = new ArrayList<>();
         this.appliedAction = appliedAction;
+
+        for (int i = 0; i < this.players.size(); i++) {
+            if(this.players.get(i).geisha.name == GeishasName.Oboro){
+                Geisha.OboroEffect(this,this.players.get(i));
+                break;
+            }
+        }
     }
 
     State(State anotherState){
@@ -38,6 +45,13 @@ public class State {
         this.parent = anotherState.parent;
         children = anotherState.children;
         this.appliedAction = anotherState.appliedAction;
+
+        for (int i = 0; i < this.players.size(); i++) {
+            if((this.players.get(i).geisha.name!=GeishasName.Akenohoshi)&&
+                    (this.players.get(i).geisha.name!=GeishasName.Oboro)){
+                this.players.get(i).geishaEffect = this.players.get(i).geisha.numberEffect;
+            }
+        }
     }
 
     public int getNextPlayer(){
