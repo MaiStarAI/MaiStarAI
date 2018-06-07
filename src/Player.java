@@ -49,6 +49,7 @@ public class Player {
                         guests.remove(i);
                     }
                 }
+                break;
 
             case District_Kanryou:
                 for (int i = 0; i < specialEffects.size(); i++) {
@@ -62,6 +63,8 @@ public class Player {
                         guests.remove(i);
                     }
                 }
+                default:
+                    System.out.println("Error: there is no such special effect");
         }
     }
 

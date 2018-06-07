@@ -50,13 +50,16 @@ public class Action {
         this.targetEffect = null;
     }
 
-    public State applyEffect(State currentState) {
-        ArrayList<State> states = new ArrayList<>();
-        if (this.name == ActionsNames.Guest && this.played && usedEffect) {
-            State state = new State(currentState);
-            //states = firstCard.applyEffect(state);
+    public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
+        State state = new State(currentState);
+        if (this.name == ActionsNames.Guest && this.played && usedEffect
+                && firstCard.isApplicableEffect(state, card, targetPlayer)) {
+            state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
+            return state;
         }
-        return null;
+        else {
+            return null;
+        }
     }
 
     public State applyAction(State currentState) {
@@ -66,14 +69,19 @@ public class Action {
         switch (this.name) {
             case Guest:
                 this.applyGuest(turnPlayer);
+                break;
             case Advertiser:
                 this.applyAdvertiser(state, turnPlayer);
+                break;
             case Exchange:
                 this.applyExchange(turnPlayer);
+                break;
             case Introduce:
                 this.applyIntroduce(state, turnPlayer);
+                break;
             case Search:
                 this.applySearch(state, turnPlayer);
+                break;
             default:
                 System.out.println("Error in applyAction: there is no such name of action");
 
