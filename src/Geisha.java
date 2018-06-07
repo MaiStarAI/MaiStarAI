@@ -44,14 +44,14 @@ public class Geisha {
     }
 
     public State applyGeisha(State state, Card first, Card second, boolean withEffect,
-                             Colors ability, boolean firstGeishaEffect) {
+                             Colors ability, boolean firstGeishaEffect, int targetPlayer) {
         switch (this.name) {
             case Natsumi:
                 return NatsumiEffect(state, first, withEffect);
             case Suzune:
                 return SuzuneEffect(state, first, firstGeishaEffect);
             case Momiji:
-                return MomijiEffect(state);
+                return MomijiEffect(state, targetPlayer, withEffect);
             case Akenohoshi:
                 return AkenohoshiEffect(state, ability, firstGeishaEffect);
             case Harukaze:
@@ -70,7 +70,7 @@ public class Geisha {
         State newState = action.applyAction(state);
 
         if (withEffect) {
-            newState = action.applyEffect(newState);
+            newState = action.applyEffect(newState, card, -1, withEffect);
         }
 
         newState.parent = state.parent;
@@ -97,11 +97,11 @@ public class Geisha {
         return newState;
     }
 
-    private State MomijiEffect(State state) {
+    private State MomijiEffect(State state, int targetPlayer, boolean withEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
         turnPlayer.geishaEffect -= 1;
 
-        State newState = state.appliedAction.applyEffect(state);
+        State newState = state.appliedAction.applyEffect(state, state.appliedAction.firstCard, targetPlayer, withEffect);
 
         newState.parent = state.parent;
         state.children.remove(newState);

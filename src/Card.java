@@ -197,7 +197,7 @@ public class Card {
         if (card.color == this.color && action.isApplicableAction(state)) {
             newState = action.applyAction(state);
             if (withEffect) {
-                newState = action.applyEffect(newState, card, targetPlayer, withEffect);
+                newState = action.applyEffect(newState, card, targetPlayer, true);
             }
         }
         return newState;
