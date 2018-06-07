@@ -32,14 +32,14 @@ public class Main {
         }
         /* Choose the most visited node. */
         int max_visits = Integer.MIN_VALUE;
-        Action a = s.children.get(0).appliedAction;
+        State s_c = s.children.get(0);
         for (int i = 0; i < s.children.size(); ++i) {
             if (s.children.get(i).visits > max_visits) {
                 max_visits = s.children.get(i).visits;
-                a = s.children.get(i).appliedAction;
+                s_c = s.children.get(i);
             }
         }
-        return a;
+        return s_c.appliedAction;
     }
 
     /** Bandit algorithm */
@@ -75,12 +75,22 @@ public class Main {
 
     /** Simulation stage */
     private static int simulate (State s) {
-        return 0;
+        Random rand = new Random();
+        State s_copy = new State(s);
+        while (/*!s.isTerminal()*/ true) { // TODO: 'isTerminal()' function
+            s_copy = c(s).get( rand.nextInt( c(s).size() ) );
+            break;
+        }
+        return /* s_copy.isVictory() */ 0; // TODO: 'isVictory()' function
     }
 
     /** Backpropagation stage */
     private static void backpropagate (State s, int reward) {
-
+        while (s.parent != null) {
+            s.visits++;
+            s.victories += reward;
+            for (int i = 0; i < s.parent.children.size(); ++i) s.parent.children.get(i).availability++;
+        }
     }
 
     /** Returns all possible actions of state 's'
@@ -106,7 +116,14 @@ public class Main {
             if (guest.isApplicableAction(s)) list.add(guest.applyAction(s));
         }
 
-        // TODO: guest actions with effects
+        // Guest actions with effects
+        for (int i = 0; i < s.players.size(); ++i) {
+            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(j), true);
+                if (guest.isApplicableAction(s))
+                    list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+            }
+        }
 
         // Advertiser actions
         for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
