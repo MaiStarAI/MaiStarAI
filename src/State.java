@@ -71,5 +71,16 @@ public class State {
         return randomCard;
     }
 
+    public boolean isTerminal(){
+        for (Player player : this.players) {
+            if (player.hand.isEmpty()) {
+                return true;
+            }
+        }
+
+        return this.drawDeck == 0;
+    }
+
+
 
 }
