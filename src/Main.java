@@ -34,5 +34,8 @@ public class Main {
         five.geisha = two;
         System.out.println(three.geisha.name);
         System.out.println(five.geisha.name);
+
+        Action action = new Action(first, false);
+        System.out.println(action.toString());
     }
 }

@@ -1,5 +1,3 @@
-import java.util.ArrayList;
-
 public class Action {
     ActionsNames name;
     Card firstCard;
@@ -164,6 +162,25 @@ public class Action {
             default:
                 return false;
         }
+    }
+
+    public String toString(){
+        String info = "";
+        info += this.name.toString() + "\n";
+        info += "Name of card: " + firstCard.name + "\n" + "Color: " + firstCard.color + "\n" +
+                "Requirement: " + firstCard.requirement + "\n" + "Guest reward: " +firstCard.guestReward +
+                "\n" + "Advertiser reward: \n" + "Red: " + firstCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
+                firstCard.advReward.get(Colors.Blue) + "\n" + "Green: " + firstCard.advReward.get(Colors.Green) + "\n";
+        if(this.name == ActionsNames.Introduce || this.name == ActionsNames.Exchange){
+            info += "Name of card: " + secondCard.name + "\n" + "Color: " + secondCard.color + "\n" +
+                    "Requirement: " + secondCard.requirement + "\n" + "Guest reward: " +secondCard.guestReward +
+                    "\n" + "Advertiser reward: \n" + "Red: " + secondCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
+                    secondCard.advReward.get(Colors.Blue) + "\n" + "Green: " + secondCard.advReward.get(Colors.Green) + "\n";
+        }
+
+        info += "Played: " + this.played + "\n" + "Used effect: " + this.usedEffect + "\n";
+
+        return info;
     }
 
 }

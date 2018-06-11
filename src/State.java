@@ -5,6 +5,7 @@ public class State {
     ArrayList<Card> cards;
     int drawDeck;
     int turnPlayerIndex;
+    int AIPlayer;
 
     int victories;
     int visits;
@@ -14,7 +15,7 @@ public class State {
     Action appliedAction;
 
     State(ArrayList<Player> players, ArrayList<Card> cards,
-          State parent, Action appliedAction){
+          State parent, Action appliedAction, int AIPlayer){
         this.players = players;
         this.cards = cards;
         this.drawDeck = cards.size();
@@ -25,10 +26,11 @@ public class State {
         this.parent = parent;
         children = new ArrayList<>();
         this.appliedAction = appliedAction;
+        this.AIPlayer = AIPlayer;
 
-        for (int i = 0; i < this.players.size(); i++) {
-            if(this.players.get(i).geisha.name == GeishasName.Oboro){
-                Geisha.OboroEffect(this,this.players.get(i));
+        for (Player player : this.players) {
+            if (player.geisha.name == GeishasName.Oboro) {
+                Geisha.OboroEffect(this, player);
                 break;
             }
         }
@@ -45,11 +47,12 @@ public class State {
         this.parent = anotherState.parent;
         children = anotherState.children;
         this.appliedAction = anotherState.appliedAction;
+        this.AIPlayer = anotherState.AIPlayer;
 
-        for (int i = 0; i < this.players.size(); i++) {
-            if((this.players.get(i).geisha.name!=GeishasName.Akenohoshi)&&
-                    (this.players.get(i).geisha.name!=GeishasName.Oboro)){
-                this.players.get(i).geishaEffect = this.players.get(i).geisha.numberEffect;
+        for (Player player : this.players) {
+            if ((player.geisha.name != GeishasName.Akenohoshi) &&
+                    (player.geisha.name != GeishasName.Oboro)) {
+                player.geishaEffect = player.geisha.numberEffect;
             }
         }
     }
@@ -68,6 +71,7 @@ public class State {
         Card randomCard = new Card(cards.get(random).name, cards.get(random).color, cards.get(random).requirement,
                 cards.get(random).guestReward, cards.get(random).advReward);
         cards.remove(cards.get(random));
+        drawDeck -= 1;
         return randomCard;
     }
 
@@ -81,6 +85,27 @@ public class State {
         return this.drawDeck == 0;
     }
 
+    public boolean isVictory(){
+        int max = 0;
+        int maxInd = -1;
+        for (int i = 0; i < this.players.size(); i++) {
+            if(this.players.get(i).score > max){
+                max = this.players.get(i).score;
+                maxInd = i;
+            }
+        }
 
+        return maxInd == this.AIPlayer;
+    }
+
+    public void getDeterminization(){
+        for (int i = 0; i < this.players.size(); i++) {
+            if(i != this.AIPlayer){
+                for (int j = 0; j < this.players.get(i).hand.size(); j++) {
+                    this.players.get(i).hand.add(this.getRandomCard());
+                }
+            }
+        }
+    }
 
 }
