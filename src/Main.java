@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Random;
 
 public class Main {
@@ -7,22 +8,55 @@ public class Main {
 
         int n = 5000; // Number of iterations
         Action action;
-        ArrayList<Player> players = new ArrayList<>(); // TODO: fill the array
-        ArrayList<Card> cards = new ArrayList<>(); // TODO: fill the array
+
+        // Abilities
+        HashMap<Colors, Integer> a_1 = new HashMap<>();
+        a_1.put(Colors.Red, 5);
+        a_1.put(Colors.Blue, 5);
+        a_1.put(Colors.Green, 5);
+
+        HashMap<Colors, Integer> a_2 = new HashMap<>();
+        a_2.put(Colors.Red, 1);
+        a_2.put(Colors.Blue, 1);
+        a_2.put(Colors.Green, 1);
+
+        HashMap<Colors, Integer> a_3 = new HashMap<>();
+        a_2.put(Colors.Red, 1);
+        a_2.put(Colors.Blue, 5);
+        a_2.put(Colors.Green, 3);
+
+        // Geisha
+        Geisha g_1 = new Geisha(GeishasName.Oboro, a_1, 0);
+        Geisha g_2 = new Geisha(GeishasName.Momiji, a_2, 0);
+        Geisha g_3 = new Geisha(GeishasName.Harukaze, a_3, 1);
+
+
+        ArrayList<Card> cards = new ArrayList<>(); // TODO: fill the array with cards (somehow)
+        ArrayList<Player> players = new ArrayList<>();
+
+        Player AI_ISMCTS = new Player("ISMCTS", cards, g_1); players.add(AI_ISMCTS);
+        Player AI_Random = new Player("RANDOM", cards, g_2); players.add(AI_Random);
+        Player human = new Player("HUMAN", cards, g_3); players.add(human);
 
         /* Initial state with some players and cards
            and without parent and appliedAction. */
-        State initial_state = new State(players, cards, null, null);
+        State initial_state = new State(players, cards, null, null, 0);
 
         action = ISMCTS(initial_state, n);
 
-        System.out.println(action); // TODO: override 'toString()' method
+        System.out.println(action);
 
+    }
+
+    private static Action randomAI (State s) {
+        Random rand = new Random();
+        ArrayList<State> children = c(s);
+        return children.get( rand.nextInt( children.size() ) ).appliedAction;
     }
 
     private static Action ISMCTS (State s, int n) {
         for (int i = 0; i < n; ++i) {
-            /* s.fillDeterminization() */ // TODO: determinization filling in
+            s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
                 selected = expand(selected);
@@ -54,7 +88,7 @@ public class Main {
     private static State select (State s0) {
         State selected = s0;
         double bestValue = Double.MIN_VALUE;
-        while (u(selected).size() == 0 /* && !selected.isTerminal() */) { // TODO: implement 'isTerminal()' function
+        while (u(selected).size() == 0 && !selected.isTerminal()) {
             for (State s : s0.children) {
                 double value = uct(s);
                 if (bestValue < value) {
@@ -69,7 +103,8 @@ public class Main {
     /** Expansion stage */
     private static State expand (State s) {
         Random rand = new Random();
-        s.children.add( u(s).get( rand.nextInt( u(s).size() ) ) );
+        ArrayList<State> u_children = u(s);
+        s.children.add( u_children.get( rand.nextInt( u_children.size() ) ) );
         return s;
     }
 
@@ -77,11 +112,11 @@ public class Main {
     private static int simulate (State s) {
         Random rand = new Random();
         State s_copy = new State(s);
-        while (/*!s.isTerminal()*/ true) { // TODO: 'isTerminal()' function
-            s_copy = c(s).get( rand.nextInt( c(s).size() ) );
-            break;
+        while (!s.isTerminal()) {
+            ArrayList<State> children = c(s_copy);
+            s_copy = children.get( rand.nextInt( children.size() ) );
         }
-        return /* s_copy.isVictory() */ 0; // TODO: 'isVictory()' function
+        return s_copy.isVictory() ? 1 : 0;
     }
 
     /** Backpropagation stage */
@@ -90,20 +125,28 @@ public class Main {
             s.visits++;
             s.victories += reward;
             for (int i = 0; i < s.parent.children.size(); ++i) s.parent.children.get(i).availability++;
+            s = s.parent;
         }
     }
 
     /** Returns all possible actions of state 's'
      *  that are not in the tree yet. */
     private static ArrayList<State> u (State s) {
-        ArrayList<State> allStates = c(s);
-        ArrayList<State> statesToAdd = new ArrayList<>();
-        for (State state : allStates) {
-            if (!s.children.contains(state)) {
-                statesToAdd.add(state);
+        ArrayList<State> p_children = c(s);
+        ArrayList<Action> p_actions = new ArrayList<>();
+        for (State state : p_children) p_actions.add(state.appliedAction);
+
+        ArrayList<State> a_children = s.children;
+        ArrayList<Action> a_actions = new ArrayList<>();
+        for (State state : a_children) a_actions.add(state.appliedAction);
+
+        ArrayList<State> children_to_add = new ArrayList<>();
+        for (Action action : p_actions) {
+            if (!a_actions.contains(action)) {
+                children_to_add.add(action.applyAction(s));
             }
         }
-        return statesToAdd;
+        return children_to_add;
     }
 
     /** Returns all possible actions of state 's'. */
