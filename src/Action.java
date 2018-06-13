@@ -1,3 +1,7 @@
+/**
+ * Class action contain information about current action
+ */
+
 public class Action {
     ActionsNames name;
     Card firstCard;
@@ -5,6 +9,12 @@ public class Action {
     boolean played;
 
     boolean usedEffect;
+
+    /**
+     * Constructor to create action Guest
+     * @param firstCard: card which we want to play as a guest
+     * @param usedEffect: true if we want and can use effect of this card
+     */
 
     Action(Card firstCard, boolean usedEffect) {
         this.name = ActionsNames.Guest;
@@ -14,6 +24,11 @@ public class Action {
         this.played = false;
     }
 
+    /**
+     * Constructor to create action Advertiser
+     * @param firstCard: card which we want to play as an advertiser
+     */
+
     Action(Card firstCard) {
         this.name = ActionsNames.Advertiser;
         this.firstCard = firstCard;
@@ -22,6 +37,15 @@ public class Action {
         this.played = false;
     }
 
+    /**
+     * Constructor to create action Exchange or Introduce
+     * @param name: name of action (Exchange or Introduce)
+     * @param firstCard: in case of Exchange: card from player's advertisers which we want to exchange
+     *                   in case of Introduce: card from player's hand which we want to remove
+     * @param secondCard: in case of Exchange: card from player's hand which we want to add as a new advertiser
+     *                    in case of Introduce: card from player's hand which we want to remove
+     */
+
     Action(ActionsNames name, Card firstCard, Card secondCard) {
         this.name = name;
         this.firstCard = firstCard;
@@ -29,6 +53,10 @@ public class Action {
         this.usedEffect = false;
         this.played = false;
     }
+
+    /**
+     * Constructor to create action Search
+     */
 
     Action() {
         this.name = ActionsNames.Search;
@@ -44,8 +72,7 @@ public class Action {
                 && firstCard.isApplicableEffect(state, card, targetPlayer)) {
             state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
             return state;
-        }
-        else {
+        } else {
             return null;
         }
     }
@@ -133,11 +160,14 @@ public class Action {
                     return true;
                 } else {
                     if (firstCard.color == Colors.Black) {
-                        for (int value : turnPlayer.geisha.abilities.values()) {
-                            if (value >= firstCard.requirement) {
-                                return true;
+                        if (firstCard.name != CardsNames.District_Kanryou) {
+                            for (int value : turnPlayer.geisha.abilities.values()) {
+                                if (value >= firstCard.requirement) {
+                                    return true;
+                                }
                             }
                         }
+                        return false;
                     }
                     return false;
                 }
@@ -154,16 +184,16 @@ public class Action {
         }
     }
 
-    public String toString(){
+    public String toString() {
         String info = "";
         info += this.name.toString() + "\n";
         info += "Name of card: " + firstCard.name + "\n" + "Color: " + firstCard.color + "\n" +
-                "Requirement: " + firstCard.requirement + "\n" + "Guest reward: " +firstCard.guestReward +
+                "Requirement: " + firstCard.requirement + "\n" + "Guest reward: " + firstCard.guestReward +
                 "\n" + "Advertiser reward: \n" + "Red: " + firstCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
                 firstCard.advReward.get(Colors.Blue) + "\n" + "Green: " + firstCard.advReward.get(Colors.Green) + "\n";
-        if(this.name == ActionsNames.Introduce || this.name == ActionsNames.Exchange){
+        if (this.name == ActionsNames.Introduce || this.name == ActionsNames.Exchange) {
             info += "Name of card: " + secondCard.name + "\n" + "Color: " + secondCard.color + "\n" +
-                    "Requirement: " + secondCard.requirement + "\n" + "Guest reward: " +secondCard.guestReward +
+                    "Requirement: " + secondCard.requirement + "\n" + "Guest reward: " + secondCard.guestReward +
                     "\n" + "Advertiser reward: \n" + "Red: " + secondCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
                     secondCard.advReward.get(Colors.Blue) + "\n" + "Green: " + secondCard.advReward.get(Colors.Green) + "\n";
         }

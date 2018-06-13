@@ -2,12 +2,6 @@ import java.util.HashMap;
 
 /**
  * Class card contain information about current card
- *
- * name: name of card
- * color: color of card (Red, Blue, Green, Black)
- * requirement: number which determine requirement which need to play this card
- * guestReward: number which added to the player's score when he plays it as a guest
- * advReward: array with numbers which are added  to geisha's abilities when this card played as an advertiser
  */
 
 public class Card {
@@ -17,6 +11,15 @@ public class Card {
     int guestReward;
     HashMap<Colors, Integer> advReward;
 
+    /**
+     * Main constructor for card
+     * @param cardName: name of a card
+     * @param color: color of a card
+     * @param requirement: number which determine requirement which need to play this card
+     * @param guestReward: number which added to the player's score when he plays it as a guest
+     * @param advReward: array with numbers which are added  to geisha's abilities when this card played as an advertiser
+     */
+
     Card(CardsNames cardName, Colors color, int requirement, int guestReward, HashMap<Colors, Integer> advReward) {
         this.name = cardName;
         this.color = color;
@@ -25,6 +28,11 @@ public class Card {
         this.advReward = advReward;
     }
 
+    /**
+     * Constructor to crate copies of cards
+     * @param anotherCard: card which new object need to create
+     */
+
     Card(Card anotherCard) {
         this.name = anotherCard.name;
         this.color = anotherCard.color;
@@ -32,6 +40,14 @@ public class Card {
         this.guestReward = anotherCard.guestReward;
         this.advReward = anotherCard.advReward;
     }
+
+    /**
+     * Method to check applicability of this card's effect
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for effect
+     * @param targetPlayer: player on which we apply effect
+     * @return true if we can apply such effect
+     */
 
     public boolean isApplicableEffect(State state, Card card, int targetPlayer) {
         if ((this.name == CardsNames.Yakuza || this.name == CardsNames.Emissary) &&
@@ -56,6 +72,15 @@ public class Card {
         }
 
     }
+
+    /**
+     * Method to apply effect
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for effect
+     * @param targetPlayer: player on which we apply effect
+     * @param withEffect: apply effect of card which we use for effect
+     * @return new state after applying effect
+     */
 
     public State applyEffect(State state, Card card, int targetPlayer, boolean withEffect) {
         switch (this.name) {
@@ -95,6 +120,12 @@ public class Card {
         }
     }
 
+    /**
+     * Apply effect of card Monk
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
+
     private State MonkEffect(State currentState) {
         State state = new State(currentState);
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
@@ -102,11 +133,24 @@ public class Card {
         return state;
     }
 
+    /**
+     * Apply effect of card Doctor
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
+
     private State DoctorEffect(State currentState) {
         State state = new State(currentState);
         state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
+
+    /**
+     * Apply effect of card Shogun
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
+
 
     private State ShogunEffect(State currentState) {
         State state = new State(currentState);
@@ -119,6 +163,13 @@ public class Card {
         return state;
     }
 
+    /**
+     * Apply effect of card Okaasan
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for this effect (as an advertiser)
+     * @return new state after applying effect
+     */
+
     private State OkaasanEffect(State state, Card card) {
         Action action = new Action(card);
         State newState = action.applyAction(state);
@@ -130,12 +181,27 @@ public class Card {
         return newState;
     }
 
+    /**
+     * Apply effect of card Sumo-Wrestler
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @param card: card which we remove
+     * @return new state after applying effect
+     */
+
     private State SumoWrestlerEffect(State state, int targetPlayer, Card card) {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.remove(card);
 
         return newState;
     }
+
+    /**
+     * Apply effect of card Emissary
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
 
     private State EmissaryEffect(State state, int targetPlayer) {
         State newState = new State(state);
@@ -151,6 +217,13 @@ public class Card {
         return newState;
     }
 
+    /**
+     * Apply effect of card Samurai
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
+
     private State SamuraiEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = newState.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
@@ -163,6 +236,12 @@ public class Card {
 
         return newState;
     }
+
+    /**
+     * Apply effect of card Daimyo
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
 
     private State DaimyoEffect(State currentState) {
         State state = new State(currentState);
@@ -177,15 +256,34 @@ public class Card {
         return state;
     }
 
+    /**
+     * Apply effect of card Ronin
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
+
     private State RoninEffect(State currentState) {
         currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
         return currentState;
     }
 
+    /**
+     * Apply effect of card District Kanryou
+     * @param currentState: game's state for which we apply effect
+     * @return new state after applying effect
+     */
+
     private State DistrictKanryouEffect(State currentState) {
         currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.District_Kanryou);
         return currentState;
     }
+
+    /**
+     * Apply effect of card Thief
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
 
     private State ThiefEffect(State state, int targetPlayer) {
         State newState = new State(state);
@@ -194,12 +292,28 @@ public class Card {
         return newState;
     }
 
+    /**
+     * Apply effect of card Yakuza
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
+
     private State YakuzaEffect(State state, int targetPlayer) {
         State newState = new State(state);
         state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
 
         return newState;
     }
+
+    /**
+     * Apply effect of card Courtier
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for this effect (as a new guest)
+     * @param targetPlayer: player on which we apply effect of card which we use for this effect (as a new guest)
+     * @param withEffect: apply effect of card which we use for effect (as a new guest)
+     * @return new state after applying effect
+     */
 
     private State CourtierEffect(State state, Card card, int targetPlayer, boolean withEffect) {
         State newState = null;
@@ -213,6 +327,13 @@ public class Card {
         return newState;
     }
 
+    /**
+     * Apply effect of card Merchant
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
+
     private State MerchantEffect(State state, int targetPlayer) {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
@@ -220,6 +341,13 @@ public class Card {
 
         return newState;
     }
+
+    /**
+     * Apply effect of card Scholar
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply this effect
+     * @return new state after applying effect
+     */
 
     private State ScholarEffect(State state, int targetPlayer) {
         State newState = new State(state);

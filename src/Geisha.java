@@ -1,10 +1,20 @@
-import java.util.ArrayList;
 import java.util.HashMap;
+
+/**
+ * Class card contain information about current geisha
+ */
 
 public class Geisha {
     GeishasName name;
     HashMap<Colors, Integer> abilities;
     int numberEffect;
+
+    /**
+     * Main constructor to create geisha
+     * @param name: name of a geisha
+     * @param abilities: numbers which determine geisha's abilities to apply cars as a guest
+     * @param numberEffect: how much we can apply geisha's effect
+     */
 
     Geisha(GeishasName name, HashMap<Colors, Integer> abilities, int numberEffect) {
         this.name = name;
@@ -12,20 +22,31 @@ public class Geisha {
         this.numberEffect = numberEffect;
     }
 
+    /**
+     * Constructor to create copies of geisha
+     * @param anotherGeisha: geisha which new object need to create
+     */
+
     Geisha(Geisha anotherGeisha) {
         this.name = anotherGeisha.name;
         this.abilities = anotherGeisha.abilities;
         this.numberEffect = anotherGeisha.numberEffect;
     }
 
-    public boolean isApplicableEffect(State state, Card first, Card second,
-                                      boolean withEffect, Colors ability, boolean firstGeishaEffect) {
+    /**
+     * Method to check applicability of geisha's effect
+     * @param state: game's state for which we apply effect
+     * @param first: card which we apply to get game's state for which we apply effect
+     * @param firstGeishaEffect: true if we apply effect of geisha first
+     * @return true if we can apply geisha's effect
+     */
+
+    public boolean isApplicableEffect(State state, Card first, boolean firstGeishaEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
 
         switch (this.name) {
             case Natsumi:
-                return state.parent.turnPlayerIndex == state.turnPlayerIndex
-                        && state.appliedAction.firstCard.color == Colors.Blue &&
+                return state.appliedAction.firstCard.color == Colors.Blue &&
                         state.appliedAction.name == ActionsNames.Guest && turnPlayer.geishaEffect > 0
                         && !firstGeishaEffect;
             case Suzune:
@@ -43,11 +64,23 @@ public class Geisha {
         }
     }
 
+    /**
+     * Method to apply geisha's effect
+     * @param state: game's state for which we apply effect
+     * @param first: card which we use for this effect
+     * @param second: card which we use for this effect
+     * @param withEffect: true if we use effect of card which we use for this effect
+     * @param ability: ability (color) which we want to increase (Akenohoshi's effect)
+     * @param firstGeishaEffect: true if we apply effect of geisha first
+     * @param targetPlayer: player on which we apply effect
+     * @return new state after applying effect
+     */
+
     public State applyGeisha(State state, Card first, Card second, boolean withEffect,
                              Colors ability, boolean firstGeishaEffect, int targetPlayer) {
         switch (this.name) {
             case Natsumi:
-                return NatsumiEffect(state, first, withEffect);
+                return NatsumiEffect(state, first, withEffect, targetPlayer);
             case Suzune:
                 return SuzuneEffect(state, first, firstGeishaEffect);
             case Momiji:
@@ -62,7 +95,15 @@ public class Geisha {
         }
     }
 
-    private State NatsumiEffect(State state, Card card, boolean withEffect) {
+    /**
+     * Apply effect of geisha Natsumi
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for this effect (play as a blue guest)
+     * @param withEffect: true if we use effect of card which we use for this effect (play as a blue guest)
+     * @return new state after applying effect
+     */
+
+    private State NatsumiEffect(State state, Card card, boolean withEffect, int targetPlayer) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
         turnPlayer.geishaEffect -= 1;
 
@@ -70,7 +111,7 @@ public class Geisha {
         State newState = action.applyAction(state);
 
         if (withEffect) {
-            newState = action.applyEffect(newState, card, -1, withEffect);
+            newState = action.applyEffect(newState, card, targetPlayer, true);
         }
 
         newState.parent = state.parent;
@@ -80,6 +121,14 @@ public class Geisha {
 
         return newState;
     }
+
+    /**
+     * Apply effect of geisha Suzune
+     * @param state: game's state for which we apply effect
+     * @param card: card which we use for this effect (play as an advertiser)
+     * @param firstGeishaEffect: true if we play geisha's effect first
+     * @return new state after applying effect
+     */
 
     private State SuzuneEffect(State state, Card card, boolean firstGeishaEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
@@ -97,6 +146,14 @@ public class Geisha {
         return newState;
     }
 
+    /**
+     * Apply effect of geisha Momiji
+     * @param state: game's state for which we apply effect
+     * @param targetPlayer: player on which we apply effect
+     * @param withEffect: true if we apply effect of this card
+     * @return new state after applying effect
+     */
+
     private State MomijiEffect(State state, int targetPlayer, boolean withEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
         turnPlayer.geishaEffect -= 1;
@@ -109,6 +166,14 @@ public class Geisha {
 
         return newState;
     }
+
+    /**
+     * Apply effect of geisha Akenohoshi
+     * @param state: game's state for which we apply effect
+     * @param ability: ability (color) which we want to increase
+     * @param firstGeishaEffect: true if we apply effect of this card
+     * @return new state after applying effect
+     */
 
     private State AkenohoshiEffect(State state, Colors ability, boolean firstGeishaEffect) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
@@ -128,6 +193,14 @@ public class Geisha {
         return newState;
     }
 
+    /**
+     * Apply effect of geisha Harukaze
+     * @param state: game's state for which we apply effect
+     * @param firstCard: card which we want to remove from hand
+     * @param secondCard: card which we want to remove from hand
+     * @return new state after applying effect
+     */
+
     private State HarukazeEffect(State state, Card firstCard, Card secondCard) {
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
         turnPlayer.geishaEffect -= 1;
@@ -139,6 +212,12 @@ public class Geisha {
 
         return newState;
     }
+
+    /**
+     * Apply effect of geisha Oboro
+     * @param state: game's state for which we apply effect
+     * @param player: player on which we apply effect (can be only a player who owns this geisha)
+     */
 
     public static void OboroEffect(State state, Player player) {
         if (state.parent == null) {
