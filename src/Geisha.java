@@ -104,9 +104,6 @@ public class Geisha {
      */
 
     private State NatsumiEffect(State state, Card card, boolean withEffect, int targetPlayer) {
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.geishaEffect -= 1;
-
         Action action = new Action(card, withEffect);
         State newState = action.applyAction(state);
 
@@ -117,7 +114,7 @@ public class Geisha {
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
-
+        newState.players.get(newState.turnPlayerIndex).geishaEffect -= 1;
 
         return newState;
     }
@@ -131,9 +128,6 @@ public class Geisha {
      */
 
     private State SuzuneEffect(State state, Card card, boolean firstGeishaEffect) {
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.geishaEffect -= 1;
-
         Action action = new Action(card);
         State newState = action.applyAction(state);
 
@@ -142,6 +136,8 @@ public class Geisha {
             state.children.remove(newState);
             newState.turnPlayerIndex = state.turnPlayerIndex;
         }
+
+        newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
 
         return newState;
     }
@@ -155,14 +151,13 @@ public class Geisha {
      */
 
     private State MomijiEffect(State state, int targetPlayer, boolean withEffect) {
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.geishaEffect -= 1;
-
         State newState = state.appliedAction.applyEffect(state, state.appliedAction.firstCard, targetPlayer, withEffect);
 
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
+
+        newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
 
         return newState;
     }
@@ -176,11 +171,8 @@ public class Geisha {
      */
 
     private State AkenohoshiEffect(State state, Colors ability, boolean firstGeishaEffect) {
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.geishaEffect -= 1;
-
         State newState = new State(state);
-        turnPlayer = newState.players.get(newState.turnPlayerIndex);
+        Player turnPlayer = newState.players.get(newState.turnPlayerIndex);
         int oldValue = turnPlayer.geisha.abilities.get(ability);
         turnPlayer.geisha.abilities.put(ability, oldValue + 3);
 
@@ -189,6 +181,8 @@ public class Geisha {
             state.children.remove(newState);
             newState.turnPlayerIndex = state.turnPlayerIndex;
         }
+
+        newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
 
         return newState;
     }
@@ -202,13 +196,12 @@ public class Geisha {
      */
 
     private State HarukazeEffect(State state, Card firstCard, Card secondCard) {
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        turnPlayer.geishaEffect -= 1;
-
         State newState = new State(state);
-        turnPlayer = newState.players.get(newState.turnPlayerIndex);
+        Player turnPlayer = newState.players.get(newState.turnPlayerIndex);
         turnPlayer.hand.remove(firstCard);
         turnPlayer.hand.remove(secondCard);
+
+        newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
 
         return newState;
     }
