@@ -1,5 +1,15 @@
 import java.util.HashMap;
 
+/**
+ * Class card contain information about current card
+ *
+ * name: name of card
+ * color: color of card (Red, Blue, Green, Black)
+ * requirement: number which determine requirement which need to play this card
+ * guestReward: number which added to the player's score when he plays it as a guest
+ * advReward: array with numbers which are added  to geisha's abilities when this card played as an advertiser
+ */
+
 public class Card {
     CardsNames name;
     Colors color;

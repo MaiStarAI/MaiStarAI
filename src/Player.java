@@ -1,5 +1,19 @@
 import java.util.ArrayList;
 
+/**
+ * Class player contains information about player
+ *
+ * name: name of player
+ * hand: cards in player's hand
+ * cardsNumber: number of cards in hand
+ * geisha: object of class Geisha which contains information about geisha of player
+ * score: sum of guest rewards of all cards which played as a guest
+ * guests: array of cards which played as guests
+ * advertiser: array of cards which played as advertisers
+ * specialEffects: array with names of cards which have special effect (Ronin, District Kanryou)
+ * geishaEffect: how much times player can play effect of his geisha
+ */
+
 public class Player {
     String name;
     ArrayList<Card> hand;
@@ -10,6 +24,13 @@ public class Player {
     ArrayList<Card> advertisers;
     ArrayList<CardsNames> specialEffects;
     int geishaEffect;
+
+    /**
+     * Main constructor for class Player
+     * @param name: name of player
+     * @param hand: array with cards which is in player's hand
+     * @param geisha: object of class Geisha which contains information about geisha of player
+     */
 
     Player(String name, ArrayList<Card> hand, Geisha geisha) {
         this.name = name;
@@ -23,6 +44,11 @@ public class Player {
         this.geishaEffect = geisha.numberEffect;
     }
 
+    /**
+     * Constructor to create copies of players
+     * @param anotherPlayer: player which new object need to create
+     */
+
     Player(Player anotherPlayer) {
         this.name = anotherPlayer.name;
         this.hand = anotherPlayer.hand;
@@ -34,6 +60,11 @@ public class Player {
         specialEffects = anotherPlayer.specialEffects;
         this.geishaEffect = anotherPlayer.geishaEffect;
     }
+
+    /**
+     * Update array with special effects and player's hand in case application of such effect
+     * @param cardName: card which effect was applied
+     */
 
     public void updateSpecialEffect(CardsNames cardName) {
         switch (cardName) {

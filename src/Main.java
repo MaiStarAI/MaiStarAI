@@ -37,5 +37,7 @@ public class Main {
 
         Action action = new Action(first, false);
         System.out.println(action.toString());
+
+
     }
 }

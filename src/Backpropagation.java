@@ -6,9 +6,9 @@ public class Backpropagation {
             endSelection.children.clear();
         }
 
-        for (int i = 0; i < startSelection.parent.children.size(); i++) {
-            startSelection.parent.children.get(i).availability += 1;
-        }
+//        for (int i = 0; i < startSelection.parent.children.size(); i++) {
+//            startSelection.parent.children.get(i).availability += 1;
+//        }
 
         while (startSelection!=null){
             startSelection.visits += 1;

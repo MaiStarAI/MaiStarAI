@@ -5,8 +5,6 @@ public class Action {
     boolean played;
 
     boolean usedEffect;
-    Card firstEffectCard;
-    Player targetEffect;
 
     Action(Card firstCard, boolean usedEffect) {
         this.name = ActionsNames.Guest;
@@ -14,8 +12,6 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = usedEffect;
         this.played = false;
-        this.firstEffectCard = null;
-        this.targetEffect = null;
     }
 
     Action(Card firstCard) {
@@ -24,8 +20,6 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = false;
         this.played = false;
-        this.firstEffectCard = null;
-        this.targetEffect = null;
     }
 
     Action(ActionsNames name, Card firstCard, Card secondCard) {
@@ -34,8 +28,6 @@ public class Action {
         this.secondCard = secondCard;
         this.usedEffect = false;
         this.played = false;
-        this.firstEffectCard = null;
-        this.targetEffect = null;
     }
 
     Action() {
@@ -44,8 +36,6 @@ public class Action {
         this.secondCard = null;
         this.usedEffect = false;
         this.played = false;
-        this.firstEffectCard = null;
-        this.targetEffect = null;
     }
 
     public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
@@ -90,7 +80,7 @@ public class Action {
         state.turnPlayerIndex = state.getNextPlayer();
         state.appliedAction = this;
         state.drawDeck = state.cards.size();
-        currentState.children.add(state);
+        currentState.children.get(currentState.children.size() - 1).add(state);
 
         return state;
     }
