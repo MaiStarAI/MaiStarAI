@@ -48,6 +48,7 @@ public class Main {
 
     }
 
+    /** AI that makes random turns */
     private static Action randomAI (State s) {
         Random rand = new Random();
         ArrayList<State> children = c(s);
@@ -89,11 +90,15 @@ public class Main {
         State selected = s0;
         double bestValue = Double.MIN_VALUE;
         while (u(selected).size() == 0 && !selected.isTerminal()) {
-            for (State s : s0.children) {
-                double value = uct(s);
-                if (bestValue < value) {
-                    bestValue = value;
-                    selected = s;
+            if (s0.turnPlayerIndex == 1) {
+                selected = randomAI(s0).applyAction(s0);
+            } else {
+                for (State s : s0.children) {
+                    double value = uct(s);
+                    if (bestValue < value) {
+                        bestValue = value;
+                        selected = s;
+                    }
                 }
             }
         }
