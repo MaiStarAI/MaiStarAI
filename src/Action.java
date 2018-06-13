@@ -6,7 +6,7 @@ public class Action {
     ActionsNames name;
     Card firstCard;
     Card secondCard;
-    boolean played;
+    boolean played; //true if action is played and we can apply effect in case of Guest action
 
     boolean usedEffect;
 
@@ -66,6 +66,15 @@ public class Action {
         this.played = false;
     }
 
+    /**
+     * Apply effect of card in case of Guest card
+     * @param currentState: game's state for which we apply effect
+     * @param card: card which we use for effect
+     * @param targetPlayer: player on which we apply effect
+     * @param withEffect: apply effect of card which we use for effect
+     * @return new state after applying effect
+     */
+
     public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
         State state = new State(currentState);
         if (this.name == ActionsNames.Guest && this.played && usedEffect
@@ -76,6 +85,12 @@ public class Action {
             return null;
         }
     }
+
+    /**
+     * Apply action
+     * @param currentState
+     * @return
+     */
 
     public State applyAction(State currentState) {
         State state = new State(currentState);
@@ -107,7 +122,7 @@ public class Action {
         state.turnPlayerIndex = state.getNextPlayer();
         state.appliedAction = this;
         state.drawDeck = state.cards.size();
-        currentState.children.get(currentState.children.size() - 1).add(state);
+        currentState.children.add(state);
 
         return state;
     }

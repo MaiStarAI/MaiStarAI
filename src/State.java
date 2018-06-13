@@ -28,7 +28,7 @@ public class State {
     int visits;
     int availability;
     State parent;
-    ArrayList<ArrayList<State>> children;
+    ArrayList<State> children;
     Action appliedAction;
 
     /**
@@ -158,8 +158,6 @@ public class State {
                 }
             }
         }
-
-        this.children.add(new ArrayList<>());
     }
 
 }
