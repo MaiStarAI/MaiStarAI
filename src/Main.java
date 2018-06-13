@@ -27,7 +27,7 @@ public class Main {
 
         // Geisha
         Geisha g_1 = new Geisha(GeishasName.Oboro, a_1, 0);
-        Geisha g_2 = new Geisha(GeishasName.Momiji, a_2, 0);
+        Geisha g_2 = new Geisha(GeishasName.Momiji, a_2, 1);
         Geisha g_3 = new Geisha(GeishasName.Harukaze, a_3, 1);
 
 
@@ -40,7 +40,7 @@ public class Main {
 
         /* Initial state with some players and cards
            and without parent and appliedAction. */
-        State initial_state = new State(players, cards, null, null, 0);
+        State initial_state = new State(players, cards, 0);
 
         action = ISMCTS(initial_state, n);
 
@@ -157,26 +157,464 @@ public class Main {
     /** Returns all possible actions of state 's'. */
     private static ArrayList<State> c (State s) {
         ArrayList<State> list = new ArrayList<>();
+        ArrayList<State> s_list = new ArrayList<>();
+        ArrayList<State> a_list = new ArrayList<>();
+
+        /* Suzune */
+        for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+            if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                    s,
+                    null,
+                    true
+            )) s_list.add(
+                    s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
+                            s,
+                            s.players.get(s.turnPlayerIndex).hand.get(i),
+                            null,
+                            false,
+                            null,
+                            true,
+                            -1
+                    )
+            );
+        }
+        for (State state : s_list) {
+            list.addAll(c(state));
+        }
+
+        /* Akenohoshi */
+        if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                s,
+                null,
+                true
+        )) {
+            a_list.add(
+                    s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
+                            s,
+                            null,
+                            null,
+                            false,
+                            Colors.Blue,
+                            true,
+                            -1
+                    )
+            );
+            a_list.add(
+                    s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
+                            s,
+                            null,
+                            null,
+                            false,
+                            Colors.Red,
+                            true,
+                            -1
+                    )
+            );
+            a_list.add(
+                    s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
+                            s,
+                            null,
+                            null,
+                            false,
+                            Colors.Green,
+                            true,
+                            -1
+                    )
+            );
+        }
+        for (State state : a_list) {
+            list.addAll(c(state));
+        }
 
         // Guest actions without effects
         for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
             Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
-            if (guest.isApplicableAction(s)) list.add(guest.applyAction(s));
+            if (guest.isApplicableAction(s)) {
+                list.add(guest.applyAction(s));
+
+                int last_pi = s.turnPlayerIndex;
+                State sa_guest = list.get(list.size() - 1);
+
+                /* Natsumi */
+                if (sa_guest.players.get(last_pi).geisha.isApplicableEffect(
+                        sa_guest,
+                        null,
+                        false
+                ))  {
+                    // Play one guest without effect
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue)) {
+                            list.add(
+                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                            sa_guest,
+                                            sa_guest.players.get(last_pi).hand.get(j),
+                                            null,
+                                            false,
+                                            null,
+                                            false,
+                                            -1
+                                    )
+                            );
+                        }
+                    }
+                    // Play one guest with effect
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        for (int k = 0; k < sa_guest.players.size(); ++k) {
+                            if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue)) {
+                                list.add(
+                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                sa_guest,
+                                                sa_guest.players.get(last_pi).hand.get(j),
+                                                null,
+                                                true,
+                                                null,
+                                                false,
+                                                k
+                                        )
+                                );
+                            }
+                        }
+                    }
+                    // Play two guests without effects
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
+                                    sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
+                                list.add(
+                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                        sa_guest,
+                                                        sa_guest.players.get(last_pi).hand.get(j),
+                                                        null,
+                                                        false,
+                                                        null,
+                                                        false,
+                                                        -1
+                                                ),
+                                                sa_guest.players.get(last_pi).hand.get(k),
+                                                null,
+                                                false,
+                                                null,
+                                                false,
+                                                -1
+                                        )
+                                );
+                            }
+                        }
+                    }
+                    // Play one guest without and another guest with effect
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = 0; l < sa_guest.players.size(); ++l) {
+                                if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
+                                        sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
+                                    list.add(
+                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                            sa_guest,
+                                                            sa_guest.players.get(last_pi).hand.get(j),
+                                                            null,
+                                                            false,
+                                                            null,
+                                                            false,
+                                                            -1
+                                                    ),
+                                                    sa_guest.players.get(last_pi).hand.get(k),
+                                                    null,
+                                                    true,
+                                                    null,
+                                                    false,
+                                                    l
+                                            )
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    // Play one guest with effect and another without
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = 0; l < sa_guest.players.size(); ++l) {
+                                if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
+                                        sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
+                                    list.add(
+                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                            sa_guest,
+                                                            sa_guest.players.get(last_pi).hand.get(j),
+                                                            null,
+                                                            true,
+                                                            null,
+                                                            false,
+                                                            l
+                                                    ),
+                                                    sa_guest.players.get(last_pi).hand.get(k),
+                                                    null,
+                                                    false,
+                                                    null,
+                                                    false,
+                                                    -1
+                                            )
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    // Play two guests with effect
+                    for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
+                        for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = 0; l < sa_guest.players.size(); ++l) {
+                                for (int m = 0; m < sa_guest.players.size(); ++m) {
+                                    if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
+                                            sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
+                                        list.add(
+                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                sa_guest,
+                                                                sa_guest.players.get(last_pi).hand.get(j),
+                                                                null,
+                                                                true,
+                                                                null,
+                                                                false,
+                                                                l
+                                                        ),
+                                                        sa_guest.players.get(last_pi).hand.get(k),
+                                                        null,
+                                                        true,
+                                                        null,
+                                                        false,
+                                                        m
+                                                )
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         // Guest actions with effects
         for (int i = 0; i < s.players.size(); ++i) {
             for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+
+                int last_pi = s.turnPlayerIndex;
+                State sa_guest;
+
                 Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(j), true);
-                if (guest.isApplicableAction(s))
+                if (guest.isApplicableAction(s)) {
                     list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+                    sa_guest = list.get(list.size() - 1);
+
+                    /* Momiji */
+                    for (int k = 0; k < s.players.size(); ++k) {
+                        if (s.players.get(last_pi).geisha.isApplicableEffect(
+                                list.get(list.size() - 1),
+                                s.players.get(last_pi).hand.get(j),
+                                false
+                        )) {
+                            list.add(s.players.get(last_pi).geisha.applyGeisha(
+                                    list.get(list.size() - 1),
+                                    null,
+                                    null,
+                                    true,
+                                    null,
+                                    false,
+                                    k
+                            ));
+                        }
+                    }
+
+                    /* Natsumi */
+                    if (sa_guest.players.get(last_pi).geisha.isApplicableEffect(
+                            sa_guest,
+                            null,
+                            false
+                    ))  {
+                        // Play one guest without effect
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            if (sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
+                                list.add(
+                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                sa_guest,
+                                                sa_guest.players.get(last_pi).hand.get(k),
+                                                null,
+                                                false,
+                                                null,
+                                                false,
+                                                -1
+                                        )
+                                );
+                            }
+                        }
+                        // Play one guest with effect
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = 0; l < sa_guest.players.size(); ++l) {
+                                if (sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue)) {
+                                    list.add(
+                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                    sa_guest,
+                                                    sa_guest.players.get(last_pi).hand.get(l),
+                                                    null,
+                                                    true,
+                                                    null,
+                                                    false,
+                                                    l
+                                            )
+                                    );
+                                }
+                            }
+                        }
+                        // Play two guests without effects
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
+                                if (sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue) &&
+                                        sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue)) {
+                                    list.add(
+                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                            sa_guest,
+                                                            sa_guest.players.get(last_pi).hand.get(l),
+                                                            null,
+                                                            false,
+                                                            null,
+                                                            false,
+                                                            -1
+                                                    ),
+                                                    sa_guest.players.get(last_pi).hand.get(l),
+                                                    null,
+                                                    false,
+                                                    null,
+                                                    false,
+                                                    -1
+                                            )
+                                    );
+                                }
+                            }
+                        }
+                        // Play one guest without and another guest with effect
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
+                                for (int m = 0; m < sa_guest.players.size(); ++m) {
+                                    if (sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue) &&
+                                            sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue)) {
+                                        list.add(
+                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                sa_guest,
+                                                                sa_guest.players.get(last_pi).hand.get(m),
+                                                                null,
+                                                                false,
+                                                                null,
+                                                                false,
+                                                                -1
+                                                        ),
+                                                        sa_guest.players.get(last_pi).hand.get(m),
+                                                        null,
+                                                        true,
+                                                        null,
+                                                        false,
+                                                        m
+                                                )
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        // Play one guest with effect and another without
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
+                                for (int m = 0; m < sa_guest.players.size(); ++m) {
+                                    if (sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue) &&
+                                            sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue)) {
+                                        list.add(
+                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                sa_guest,
+                                                                sa_guest.players.get(last_pi).hand.get(m),
+                                                                null,
+                                                                true,
+                                                                null,
+                                                                false,
+                                                                m
+                                                        ),
+                                                        sa_guest.players.get(last_pi).hand.get(m),
+                                                        null,
+                                                        false,
+                                                        null,
+                                                        false,
+                                                        -1
+                                                )
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                        // Play two guests with effect
+                        for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
+                            for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
+                                for (int m = 0; m < sa_guest.players.size(); ++m) {
+                                    for (int n = 0; n < sa_guest.players.size(); ++n) {
+                                        if (sa_guest.players.get(last_pi).hand.get(n).color.equals(Colors.Blue) &&
+                                                sa_guest.players.get(last_pi).hand.get(n).color.equals(Colors.Blue)) {
+                                            list.add(
+                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                    sa_guest,
+                                                                    sa_guest.players.get(last_pi).hand.get(n),
+                                                                    null,
+                                                                    true,
+                                                                    null,
+                                                                    false,
+                                                                    n
+                                                            ),
+                                                            sa_guest.players.get(last_pi).hand.get(n),
+                                                            null,
+                                                            true,
+                                                            null,
+                                                            false,
+                                                            n
+                                                    )
+                                            );
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
         // Advertiser actions
         for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
             Action advertiser = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
-            if (advertiser.isApplicableAction(s)) list.add(advertiser.applyAction(s));
+            if (advertiser.isApplicableAction(s)) {
+                list.add(advertiser.applyAction(s));
+
+                /* Harukaze */
+                State last_state = list.get(list.size() - 1);
+                if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                        last_state,
+                        null,
+                        false
+                        )) {
+                    for (int j = 0; j < last_state.players.get(last_state.turnPlayerIndex).hand.size(); ++j) {
+                        for (int k = j + 1; k < last_state.players.get(last_state.turnPlayerIndex).hand.size(); ++k) {
+                            list.add(last_state.players.get(last_state.turnPlayerIndex).geisha.applyGeisha(
+                                    last_state,
+                                    last_state.players.get(last_state.turnPlayerIndex).hand.get(j),
+                                    last_state.players.get(last_state.turnPlayerIndex).hand.get(k),
+                                    false,
+                                    null,
+                                    false,
+                                    -1
+                            ));
+                        }
+                    }
+                }
+            }
         }
 
         // Exchange action
@@ -203,7 +641,26 @@ public class Main {
         Action search = new Action();
         if (search.isApplicableAction(s)) list.add(search.applyAction(s));
 
-        // TODO: geisha's effects
+        /* Suzune */
+        for (int i = 0; i < list.size(); ++i) {
+            if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                    list.get(i),
+                    null,
+                    false
+            )) {
+                for (int j = 0; j < list.get(i).players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                    list.add(list.get(i).players.get(s.turnPlayerIndex).geisha.applyGeisha(
+                            list.get(i),
+                            list.get(i).players.get(s.turnPlayerIndex).hand.get(j),
+                            null,
+                            false,
+                            null,
+                            false,
+                            -1
+                    ));
+                }
+            }
+        }
 
         return list;
     }
