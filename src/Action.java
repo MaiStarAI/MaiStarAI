@@ -88,8 +88,8 @@ public class Action {
 
     /**
      * Apply action
-     * @param currentState
-     * @return
+     * @param currentState: game's state for which we apply action
+     * @return new state after applying action
      */
 
     public State applyAction(State currentState) {
@@ -127,11 +127,22 @@ public class Action {
         return state;
     }
 
+    /**
+     * Apply action Guest
+     * @param turnPlayer: player who play this card as a guest
+     */
+
     private void applyGuest(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.guests.add(firstCard);
         turnPlayer.score += firstCard.guestReward;
     }
+
+    /**
+     * Apply action Advertiser
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who play this card as an advertiser
+     */
 
     private void applyAdvertiser(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -147,12 +158,23 @@ public class Action {
         turnPlayer.hand.add(state.getRandomCard());
     }
 
+    /**
+     * Apply action Exchange
+     * @param turnPlayer: player who play this action
+     */
+
     private void applyExchange(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.advertisers.remove(secondCard);
         turnPlayer.hand.add(secondCard);
         turnPlayer.advertisers.add(firstCard);
     }
+
+    /**
+     * Apply action Introduce
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who play this action
+     */
 
     private void applyIntroduce(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -163,9 +185,21 @@ public class Action {
         }
     }
 
+    /**
+     * Apply action Search
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who play this action
+     */
+
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
     }
+
+    /**
+     * Method to check applicability of action
+     * @param currentState: game's state for which we apply action
+     * @return true if we can apply this action
+     */
 
     public boolean isApplicableAction(State currentState) {
         Player turnPlayer = currentState.players.get(currentState.turnPlayerIndex);
@@ -198,6 +232,11 @@ public class Action {
                 return false;
         }
     }
+
+    /**
+     * Get information about action
+     * @return string with all information about current action
+     */
 
     public String toString() {
         String info = "";
