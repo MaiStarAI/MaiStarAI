@@ -136,6 +136,7 @@ public class Action {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.guests.add(firstCard);
         turnPlayer.score += firstCard.guestReward;
+        turnPlayer.cardsNumber --;
     }
 
     /**
@@ -193,6 +194,7 @@ public class Action {
 
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
+        turnPlayer.cardsNumber ++;
     }
 
     /**

@@ -216,6 +216,7 @@ public class Geisha {
         if (state.parent == null) {
             player.hand.add(state.getRandomCard());
             player.hand.add(state.getRandomCard());
+            player.cardsNumber += 2;
         }
     }
 
