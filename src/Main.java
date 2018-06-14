@@ -51,19 +51,19 @@ public class Main {
         System.out.println(state.toString());
         Action action1 = new Action(state.players.get(state.turnPlayerIndex).hand.get(0), true);
         if(action1.isApplicableAction(state)) {
-            action1.applyAction(state);
+            state = action1.applyAction(state);
             System.out.println(state.toString());
         }
 
         Action action2 = new Action(state.players.get(state.turnPlayerIndex).hand.get(0), true);
         if(action2.isApplicableAction(state)){
-            action2.applyAction(state);
+            state = action2.applyAction(state);
             System.out.println(state.toString());
         }
         else{
             action2 = new Action(state.players.get(state.turnPlayerIndex).hand.get(0));
             if(action2.isApplicableAction(state)) {
-                action2.applyAction(state);
+                state = action2.applyAction(state);
                 System.out.println(state.toString());
             }
         }

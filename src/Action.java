@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 /**
  * Class action contain information about current action
  */
@@ -118,7 +120,7 @@ public class Action {
         }
 
         state.parent = currentState;
-        state.children = null;
+        state.children = new ArrayList<>();
         state.turnPlayerIndex = state.getNextPlayer();
         state.appliedAction = this;
         state.drawDeck = state.cards.size();
