@@ -105,18 +105,22 @@ public class Geisha {
 
     private State NatsumiEffect(State state, Card card, boolean withEffect, int targetPlayer) {
         Action action = new Action(card, withEffect);
-        State newState = action.applyAction(state);
+        if (action.isApplicableAction(state)) {
+            State newState = action.applyAction(state);
 
-        if (withEffect) {
-            newState = action.applyEffect(newState, card, targetPlayer, true);
+            if (withEffect) {
+                newState = action.applyEffect(newState, card, targetPlayer, true);
+            }
+            if (newState != null) {
+                newState.parent = state.parent;
+                state.children.remove(newState);
+                newState.turnPlayerIndex = state.turnPlayerIndex;
+                newState.players.get(newState.turnPlayerIndex).geishaEffect -= 1;
+            }
+
+            return newState;
         }
-
-        newState.parent = state.parent;
-        state.children.remove(newState);
-        newState.turnPlayerIndex = state.turnPlayerIndex;
-        newState.players.get(newState.turnPlayerIndex).geishaEffect -= 1;
-
-        return newState;
+        return null;
     }
 
     /**
@@ -152,13 +156,13 @@ public class Geisha {
 
     private State MomijiEffect(State state, int targetPlayer, boolean withEffect) {
         State newState = state.appliedAction.applyEffect(state, state.appliedAction.firstCard, targetPlayer, withEffect);
+        if (newState != null) {
+            newState.parent = state.parent;
+            //state.children.remove(newState);
+            newState.turnPlayerIndex = state.turnPlayerIndex;
 
-        newState.parent = state.parent;
-        state.children.remove(newState);
-        newState.turnPlayerIndex = state.turnPlayerIndex;
-
-        newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
-
+            newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
+        }
         return newState;
     }
 

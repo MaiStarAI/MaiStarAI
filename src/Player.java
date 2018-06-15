@@ -51,13 +51,13 @@ public class Player {
 
     Player(Player anotherPlayer) {
         this.name = anotherPlayer.name;
-        this.hand = anotherPlayer.hand;
-        this.geisha = anotherPlayer.geisha;
+        this.hand = new ArrayList<>(anotherPlayer.hand);
+        this.geisha = new Geisha(anotherPlayer.geisha);
         cardsNumber = anotherPlayer.cardsNumber;
         score = anotherPlayer.score;
-        guests = anotherPlayer.guests;
-        advertisers = anotherPlayer.advertisers;
-        specialEffects = anotherPlayer.specialEffects;
+        guests = new ArrayList<>(anotherPlayer.guests);
+        advertisers = new ArrayList<>(anotherPlayer.advertisers);
+        specialEffects = new ArrayList<>(anotherPlayer.specialEffects);
         this.geishaEffect = anotherPlayer.geishaEffect;
     }
 

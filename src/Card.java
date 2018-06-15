@@ -50,27 +50,26 @@ public class Card {
      */
 
     public boolean isApplicableEffect(State state, Card card, int targetPlayer) {
-        if ((this.name == CardsNames.Yakuza || this.name == CardsNames.Emissary) &&
-                !state.players.get(targetPlayer).advertisers.isEmpty()) {
-            return true;
-        } else {
-            if ((this.name == CardsNames.Thief || this.name == CardsNames.Samurai) &&
-                    !state.players.get(targetPlayer).guests.isEmpty()) {
-                return true;
-            } else {
-                if (this.name == CardsNames.Courtier && card.color == this.color &&
-                        card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color)) {
-                    return true;
-                } else {
-                    return this.name == CardsNames.District_Kanryou || this.name == CardsNames.Ronin
-                            || this.name == CardsNames.Daimyo || this.name == CardsNames.Shogun
-                            || this.name == CardsNames.Doctor || this.name == CardsNames.Monk
-                            || this.name == CardsNames.Okaasan || this.name == CardsNames.Sumo_Wrestler
-                            || this.name == CardsNames.Merchant || this.name == CardsNames.Scholar;
-                }
-            }
+        switch (name) {
+            case Ronin: { return true; }
+            case Courtier: { return card.color == this.color &&
+                    card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
+            case District_Kanryou: { return true; }
+            case Doctor: { return true; }
+            case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
+            case Merchant: { return state.drawDeck > 1; }
+            case Yakuza: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
+            case Okaasan: { return true; }
+            case Scholar: { return state.drawDeck > 0; }
+            case Sumo_Wrestler: { return true; }
+            case Thief: { return !state.players.get(targetPlayer).guests.isEmpty(); }
+            case Actor: { return true; }
+            case Daimyo: { return true; }
+            case Samurai: { return !state.players.get(targetPlayer).guests.isEmpty(); }
+            case Monk: { return true; }
+            case Shogun: { return true; }
+            default: { return false; }
         }
-
     }
 
     /**
@@ -115,7 +114,7 @@ public class Card {
             case Scholar:
                 return this.ScholarEffect(state, targetPlayer);
             default:
-                System.out.println("Error: no such name of card with effect");
+                //System.out.println("Error: no such name of card with effect");
                 return null;
         }
     }

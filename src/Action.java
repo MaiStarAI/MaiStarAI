@@ -8,7 +8,6 @@ public class Action {
     ActionsNames name;
     Card firstCard;
     Card secondCard;
-    boolean played; //true if action is played and we can apply effect in case of Guest action
 
     boolean usedEffect;
 
@@ -23,7 +22,6 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = usedEffect;
-        this.played = false;
     }
 
     /**
@@ -36,7 +34,6 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = false;
-        this.played = false;
     }
 
     /**
@@ -53,7 +50,6 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = secondCard;
         this.usedEffect = false;
-        this.played = false;
     }
 
     /**
@@ -65,7 +61,6 @@ public class Action {
         this.firstCard = null;
         this.secondCard = null;
         this.usedEffect = false;
-        this.played = false;
     }
 
     /**
@@ -79,7 +74,7 @@ public class Action {
 
     public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
         State state = new State(currentState);
-        if (this.name == ActionsNames.Guest && this.played && usedEffect
+        if (this.name == ActionsNames.Guest /*&& this.played*/ && usedEffect
                 && firstCard.isApplicableEffect(state, card, targetPlayer)) {
             state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
             return state;
@@ -90,13 +85,13 @@ public class Action {
 
     /**
      * Apply action
-     * @param currentState: game's state for which we apply action
-     * @return new state after applying action
+     * @param currentState
+     * @return
      */
 
     public State applyAction(State currentState) {
         State state = new State(currentState);
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
+        Player turnPlayer = new Player(state.players.get(state.turnPlayerIndex));
 
         switch (this.name) {
             case Guest:
@@ -120,19 +115,19 @@ public class Action {
         }
 
         state.parent = currentState;
-        state.children = new ArrayList<>();
+        state.children = null;
         state.turnPlayerIndex = state.getNextPlayer();
         state.appliedAction = this;
         state.drawDeck = state.cards.size();
-        currentState.children.add(state);
+        if (currentState.children == null) {
+            currentState.children = new ArrayList<>();
+            currentState.children.add(state);
+        } else {
+            currentState.children.add(state);
+        }
 
         return state;
     }
-
-    /**
-     * Apply action Guest
-     * @param turnPlayer: player who play this card as a guest
-     */
 
     private void applyGuest(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -140,12 +135,6 @@ public class Action {
         turnPlayer.score += firstCard.guestReward;
         turnPlayer.cardsNumber --;
     }
-
-    /**
-     * Apply action Advertiser
-     * @param state: game's state for which we apply action
-     * @param turnPlayer: player who play this card as an advertiser
-     */
 
     private void applyAdvertiser(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -158,13 +147,8 @@ public class Action {
         n = turnPlayer.geisha.abilities.get(Colors.Green);
         turnPlayer.geisha.abilities.put(Colors.Green, firstCard.advReward.get(Colors.Green) + n);
 
-        turnPlayer.hand.add(state.getRandomCard());
+        if (state.drawDeck > 0) turnPlayer.hand.add(state.getRandomCard());
     }
-
-    /**
-     * Apply action Exchange
-     * @param turnPlayer: player who play this action
-     */
 
     private void applyExchange(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -172,12 +156,6 @@ public class Action {
         turnPlayer.hand.add(secondCard);
         turnPlayer.advertisers.add(firstCard);
     }
-
-    /**
-     * Apply action Introduce
-     * @param state: game's state for which we apply action
-     * @param turnPlayer: player who play this action
-     */
 
     private void applyIntroduce(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -188,22 +166,10 @@ public class Action {
         }
     }
 
-    /**
-     * Apply action Search
-     * @param state: game's state for which we apply action
-     * @param turnPlayer: player who play this action
-     */
-
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
         turnPlayer.cardsNumber ++;
     }
-
-    /**
-     * Method to check applicability of action
-     * @param currentState: game's state for which we apply action
-     * @return true if we can apply this action
-     */
 
     public boolean isApplicableAction(State currentState) {
         Player turnPlayer = currentState.players.get(currentState.turnPlayerIndex);
@@ -229,18 +195,13 @@ public class Action {
             case Exchange:
                 return !turnPlayer.advertisers.isEmpty();
             case Introduce:
-                return true;
+                return currentState.drawDeck > 1;
             case Search:
-                return true;
+                return currentState.drawDeck > 0;
             default:
                 return false;
         }
     }
-
-    /**
-     * Get information about action
-     * @return string with all information about current action
-     */
 
     public String toString() {
         String info = "";
@@ -256,7 +217,7 @@ public class Action {
                     secondCard.advReward.get(Colors.Blue) + "\n" + "Green: " + secondCard.advReward.get(Colors.Green) + "\n";
         }
 
-        info += "Played: " + this.played + "\n" + "Used effect: " + this.usedEffect + "\n";
+        info += "Used effect: " + this.usedEffect + "\n";
 
         return info;
     }
