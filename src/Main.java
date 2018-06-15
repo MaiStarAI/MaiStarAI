@@ -6,7 +6,7 @@ public class Main {
 
     private static int c_calls = 0;
     private static long end_time;
-    private static int iterations = 10000;
+    private enum Mode { ITERATIONS, TIME }
 
     public static void main(String[] args) {
 
@@ -54,15 +54,32 @@ public class Main {
            and without parent and appliedAction. */
         State initial_state = new State(players, deck, 0);
 
-        long time_to_compute = 40;
-        end_time = System.currentTimeMillis() + time_to_compute * 1000;
-        action = ISMCTS_time(initial_state);
+        Mode mode = Mode.ITERATIONS;
+        long start_time;
+        long time_to_compute;
 
-        System.out.println();
-        System.out.println("Elapsed time: " + time_to_compute + " seconds");
-        System.out.println();
+        switch (mode) {
+            case ITERATIONS: {
+                start_time = System.currentTimeMillis();
+                action = ISMCTS_iter(initial_state, 1000);
+                end_time = System.currentTimeMillis();
 
-        System.out.println(action);
+                System.out.println();
+                System.out.println("Elapsed time: " + (end_time - start_time)/1000 + " seconds");
+                System.out.println(action);
+                break;
+            }
+            case TIME: {
+                time_to_compute = 20;
+                end_time = System.currentTimeMillis() + time_to_compute * 1000;
+                action = ISMCTS_time (initial_state);
+
+                System.out.println();
+                System.out.println("Elapsed time: " + time_to_compute + " seconds");
+                System.out.println(action);
+                break;
+            }
+        }
 
     }
 
@@ -70,11 +87,13 @@ public class Main {
     private static Action randomAI (State s) {
         Random rand = new Random();
         ArrayList<State> children = c(s);
-        return children.get( rand.nextInt( children.size() ) ).appliedAction;
+        for (int i = children.size() - 1; i >= 0; --i) if (children.get(i) == null) children.remove(i);
+        int rand_i = rand.nextInt(children.size());
+        return children.get(rand_i).appliedAction;
     }
 
-    private static Action ISMCTS_iter (State s) {
-        for (int i = 0; i < iterations; ++i) {
+    private static Action ISMCTS_iter (State s, int n) {
+        for (int i = 0; i < n; ++i) {
             s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
@@ -130,10 +149,10 @@ public class Main {
         State selected = s0;
         double bestValue = Double.MIN_VALUE;
         while (u(selected).size() == 0 && !selected.isTerminal()) {
-            if (s0.turnPlayerIndex == 1) {
-                selected = randomAI(s0).applyAction(s0);
+            if (selected.turnPlayerIndex == 1) {
+                selected = randomAI(selected).applyAction(selected);
             } else {
-                for (State s : s0.children) {
+                for (State s : selected.children) {
                     double value = uct(s);
                     if (bestValue < value) {
                         bestValue = value;
@@ -149,8 +168,14 @@ public class Main {
     private static State expand (State s) {
         Random rand = new Random();
         ArrayList<State> u_children = u(s);
-        s.children.add( u_children.get( rand.nextInt( u_children.size() ) ) );
-        return s;
+        State new_state = new State(u_children.get(rand.nextInt(u_children.size())));
+        if (s.children != null) {
+            s.children.add(new_state);
+        } else {
+            s.children = new ArrayList<>();
+            s.children.add(new_state);
+        }
+        return new_state;
     }
 
     /** Simulation stage */
@@ -193,17 +218,42 @@ public class Main {
         ArrayList<Action> p_actions = new ArrayList<>();
         for (State state : p_children) if (state != null) p_actions.add(state.appliedAction);
 
-        ArrayList<State> a_children = s.children;
         ArrayList<Action> a_actions = new ArrayList<>();
-        for (State state : a_children) a_actions.add(state.appliedAction);
+        if (s.children != null)
+            for (State state : s.children) a_actions.add(state.appliedAction);
 
         ArrayList<State> children_to_add = new ArrayList<>();
-        for (Action action : p_actions) {
-            if (!a_actions.contains(action)) {
-                children_to_add.add(action.applyAction(s_copy));
-            }
+        for (Action p_a : p_actions) {
+            if (!actionContains(a_actions, p_a))
+                children_to_add.add(p_a.applyAction(s_copy));
         }
+
         return children_to_add;
+    }
+
+    private static boolean actionContains (ArrayList<Action> list, Action a) {
+        boolean contains = false;
+        for (Action action : list) if (equalActions(a, action)) contains = true;
+        return contains;
+    }
+
+    private static boolean equalActions (Action a1, Action a2) {
+        if (a1 == null || a2 == null)
+            return a1 == a2;
+        else if (a1.firstCard == null || a2.firstCard == null)
+            return (a1.name == a2.name) &&
+                    (a1.usedEffect == a2.usedEffect) &&
+                    (a1.firstCard == a2.firstCard);
+        else if (a1.secondCard == null || a2.secondCard == null)
+            return (a1.name == a2.name) &&
+                (a1.usedEffect == a2.usedEffect) &&
+                (a1.firstCard.equals(a2.firstCard)) &&
+                (a1.secondCard == a2.secondCard);
+        else
+            return (a1.name == a2.name) &&
+                    (a1.usedEffect == a2.usedEffect) &&
+                    (a1.firstCard.equals(a2.firstCard)) &&
+                    (a1.secondCard.equals(a2.secondCard));
     }
 
     /** Returns all possible actions of state 's'. */
