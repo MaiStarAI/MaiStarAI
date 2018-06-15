@@ -14,9 +14,9 @@ public class Main {
 
         // Abilities
         HashMap<Colors, Integer> a_1 = new HashMap<>();
-        a_1.put(Colors.Red, 3);
-        a_1.put(Colors.Blue, 3);
-        a_1.put(Colors.Green, 3);
+        a_1.put(Colors.Red, 2);
+        a_1.put(Colors.Blue, 2);
+        a_1.put(Colors.Green, 2);
 
         HashMap<Colors, Integer> a_2 = new HashMap<>();
         a_2.put(Colors.Red, 5);
@@ -24,12 +24,12 @@ public class Main {
         a_2.put(Colors.Green, 5);
 
         HashMap<Colors, Integer> a_3 = new HashMap<>();
-        a_3.put(Colors.Red, 3);
-        a_3.put(Colors.Blue, 5);
-        a_3.put(Colors.Green, 1);
+        a_3.put(Colors.Red, 1);
+        a_3.put(Colors.Blue, 3);
+        a_3.put(Colors.Green, 5);
 
         // Geisha
-        Geisha g_3 = new Geisha(GeishasName.Akenohoshi, a_1, 1);
+        Geisha g_3 = new Geisha(GeishasName.Suzune, a_1, 1);
         Geisha g_2 = new Geisha(GeishasName.Oboro, a_2, 0);
         Geisha g_1 = new Geisha(GeishasName.Harukaze, a_3, 1);
 

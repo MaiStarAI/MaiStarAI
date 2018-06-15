@@ -209,7 +209,7 @@ public class Card {
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        state.children.remove(newState);
+        if (state.children != null) state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
 
 
@@ -230,7 +230,7 @@ public class Card {
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        state.children.remove(newState);
+        if (state.children != null) state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
 
         return newState;

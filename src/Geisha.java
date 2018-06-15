@@ -29,7 +29,7 @@ public class Geisha {
 
     Geisha(Geisha anotherGeisha) {
         this.name = anotherGeisha.name;
-        this.abilities = anotherGeisha.abilities;
+        this.abilities = new HashMap<>(anotherGeisha.abilities);
         this.numberEffect = anotherGeisha.numberEffect;
     }
 

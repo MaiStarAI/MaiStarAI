@@ -91,23 +91,22 @@ public class Action {
 
     public State applyAction(State currentState) {
         State state = new State(currentState);
-        Player turnPlayer = new Player(state.players.get(state.turnPlayerIndex));
 
         switch (this.name) {
             case Guest:
-                this.applyGuest(turnPlayer);
+                this.applyGuest(state.players.get(state.turnPlayerIndex));
                 break;
             case Advertiser:
-                this.applyAdvertiser(state, turnPlayer);
+                this.applyAdvertiser(state, state.players.get(state.turnPlayerIndex));
                 break;
             case Exchange:
-                this.applyExchange(turnPlayer);
+                this.applyExchange(state.players.get(state.turnPlayerIndex));
                 break;
             case Introduce:
-                this.applyIntroduce(state, turnPlayer);
+                this.applyIntroduce(state, state.players.get(state.turnPlayerIndex));
                 break;
             case Search:
-                this.applySearch(state, turnPlayer);
+                this.applySearch(state, state.players.get(state.turnPlayerIndex));
                 break;
             default:
                 System.out.println("Error in applyAction: there is no such name of action");
