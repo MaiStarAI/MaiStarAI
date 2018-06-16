@@ -10,6 +10,11 @@ public class Action {
     Card secondCard;
 
     boolean usedEffect;
+    int targetPlayer; //Targeted player by effect
+    Card effectCard; //Card which used for effect
+
+    boolean usedGeisha; //True if used effect of geisha
+    Card geishaCard; //Card which used for geisha effect
 
     /**
      * Constructor to create action Guest
@@ -22,6 +27,10 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = usedEffect;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard = null;
     }
 
     /**
@@ -34,6 +43,10 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard = null;
     }
 
     /**
@@ -50,6 +63,10 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = secondCard;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard = null;
     }
 
     /**
@@ -61,6 +78,10 @@ public class Action {
         this.firstCard = null;
         this.secondCard = null;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard = null;
     }
 
     /**
@@ -74,9 +95,15 @@ public class Action {
 
     public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
         State state = new State(currentState);
-        if (this.name == ActionsNames.Guest /*&& this.played*/ && usedEffect
+        this.targetPlayer = targetPlayer;
+        this.effectCard = card;
+
+        if (this.name == ActionsNames.Guest && !usedEffect
                 && firstCard.isApplicableEffect(state, card, targetPlayer)) {
             state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
+            usedEffect = true;
+            this.targetPlayer = targetPlayer;
+            effectCard = card;
             return state;
         } else {
             return null;
@@ -218,6 +245,19 @@ public class Action {
         }
 
         info += "Used effect: " + this.usedEffect + "\n";
+        if(targetPlayer != -1) {
+            info += "Target player: " + this.targetPlayer + "\n";
+        }
+
+        if(effectCard != null){
+            info += "Card used for effect: " + this.effectCard + "\n";
+        }
+
+        info += "Used geisha: " + this.usedGeisha + "\n";
+
+        if(this.geishaCard != null){
+            info += "Card used for geisha effect: " + this.geishaCard + "\n";
+        }
 
         return info;
     }

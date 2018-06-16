@@ -78,6 +78,9 @@ public class Geisha {
 
     public State applyGeisha(State state, Card first, Card second, boolean withEffect,
                              Colors ability, boolean firstGeishaEffect, int targetPlayer) {
+        state.appliedAction.usedGeisha = true;
+        state.appliedAction.geishaCard = first;
+
         switch (this.name) {
             case Natsumi:
                 return NatsumiEffect(state, first, withEffect, targetPlayer);
