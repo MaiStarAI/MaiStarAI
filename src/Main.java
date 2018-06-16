@@ -5,6 +5,7 @@ import java.util.Random;
 public class Main {
 
     private static int c_calls = 0;
+    private static long time_to_compute = 40;
     private static long end_time;
     private enum Mode { ITERATIONS, TIME }
 
@@ -14,24 +15,24 @@ public class Main {
 
         // Abilities
         HashMap<Colors, Integer> a_1 = new HashMap<>();
-        a_1.put(Colors.Red, 2);
-        a_1.put(Colors.Blue, 2);
-        a_1.put(Colors.Green, 2);
+        a_1.put(Colors.Red, 5);
+        a_1.put(Colors.Blue, 1);
+        a_1.put(Colors.Green, 3);
 
         HashMap<Colors, Integer> a_2 = new HashMap<>();
-        a_2.put(Colors.Red, 5);
-        a_2.put(Colors.Blue, 5);
+        a_2.put(Colors.Red, 1);
+        a_2.put(Colors.Blue, 3);
         a_2.put(Colors.Green, 5);
 
         HashMap<Colors, Integer> a_3 = new HashMap<>();
-        a_3.put(Colors.Red, 1);
-        a_3.put(Colors.Blue, 3);
-        a_3.put(Colors.Green, 5);
+        a_3.put(Colors.Red, 2);
+        a_3.put(Colors.Blue, 2);
+        a_3.put(Colors.Green, 2);
 
         // Geisha
-        Geisha g_3 = new Geisha(GeishasName.Suzune, a_1, 1);
-        Geisha g_2 = new Geisha(GeishasName.Oboro, a_2, 0);
-        Geisha g_1 = new Geisha(GeishasName.Harukaze, a_3, 1);
+        Geisha g_1 = new Geisha(GeishasName.Momiji, a_1, 1);
+        Geisha g_2 = new Geisha(GeishasName.Harukaze, a_2, 1);
+        Geisha g_3 = new Geisha(GeishasName.Suzune, a_3, 1);
 
         Random rand = new Random();
         ArrayList<Card> deck = deckFill();
@@ -54,9 +55,8 @@ public class Main {
            and without parent and appliedAction. */
         State initial_state = new State(players, deck, 0);
 
-        Mode mode = Mode.ITERATIONS;
+        Mode mode = Mode.TIME;
         long start_time;
-        long time_to_compute;
 
         switch (mode) {
             case ITERATIONS: {
@@ -66,16 +66,17 @@ public class Main {
 
                 System.out.println();
                 System.out.println("Elapsed time: " + (end_time - start_time)/1000 + " seconds");
+                System.out.println();
                 System.out.println(action);
                 break;
             }
             case TIME: {
-                time_to_compute = 20;
                 end_time = System.currentTimeMillis() + time_to_compute * 1000;
                 action = ISMCTS_time (initial_state);
 
                 System.out.println();
                 System.out.println("Elapsed time: " + time_to_compute + " seconds");
+                System.out.println();
                 System.out.println(action);
                 break;
             }
@@ -94,6 +95,8 @@ public class Main {
 
     private static Action ISMCTS_iter (State s, int n) {
         for (int i = 0; i < n; ++i) {
+            System.out.println(((i*1f / n*1f) * 100f) + " %");
+
             s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
@@ -116,6 +119,8 @@ public class Main {
 
     private static Action ISMCTS_time(State s) {
         while (System.currentTimeMillis() <= end_time) {
+            System.out.println((100f - (float)(end_time - System.currentTimeMillis())/(time_to_compute * 1000)*100) + " %");
+
             s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
@@ -169,6 +174,7 @@ public class Main {
         Random rand = new Random();
         ArrayList<State> u_children = u(s);
         State new_state = new State(u_children.get(rand.nextInt(u_children.size())));
+        new_state.parent = s;
         if (s.children != null) {
             s.children.add(new_state);
         } else {
@@ -261,7 +267,7 @@ public class Main {
         if (s != null) {
 
             c_calls++;
-            System.out.println(c_calls);
+            //System.out.println(c_calls);
 
             ArrayList<State> list = new ArrayList<>();
             ArrayList<State> s_list = new ArrayList<>();
@@ -782,7 +788,7 @@ public class Main {
             if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Suzune)) {
                 for (int i = 0; i < list.size(); ++i) {
                     if (list.get(i) != null) {
-                        if (list.get(i).players.get(list.get(i).turnPlayerIndex).geisha.isApplicableEffect(
+                        if (list.get(i).players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
                                 list.get(i),
                                 null,
                                 false
