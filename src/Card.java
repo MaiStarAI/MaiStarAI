@@ -54,7 +54,6 @@ public class Card {
             case Ronin: { return true; }
             case Courtier: { return card.color == this.color &&
                     card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
-            case District_Kanryou: { return true; }
             case Doctor: { return true; }
             case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
             case Merchant: { return state.drawDeck > 1; }
@@ -101,8 +100,6 @@ public class Card {
                 return this.DaimyoEffect(state);
             case Ronin:
                 return this.RoninEffect(state);
-            case District_Kanryou:
-                return this.DistrictKanryouEffect(state);
             case Thief:
                 return this.ThiefEffect(state, targetPlayer);
             case Yakuza:
@@ -263,17 +260,6 @@ public class Card {
 
     private State RoninEffect(State currentState) {
         currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
-        return currentState;
-    }
-
-    /**
-     * Apply effect of card District Kanryou
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State DistrictKanryouEffect(State currentState) {
-        currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.District_Kanryou);
         return currentState;
     }
 

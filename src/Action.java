@@ -175,6 +175,12 @@ public class Action {
         turnPlayer.geisha.abilities.put(Colors.Green, firstCard.advReward.get(Colors.Green) + n);
 
         if (state.drawDeck > 0) turnPlayer.hand.add(state.getRandomCard());
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     private void applyExchange(Player turnPlayer) {
@@ -182,6 +188,12 @@ public class Action {
         turnPlayer.advertisers.remove(secondCard);
         turnPlayer.hand.add(secondCard);
         turnPlayer.advertisers.add(firstCard);
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     private void applyIntroduce(State state, Player turnPlayer) {
@@ -191,11 +203,23 @@ public class Action {
             turnPlayer.hand.remove(secondCard);
             turnPlayer.hand.add(state.getRandomCard());
         }
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
         turnPlayer.cardsNumber ++;
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     public boolean isApplicableAction(State currentState) {

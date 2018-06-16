@@ -42,6 +42,12 @@ public class Player {
         advertisers = new ArrayList<>();
         specialEffects = new ArrayList<>();
         this.geishaEffect = geisha.numberEffect;
+
+        for (Card aHand : this.hand) {
+            if (aHand.name == CardsNames.District_Kanryou) {
+                this.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     /**
