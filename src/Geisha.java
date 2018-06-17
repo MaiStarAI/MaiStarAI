@@ -79,7 +79,10 @@ public class Geisha {
     public State applyGeisha(State state, Card first, Card second, boolean withEffect,
                              Colors ability, boolean firstGeishaEffect, int targetPlayer) {
         state.appliedAction.usedGeisha = true;
-        state.appliedAction.geishaCard = first;
+        state.appliedAction.geishaCard1 = first;
+        state.appliedAction.geishaCard2 = second;
+        state.appliedAction.geishaAbility = ability;
+        state.appliedAction.geishaTargetPlayer = targetPlayer;
 
         switch (this.name) {
             case Natsumi:

@@ -162,6 +162,11 @@ public class State {
         }
     }
 
+    /**
+     * Method to get main information about state
+     * @return string with main information
+     */
+
     @Override
     public String toString() {
         StringBuilder info = new StringBuilder();
