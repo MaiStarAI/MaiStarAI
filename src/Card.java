@@ -202,6 +202,14 @@ public class Card {
     private State EmissaryEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = newState.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+
+        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
+        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
+        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
+
         Action action = new Action(removed);
         newState = action.applyAction(newState);
 
@@ -223,6 +231,8 @@ public class Card {
     private State SamuraiEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = newState.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        newState.players.get(targetPlayer).score -= removed.guestReward;
+
         Action action = new Action(removed, false);
         newState = action.applyAction(newState);
 
@@ -272,7 +282,8 @@ public class Card {
 
     private State ThiefEffect(State state, int targetPlayer) {
         State newState = new State(state);
-        state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        Card removed = state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        newState.players.get(targetPlayer).score -= removed.guestReward;
 
         return newState;
     }
@@ -286,7 +297,14 @@ public class Card {
 
     private State YakuzaEffect(State state, int targetPlayer) {
         State newState = new State(state);
-        state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+        Card removed = state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+
+        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
+        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
+        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
 
         return newState;
     }
