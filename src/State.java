@@ -104,12 +104,9 @@ public class State {
      */
 
     public Card getRandomCard(){
-        int random = (int) (Math.random() * drawDeck);
-        Card randomCard = new Card(cards.get(random).name, cards.get(random).color, cards.get(random).requirement,
-                cards.get(random).guestReward, cards.get(random).advReward);
-        cards.remove(cards.get(random));
+        Card removed = this.cards.remove(0);
         drawDeck -= 1;
-        return randomCard;
+        return removed;
     }
 
     /**
@@ -151,12 +148,23 @@ public class State {
      */
 
     public void getDeterminization(){
+        for (int i = 0; i < this.cards.size(); i++) {
+            int random = (int) (Math.random() * drawDeck);
+            if(!cards.get(i).known && !cards.get(random).known){
+                Card oneCard = cards.get(i);
+                cards.set(i, cards.get(random));
+                cards.set(random, oneCard);
+            }
+        }
+
         for (int i = 0; i < this.players.size(); i++) {
             if(i != this.AIPlayer){
-                drawDeck += this.players.get(i).hand.size();
-                cards.addAll(this.players.get(i).hand);
                 for (int j = 0; j < this.players.get(i).hand.size(); j++) {
-                    this.players.get(i).hand.set(j, this.getRandomCard());
+                    if(!this.players.get(i).hand.get(j).known) {
+                        drawDeck += 1;
+                        this.cards.add(this.players.get(i).hand.get(j));
+                        this.players.get(i).hand.set(j, this.getRandomCard());
+                    }
                 }
             }
         }

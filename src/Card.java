@@ -10,6 +10,7 @@ public class Card {
     int requirement;
     int guestReward;
     HashMap<Colors, Integer> advReward;
+    boolean known;
 
     /**
      * Main constructor for card
@@ -26,6 +27,7 @@ public class Card {
         this.requirement = requirement;
         this.guestReward = guestReward;
         this.advReward = advReward;
+        this.known = false;
     }
 
     /**
@@ -38,7 +40,8 @@ public class Card {
         this.color = anotherCard.color;
         this.requirement = anotherCard.requirement;
         this.guestReward = anotherCard.guestReward;
-        this.advReward = anotherCard.advReward;
+        this.advReward = new HashMap<>(anotherCard.advReward);
+        this.known = anotherCard.known;
     }
 
     /**
@@ -187,6 +190,9 @@ public class Card {
 
     private State SumoWrestlerEffect(State state, int targetPlayer, Card card) {
         State newState = new State(state);
+        for (int i = 0; i < newState.players.get(targetPlayer).hand.size(); i++) {
+            newState.players.get(targetPlayer).hand.get(i).known = true;
+        }
         newState.players.get(targetPlayer).hand.remove(card);
 
         return newState;

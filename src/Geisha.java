@@ -210,6 +210,11 @@ public class Geisha {
         Player turnPlayer = newState.players.get(newState.turnPlayerIndex);
         turnPlayer.hand.remove(firstCard);
         turnPlayer.hand.remove(secondCard);
+        firstCard.known = true;
+        secondCard.known = true;
+        newState.cards.add(firstCard);
+        newState.cards.add(secondCard);
+        newState.drawDeck += 2;
 
         newState.players.get(state.turnPlayerIndex).geishaEffect -= 1;
 
