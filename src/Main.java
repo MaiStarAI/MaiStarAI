@@ -61,7 +61,7 @@ public class Main {
         switch (mode) {
             case ITERATIONS: {
                 start_time = System.currentTimeMillis();
-                action = ISMCTS_iter(initial_state, 1000);
+                action = ISMCTS_iter(new State(initial_state), 1000);
                 end_time = System.currentTimeMillis();
 
                 System.out.println();
@@ -72,7 +72,7 @@ public class Main {
             }
             case TIME: {
                 end_time = System.currentTimeMillis() + time_to_compute * 1000;
-                action = ISMCTS_time (initial_state);
+                action = ISMCTS_time (new State(initial_state));
 
                 System.out.println();
                 System.out.println("Elapsed time: " + time_to_compute + " seconds");

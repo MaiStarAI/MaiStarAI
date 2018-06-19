@@ -38,8 +38,8 @@ public class SetupView extends Application {
     //private GridPane setupCard;
     private ImageView setupCard;
 
-    public int windowWidth = 940;
-    public int windowHeight = 660;
+    public static final int windowWidth = 940;
+    public static final int windowHeight = 660;
 
     public static ArrayList<String> cardImagesNames;
     private String[] cardSelection = {"Actor", "Courtier", "Doctor", "Emissary", "Merchant", "Okaasan",
@@ -408,7 +408,7 @@ public class SetupView extends Application {
             playerHandBox[i].getChildren().addAll(playerHand[i], handOptions[i]);
 
             handBox[i] = new VBox(5);
-            handBox[i].setAlignment(Pos.BASELINE_CENTER);
+            handBox[i].setAlignment(Pos.BASELINE_LEFT);
 
             if (i < players.size()) {
                 playerName[i].setText(players.get(i) + (!isHuman[i] ? " [AI]" : ""));
@@ -469,6 +469,8 @@ public class SetupView extends Application {
 
                                 setOnMouseClicked(e -> {
                                     if (e.getClickCount() > 1) {
+                                        editingIndex = -1;
+                                        
                                         if (cardColor.getItems().contains("Geisha")) {
                                             cardType.getItems().clear();
                                             cardType.getItems().addAll(cardSelection);
@@ -479,10 +481,10 @@ public class SetupView extends Application {
 
                                         setDeckLabels(cardsLeft, typeCardsLeft, cardColor.getValue().concat("_".concat(cardType.getValue())));
                                     }
-                                    System.out.println(cardsRemaining.size() + "\n" +
+                                    /*System.out.println(cardsRemaining.size() + "\n" +
                                             cardColor.getValue().concat("_").concat(cardType.getValue()) + "\n" +
                                             cardsRemaining.contains(cardColor.getValue().concat("_").concat(cardType.getValue()))
-                                    );
+                                    );*/
                                 });
                             }
                         }
@@ -653,6 +655,10 @@ public class SetupView extends Application {
     private void swapGeishas (ChoiceBox<String> cardType, int j) {
         {
             if (editingIndex == -1) return;
+            boolean isGeisha = false;
+            for (String i : geishasDeck)
+                if (cardType.getValue().equals(i)) isGeisha = true;
+            if (!isGeisha) return;
             geishasRemaining.add((String)playerHand[j].getItems().get(0));
             if (playerHand[editingIndex].getItems().get(0).equals(cardType.getValue())) {
                 playerHand[editingIndex].getItems().set(0, playerHand[j].getItems().get(0));
@@ -672,7 +678,7 @@ public class SetupView extends Application {
     //private void setupPhase3 ()
     // assume phase 2 is but a starting state, then phase 3 is full-detail mid-game state. To-do later, expand phase 2 to phase 3 and limit phase 2
 
-    /** Restore the deck fully and put a random geisha and random 5 cards (7, if Oboro is the geisha) into the hand of each player,
+    /** Restore the deck fully and put a random geisha and random 5 cards into the hand of each player,
      * starting from the last */
     private void randomizeHands (int index, boolean leaveGeishas) {
         //TODO --DECK-- return all cards to the deck -DONE
@@ -683,12 +689,11 @@ public class SetupView extends Application {
             min = 0;
         }
 
-        cardsRemaining.clear();
-        cardsRemaining.addAll(Arrays.asList(cardsDeck));
-
-        if (!leaveGeishas) {
-            geishasRemaining.clear();
-            geishasRemaining.addAll(Arrays.asList(geishasDeck));
+        for (int j = i; j >= min; j--) {
+            if (!leaveGeishas) geishasRemaining.add(playerHand[j].getItems().get(0).toString());
+            for (int k = 1; k < playerHand[j].getItems().size(); k++) {
+                cardsRemaining.add(playerHand[j].getItems().get(k).toString());
+            }
         }
 
         for (; i >= min; i--) {
@@ -699,7 +704,7 @@ public class SetupView extends Application {
                 clearHands(i);
             }
 
-            for (int k = 0; k < (playerHand[i].getItems().get(0).toString().equals("Oboro") ? 7 : 5); k++)
+            for (int k = 0; k <  5; k++) /*(playerHand[i].getItems().get(0).toString().equals("Oboro") ? 7 : )*/
                 playerHand[i].getItems().add(cardsRemaining.remove(new Random().nextInt(cardsRemaining.size())));
         }
     }
@@ -725,11 +730,10 @@ public class SetupView extends Application {
             max = players.size();
         }
 
-        cardsRemaining.clear();
-        cardsRemaining.addAll(Arrays.asList(cardsDeck));
-
         for (; i < max; i++) {
             //TODO first move all cards to the --DECK-- -DONE
+            for (int j = 1; j < playerHand[i].getItems().size(); j++)
+                cardsRemaining.add(playerHand[i].getItems().get(j).toString());
             playerHand[i].getItems().remove(1, playerHand[i].getItems().size());
         }
     }
