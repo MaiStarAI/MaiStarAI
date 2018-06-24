@@ -84,6 +84,8 @@ public class Card {
      */
 
     public State applyEffect(State state, Card card, int targetPlayer, boolean withEffect) {
+        state.turnPlayerIndex = state.getPreviousPlayer();
+
         switch (this.name) {
             case Monk:
                 return this.MonkEffect(state);
@@ -129,6 +131,7 @@ public class Card {
         State state = new State(currentState);
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
         turnPlayer.hand.clear();
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -140,7 +143,6 @@ public class Card {
 
     private State DoctorEffect(State currentState) {
         State state = new State(currentState);
-        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -159,6 +161,7 @@ public class Card {
             turnPlayer.score += turnPlayer.hand.get(i).guestReward;
         }
         turnPlayer.hand.clear();
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -176,6 +179,7 @@ public class Card {
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -194,6 +198,7 @@ public class Card {
             newState.players.get(targetPlayer).hand.get(i).known = true;
         }
         newState.players.get(targetPlayer).hand.remove(card);
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -222,7 +227,7 @@ public class Card {
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
-
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -245,6 +250,7 @@ public class Card {
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -265,6 +271,7 @@ public class Card {
                 turnPlayer.score += removed.guestReward;
             }
         }
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -275,8 +282,10 @@ public class Card {
      */
 
     private State RoninEffect(State currentState) {
-        currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
-        return currentState;
+        State state = new State(currentState);
+        state.players.get(state.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
+        state.turnPlayerIndex = state.getNextPlayer();
+        return state;
     }
 
     /**
@@ -290,6 +299,7 @@ public class Card {
         State newState = new State(state);
         Card removed = state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
         newState.players.get(targetPlayer).score -= removed.guestReward;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -311,6 +321,7 @@ public class Card {
         newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
         int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
         newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -333,6 +344,7 @@ public class Card {
                 newState = action.applyEffect(newState, card, targetPlayer, true);
             }
         }
+        newState.turnPlayerIndex = newState.getNextPlayer();
         return newState;
     }
 
@@ -347,6 +359,7 @@ public class Card {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -361,6 +374,7 @@ public class Card {
     private State ScholarEffect(State state, int targetPlayer) {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }

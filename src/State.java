@@ -101,6 +101,17 @@ public class State {
         }
     }
 
+    public int getPreviousPlayer(){
+        Player turnPlayer = this.players.get(turnPlayerIndex);
+
+        if(turnPlayerIndex == 0){
+            return players.size() - 1;
+        }
+        else{
+            return turnPlayerIndex - 1;
+        }
+    }
+
     /**
      * Method to get random card from cards which in game
      * @return object of class Card

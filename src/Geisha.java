@@ -83,22 +83,32 @@ public class Geisha {
         state.appliedAction.geishaCard2 = second;
         state.appliedAction.geishaAbility = ability;
         state.appliedAction.geishaTargetPlayer = targetPlayer;
+        state.turnPlayerIndex = state.getPreviousPlayer();
+        State returnState = null;
 
         switch (this.name) {
             case Natsumi:
-                return NatsumiEffect(state, first, withEffect, targetPlayer);
+                returnState = NatsumiEffect(state, first, withEffect, targetPlayer);
+                break;
             case Suzune:
-                return SuzuneEffect(state, first, firstGeishaEffect);
+                returnState = SuzuneEffect(state, first, firstGeishaEffect);
+                break;
             case Momiji:
-                return MomijiEffect(state, targetPlayer, withEffect);
+                returnState = MomijiEffect(state, targetPlayer, withEffect);
+                break;
             case Akenohoshi:
-                return AkenohoshiEffect(state, ability, firstGeishaEffect);
+                returnState = AkenohoshiEffect(state, ability, firstGeishaEffect);
+                break;
             case Harukaze:
-                return HarukazeEffect(state, first, second);
+                returnState = HarukazeEffect(state, first, second);
+                break;
             default:
                 System.out.println("Error: there is no ability for such geisha or no such geisha");
-                return null;
+                returnState = null;
         }
+        returnState.turnPlayerIndex = returnState.getNextPlayer();
+
+        return returnState;
     }
 
     /**
