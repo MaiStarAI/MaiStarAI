@@ -759,7 +759,7 @@ public class Main {
     }
 
     /** Returns draw deck */
-    private static ArrayList<Card> deckFill () {
+    public static ArrayList<Card> deckFill() {
         ArrayList<Card> deck = new ArrayList<>();
         HashMap<Colors, Integer> bonus;
 

@@ -90,6 +90,9 @@ public class State {
      */
 
     public int getNextPlayer(){
+        Player turnPlayer = this.players.get(turnPlayerIndex);
+        turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
+
         if(turnPlayerIndex == players.size() - 1){
             return 0;
         }
