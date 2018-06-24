@@ -4,6 +4,7 @@ import java.util.ArrayList;
  * Class player contains information about player
  *
  * name: name of player
+ * type: type of player
  * hand: cards in player's hand
  * cardsNumber: number of cards in hand
  * geisha: object of class Geisha which contains information about geisha of player
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 
 public class Player {
     String name;
+    PlayerType type;
     ArrayList<Card> hand;
     int cardsNumber;
     Geisha geisha;
@@ -65,6 +67,15 @@ public class Player {
         advertisers = new ArrayList<>(anotherPlayer.advertisers);
         specialEffects = new ArrayList<>(anotherPlayer.specialEffects);
         this.geishaEffect = anotherPlayer.geishaEffect;
+    }
+
+    /**
+     * Method to set type
+     * @param type: new type of player
+     */
+
+    public void setType(PlayerType type){
+        this.type = type;
     }
 
     /**
