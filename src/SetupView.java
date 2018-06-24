@@ -1,10 +1,8 @@
 import javafx.application.Application;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.*;
-import javafx.scene.effect.BoxBlur;
 import javafx.scene.image.*;
 import javafx.scene.control.*;
 import javafx.scene.control.Button;
@@ -26,22 +24,22 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
 
+/**
+ * SetupView - it is just graphics, it doesn't connect in any way to the backend
+ */
 public class SetupView extends Application {
 
     public static Stage window;
     private Scene scene;
 
     public static ArrayList<String> players;
-    private int[] aiType;
-    //private GridPane setupCard;
+    public static Integer[] aiType;
+    public static int playerIndex;
 
     public static final int windowWidth = 940;
-    public static final int windowHeight = 660;
+    public static final int windowHeight = 690;
 
     public static ArrayList<String> cardImagesNames;
     private ImageView setupCard;
@@ -50,15 +48,17 @@ public class SetupView extends Application {
             "Daimyo", "Samurai", "District Kanryou", "Monk", "Shogun"};
 
     public static final String[] geishasDeck = {
-            "Momiji", "Akenohoshi", "Suzune", "Natsumi", "Harukaze", "Oboro"};
+            "Momiji", "Akenohoshi", "Suzune", "Natsumi", "Oboro", "Harukaze"};
     private ArrayList<String> geishasRemaining;
+    private ArrayList<Integer> geishasPrioritized;
 
     private String[] cardsDeck;
-    private ArrayList<String> cardsRemaining;
+    public static ArrayList<String> cardsRemaining;
 
-    public ArrayList<String> playerGeishas;
-    public ArrayList< ArrayList<String> > playerCards;
-    public ArrayList<String> heapCards;
+    private StackPane selectedGeisha;
+
+    public static ArrayList<String> playerGeishas;
+    public static ArrayList< ArrayList<String> > playerCards;
     private ListView[] playerHand;
     private int editingIndex;
 
@@ -72,7 +72,9 @@ public class SetupView extends Application {
         window.setTitle("Mai-Star");
 
         window.setMinWidth(windowWidth);
+        window.setWidth(windowWidth);
         window.setMinHeight(windowHeight);
+        window.setHeight(windowHeight);
 
         cardImagesNames = new ArrayList<>();
         File file = new File("cards");
@@ -88,10 +90,11 @@ public class SetupView extends Application {
         }
 
         players = new ArrayList<>();
-        aiType = new int[6];
+        aiType = new Integer[6];
         Arrays.fill(aiType, 2);
         aiType[0] = 0;
         aiType[1] = 1;
+        playerIndex = 0;
 
         playerGeishas = new ArrayList<>();
         playerCards = new ArrayList<>();
@@ -99,6 +102,8 @@ public class SetupView extends Application {
         geishasRemaining = new ArrayList<>();
         cardsRemaining = new ArrayList<>();
         editingIndex = -1;
+
+        geishasPrioritized = new ArrayList<>();
 
         ArrayList<Card> deck = new ArrayList<>();
         deck.addAll(Main.deckFill());
@@ -114,10 +119,12 @@ public class SetupView extends Application {
         geishasRemaining.clear();
         geishasRemaining.addAll(Arrays.asList(geishasDeck));
 
-        //setScene1();
+        window.setScene(new Scene(new VBox(), windowWidth, windowHeight));
+        window.show();
 
-        /**/window.show();
-        play();
+        setScene1();
+
+        //play();
     }
 
     private void setScene1 () {
@@ -178,6 +185,7 @@ public class SetupView extends Application {
             int j = i;
             playerType[i].setOnAction(e -> {
                 if (!playerType[j].getValue().equals("Human")) return;
+                playerIndex = j;
                 for (int k = 0; k < 6; k++) {
                     if (k != j && playerType[k].getValue().equals("Human"))
                         playerType[k].getSelectionModel().select("ISMCTS");
@@ -188,14 +196,16 @@ public class SetupView extends Application {
         box.getChildren().addAll(new Separator(), playerNamesBox[0], playerNamesBox[1]);
 
         Button beginGame = new Button("Start Game");
-        //beginGame.setDefaultButton(true);
-        //beginGame.setDisable(true);
+        beginGame.setDefaultButton(true);
 
         Button setState = new Button("Advanced...");
-        setState.setDefaultButton(true); //TODO beginGame
 
-        HBox buttonsBox = new HBox(50);
-        buttonsBox.getChildren().addAll(beginGame, setState);
+        Button help = new Button("Rules (.pdf)");
+
+        HBox buttonsBox = new HBox();
+        ButtonBar buttonsBar = new ButtonBar();
+        buttonsBar.getButtons().addAll(beginGame, setState, help);
+        buttonsBox.getChildren().addAll(buttonsBar);
         buttonsBox.setAlignment(Pos.CENTER);
 
         box.getChildren().addAll(new Separator(), buttonsBox);
@@ -215,24 +225,38 @@ public class SetupView extends Application {
             }
         });
 
+        help.setOnAction(e -> {
+            File file = new File("rules.pdf");
+            try {
+                if (file.exists())
+                    Desktop.getDesktop().open(file);
+            } catch (Exception ex) {
+                System.out.println(ex + "\nERROR: Couldn't open 'rules.pdf'.");
+            }
+        });
+
         setState.setOnAction(e -> {
             for (int i = 0; i < playerCount.getValue(); i++) {
-                players.set(i, !playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText());
                 aiType[i] = playerType[i].getSelectionModel().getSelectedIndex();
+                players.set(i,
+                        (!playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText())
+                        + (aiType[i] == 0 ? "" : aiType[i] == 1 ? " [ISMCTS]" : " [Random]")
+                );
             }
             setScene2();
         });
 
         beginGame.setOnAction(e -> {
             for (int i = 0; i < playerCount.getValue(); i++) {
-                players.set(i, !playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText());
                 aiType[i] = playerType[i].getSelectionModel().getSelectedIndex();
-                /*if (playerCards.size() <= i)
-                    playerCards.add(new ArrayList<>());*/
+                players.set(i,
+                        (!playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText())
+                                + (aiType[i] == 0 ? "" : aiType[i] == 1 ? " [ISMCTS]" : " [Random]")
+                );
             }
 
-            randomizeHands(); //todo YOU GO FIRST, YOU PICK YOUR GEISHA LAST
-            loadHandsToArrays();
+            playerGeishas.clear();
+            playerCards.clear();
 
             play();
         });
@@ -252,6 +276,10 @@ public class SetupView extends Application {
         Button back = new Button("Back");
         back.setCancelButton(true);
         back.setOnAction(e -> {
+            for (int i = 0; i < players.size(); i++) {
+                players.set(i, players.get(i).replace(" [ISMCTS]", ""));
+                players.set(i, players.get(i).replace(" [Random]", ""));
+            }
             loadHandsToArrays();
             setScene1();
         });
@@ -283,14 +311,12 @@ public class SetupView extends Application {
         deckInfoBox.getChildren().addAll(cardsLeft, typeCardsLeft);
 
         Button savePresetButton = new Button("Save this preset...");
-        //TODO savePresetButton.setTooltip(new Tooltip(""));
         savePresetButton.setOnAction(e -> {
             setPresetScene("Save");
             setDeckLabels(cardsLeft, typeCardsLeft, cardColor.getValue().concat("_".concat(cardType.getValue())));
         });
 
         Button loadPresetButton = new Button("Load preset...");
-        //TODO loadPresetButton.setTooltip(new Tooltip(""));
         loadPresetButton.setOnAction(e -> {
             setPresetScene("Load");
             setDeckLabels(cardsLeft, typeCardsLeft, cardColor.getValue().concat("_".concat(cardType.getValue())));
@@ -412,7 +438,7 @@ public class SetupView extends Application {
             handBox[i].setAlignment(Pos.BASELINE_LEFT);
 
             if (i < players.size()) {
-                playerName[i].setText(players.get(i) + (aiType[i] == 0 ? "" : aiType[i] == 1 ? " [ISMCTS]" : " [Random]"));
+                playerName[i].setText(players.get(i));
             } else {
                 handBox[i].setManaged(false);
                 handBox[i].setVisible(false);
@@ -583,17 +609,17 @@ public class SetupView extends Application {
 
             if (!loadHandsToArrays()) return;
             for (int i = 0; i < players.size(); i++) {
-                if (playerCards.get(i).size() == 0) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR,
+                if (playerCards.get(i).size() == 0) { //todo change, just load random cards, leave geishas
+                    randomizeHands(i);
+                    /*Alert alert = new Alert(Alert.AlertType.ERROR,
                             "You cannot have empty hands for players! That would violate the rules of the game." +
                                     "\n\nPlease, ensure you have at least one card apart from Geisha in each of your hands.");
                     alert.showAndWait();
-                    return;
+                    return;*/
                 }
             }
 
             play();
-            // TODO throw names, check if all hands have at least two cards (Geisha and one more)
         });
 
         clearHandsButton.setOnAction(e -> {
@@ -1103,6 +1129,105 @@ public class SetupView extends Application {
         return true;
     }
 
+    private void openGeishas() {
+        Stage window = new Stage();
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Select Geisha");
+        //window.getIcons().add(Window.icon);
+        window.setMinWidth(720);
+        window.setMinHeight(620);
+
+        GridPane geishaGrid = new GridPane();
+        geishaGrid.setAlignment(Pos.CENTER);
+        geishaGrid.getRowConstraints().addAll(new RowConstraints(260), new RowConstraints(260));
+
+        for (int j = 0; j < 3; j++) {
+            ColumnConstraints ccRounds = new ColumnConstraints(200);
+            ccRounds.setHalignment(HPos.CENTER);
+            geishaGrid.getColumnConstraints().add(ccRounds);
+
+            for (int i = 0; i < 2; i++) {
+                ImageView img = GameGraphics.getCardImage(geishasDeck[j*2+i]); //.name
+                img.setFitWidth(200);
+                img.setFitHeight(250);
+                img.setPickOnBounds(true);
+                img.setPreserveRatio(true);
+
+                StackPane card = new StackPane();
+                card.setMaxHeight(img.getFitHeight());
+                card.setMaxWidth(img.getFitWidth() * 0.7114);
+                card.getChildren().add(img);
+                card.getStyleClass().add("card");
+
+                card.setOnMouseClicked(e -> {
+                    if (selectedGeisha != null) selectedGeisha.getStyleClass().remove("selected");
+                    selectedGeisha = card;
+                    selectedGeisha.getStyleClass().add("selected");
+                });
+
+                geishaGrid.add(card, j, i);
+
+                if (!geishasPrioritized.contains(j*2+i)) {
+                    Label playerName = new Label("Claimed by " + players.get(players.size() -1 - playerGeishas.indexOf(geishasDeck[j*2+i])));
+                    playerName.setStyle(
+                            "-fx-font-weight: bold;" +
+                            "-fx-font-style: italic;" +
+                            "-fx-text-alignment: center;" +
+                            "-fx-wrap-text: true;" +
+                            "-fx-opacity: 1.5;"
+                    );
+                    //todo
+
+                    card.setDisable(true);
+                    card.getChildren().add(playerName);
+                    card.getChildren().get(0).setOpacity(0.33);
+                } else {
+                    //card.setFocusTraversable(true); todo
+                }
+            }
+        }
+
+        Button resumeButton = new Button("Select Geisha");
+        resumeButton.getStyleClass().add("actionButton");
+        resumeButton.setMaxWidth(200);
+        resumeButton.setDefaultButton(true);
+        resumeButton.setCancelButton(true);
+        resumeButton.setOnAction(e -> {
+            if (selectedGeisha != null) {
+                window.close();
+            } else {
+                Alert alert = new Alert(Alert.AlertType.WARNING, "You must select your Geisha.",
+                        ButtonType.OK);
+                alert.show();
+            }
+        });
+
+        window.setOnCloseRequest(e -> {
+            //selectedGeisha = null;
+            if (selectedGeisha == null) {
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to quit?",
+                        ButtonType.YES, ButtonType.NO);
+                alert.showAndWait();
+                if (alert.getResult() == ButtonType.YES) {
+                    window.close();
+                    SetupView.window.close();
+                }
+                e.consume();
+            }
+        });
+
+        VBox layout = new VBox(20);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.getChildren().addAll(geishaGrid, resumeButton);
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(0,0,10,0));
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
     private void setDeckLabels (Label total, Label instance, String currentCard) {
         int counter = 0;
         for (String i : cardsRemaining) {
@@ -1113,11 +1238,11 @@ public class SetupView extends Application {
         instance.setText("This card : " + counter);
     }
 
-    private String getCardName (String item) {
+    public static String getCardName (String item) {
         return item.substring(item.indexOf('_')+1).trim();
     }
 
-    private String getCardColor (String item) {
+    public static String getCardColor (String item) {
         return item.substring(0, item.indexOf('_'));
     }
 
@@ -1176,6 +1301,62 @@ public class SetupView extends Application {
     }
 
     private void play() {
+        if (playerGeishas.size() == 0) {
+            geishasPrioritized.clear();
+            geishasPrioritized.addAll(Arrays.asList(2, 5, 3, 0, 1, 4));
+
+            playerGeishas.clear();
+            playerCards.clear();
+
+            String playerName = players.get(playerIndex);
+
+            ArrayList<Integer> indices = new ArrayList<>();
+            for (int i = 0; i < players.size(); i++)
+                indices.add(i);
+            Collections.shuffle(indices);
+
+            ArrayList<String> players = new ArrayList<>();
+            ArrayList<Integer> aiType = new ArrayList<>();
+
+            for (int i : indices) {
+                players.add(this.players.get(i));
+                aiType.add(this.aiType[i]);
+            }
+
+            playerIndex = players.indexOf(playerName);
+
+            for (int i = players.size()-1; i >= 0; i--) {
+                if (aiType.get(i) == 0) {
+
+                    openGeishas();
+                    if (selectedGeisha == null) {
+                        playerGeishas.clear();
+                        return;
+                    }
+                    playerGeishas.add(0, geishasDeck[GridPane.getColumnIndex(selectedGeisha) * 2 + GridPane.getRowIndex(selectedGeisha)]);
+                    geishasPrioritized.remove(geishasPrioritized.indexOf(GridPane.getColumnIndex(selectedGeisha) * 2 + GridPane.getRowIndex(selectedGeisha)));
+
+                } else if (aiType.get(i) == 1) {
+
+                    playerGeishas.add(0, geishasDeck[geishasPrioritized.remove(geishasPrioritized.size() - 1)]);
+
+                } else if (aiType.get(i) == 2) {
+
+                    playerGeishas.add(0, geishasDeck[geishasPrioritized.remove(new Random().nextInt(geishasPrioritized.size()))]);
+
+                }
+
+                playerCards.add(0, new ArrayList<>());
+                for (int k = 0; k < 5; k++)
+                    playerCards.get(0).add(cardsRemaining.remove(new Random().nextInt(cardsRemaining.size())));
+
+            }
+
+            this.players.clear();
+            this.players.addAll(players);
+            this.aiType = aiType.toArray(new Integer[aiType.size()]);
+        }
+
         GameView game = new GameView();
     }
 }

@@ -27,7 +27,7 @@
             <Image url="file:cards/card.png" />
          </image>
       </ImageView>
-      <ImageView id="heapImage" fitHeight="180.0" fitWidth="110.0" layoutX="507.0" layoutY="273.0" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="0.0">
+      <ImageView id="heapImage" fitHeight="180.0" fitWidth="110.0" layoutX="507.0" layoutY="273.0" onMouseClicked="#openDiscard" pickOnBounds="true" preserveRatio="true" AnchorPane.bottomAnchor="0.0" AnchorPane.rightAnchor="0.0">
          <image>
             <Image url="file:cards/card.png" />
          </image>
@@ -40,7 +40,7 @@
       <VBox alignment="CENTER" layoutX="10.0" layoutY="514.0" mouseTransparent="true" prefHeight="180.0" prefWidth="110.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0">
          <children>
             <Label alignment="CENTER" styleClass="pileLabel" text="DECK" textAlignment="CENTER" />
-            <Label fx:id="deckLabel" alignment="CENTER" contentDisplay="CENTER" onMouseClicked="#changeDeckLabel" styleClass="pileNumber" text="75" textAlignment="CENTER">
+            <Label fx:id="deckLabel" alignment="CENTER" contentDisplay="CENTER" styleClass="pileNumber" text="75" textAlignment="CENTER">
                <font>
                   <Font name="System Bold" size="24.0" />
                </font>
@@ -53,7 +53,7 @@
             <Label fx:id="heapLabel" pickOnBounds="false" styleClass="pileNumber" text="0" />
          </children>
       </VBox>
-      <GridPane fx:id="playerGrid" alignment="CENTER" gridLinesVisible="true" layoutX="65.0" layoutY="27.0" onMouseClicked="#shiftPlayerGrid" prefHeight="150.0" prefWidth="600.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="270.0" AnchorPane.topAnchor="0.0">
+      <GridPane fx:id="playerGrid" alignment="CENTER" layoutX="65.0" layoutY="27.0" prefHeight="150.0" prefWidth="600.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="270.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
               <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -69,7 +69,7 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
          <children>
-           <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="0">
+           <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="0">
                <children>
                    <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                        <ImageView fitHeight="36.0" fitWidth="36.0" preserveRatio="true">
@@ -83,7 +83,7 @@
                        <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                    </VBox>
                    <Label styleClass="playerLabel" text="Player 1" />
-                   <GridPane alignment="CENTER" gridLinesVisible="true">
+                   <GridPane alignment="CENTER" styleClass="gridCell">
                        <columnConstraints>
                            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                            <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -93,21 +93,22 @@
                            <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                        </rowConstraints>
                        <children>
-                           <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                           <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                            <Label styleClass="statNameLabel" text="HAND" />
                            <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                        </children>
                    </GridPane>
                </children>
+               <effect>
+                  <Glow level="0.4" />
+               </effect>
            </VBox>
-             <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="1">
+             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="1">
                  <children>
                      <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                          <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
-                     <GridPane alignment="CENTER" gridLinesVisible="true">
+                     <GridPane alignment="CENTER" styleClass="gridCell">
                          <columnConstraints>
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -117,21 +118,19 @@
                              <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                          </rowConstraints>
                          <children>
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                              <Label styleClass="statNameLabel" text="HAND" />
                              <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                          </children>
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="2">
+             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="2">
                  <children>
                      <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                          <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
-                     <GridPane alignment="CENTER" gridLinesVisible="true">
+                     <GridPane alignment="CENTER" styleClass="gridCell">
                          <columnConstraints>
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -141,21 +140,19 @@
                              <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                          </rowConstraints>
                          <children>
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                              <Label styleClass="statNameLabel" text="HAND" />
                              <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                          </children>
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="3">
+             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="3">
                  <children>
                      <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                          <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
-                     <GridPane alignment="CENTER" gridLinesVisible="true">
+                     <GridPane alignment="CENTER" styleClass="gridCell">
                          <columnConstraints>
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -165,21 +162,19 @@
                              <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                          </rowConstraints>
                          <children>
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                              <Label styleClass="statNameLabel" text="HAND" />
                              <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                          </children>
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="4">
+             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="4">
                  <children>
                      <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                          <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
-                     <GridPane alignment="CENTER" gridLinesVisible="true">
+                     <GridPane alignment="CENTER" styleClass="gridCell">
                          <columnConstraints>
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -189,21 +184,19 @@
                              <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                          </rowConstraints>
                          <children>
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                              <Label styleClass="statNameLabel" text="HAND" />
                              <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                          </children>
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" prefHeight="120.0" prefWidth="100.0" GridPane.columnIndex="5">
+             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="5">
                  <children>
                      <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
                          <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
-                     <GridPane alignment="CENTER" gridLinesVisible="true">
+                     <GridPane alignment="CENTER" styleClass="gridCell">
                          <columnConstraints>
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
                              <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -213,8 +206,6 @@
                              <RowConstraints minHeight="10.0" prefHeight="33.0" vgrow="SOMETIMES" />
                          </rowConstraints>
                          <children>
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="5" textAlignment="CENTER" GridPane.rowIndex="1" />
-                             <Label alignment="CENTER" contentDisplay="CENTER" styleClass="statLabel" text="64" textAlignment="CENTER" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                              <Label styleClass="statNameLabel" text="HAND" />
                              <Label styleClass="statNameLabel" text="SCORE" GridPane.columnIndex="1" />
                          </children>
@@ -223,7 +214,7 @@
              </VBox>
          </children>
       </GridPane>
-       <VBox fx:id="table" alignment="BOTTOM_CENTER" layoutX="23.0" layoutY="190.0" onMouseClicked="#changeTable" prefHeight="300.0" prefWidth="600.0" AnchorPane.bottomAnchor="185.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="270.0">
+       <VBox fx:id="table" alignment="BOTTOM_CENTER" layoutX="23.0" layoutY="190.0" prefHeight="300.0" prefWidth="600.0" AnchorPane.bottomAnchor="185.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="270.0">
           <GridPane alignment="CENTER_LEFT" prefHeight="270.0" prefWidth="600.0" styleClass="table">
             <columnConstraints>
                 <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="105.0" minWidth="98.0" prefWidth="105.0" />
@@ -235,28 +226,6 @@
               <RowConstraints maxHeight="140.0" minHeight="10.0" valignment="BOTTOM" vgrow="SOMETIMES" />
             </rowConstraints>
              <children>
-                <ImageView fitHeight="130.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.rowIndex="1">
-                   <image>
-                      <Image url="file:cards/Harukaze.png" />
-                   </image>
-                </ImageView>
-                <ImageView fitHeight="130.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="1" GridPane.rowIndex="1">
-                   <image>
-                      <Image url="file:cards/red_ronin.png" />
-                   </image>
-                </ImageView>
-                <ImageView fitHeight="130.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="1">
-                   <image>
-                      <Image url="file:cards/blue_daimyo.png" />
-                   </image>
-                </ImageView>
-                <Label id="player1Label" fx:id="playerLabel" alignment="CENTER" contentDisplay="CENTER" mnemonicParsing="true" styleClass="player1Label" text="Player 1" textAlignment="CENTER" wrapText="true">
-                   <GridPane.margin>
-                      <Insets />
-                   </GridPane.margin>
-                   <padding>
-                      <Insets bottom="1.0" left="1.0" right="1.0" top="1.0" />
-                   </padding></Label>
              </children>
           </GridPane>
          <padding>
@@ -267,12 +236,12 @@
          <children>
             <ButtonBar buttonMinWidth="65.0" prefHeight="40.0" prefWidth="200.0">
               <buttons>
-                  <Button fx:id="akenohoshiButton" mnemonicParsing="false" onAction="#setShowcaseCardDefault" styleClass="actionButton" text="Apply Geisha" />
-                <Button fx:id="playGuest" mnemonicParsing="false" styleClass="actionButton" text="Play as Guest" />
-                  <Button fx:id="advertise" mnemonicParsing="false" styleClass="actionButton" text="Advertise" />
-                  <Button fx:id="introduce" mnemonicParsing="false" styleClass="actionButton" text="Introduce" />
-                  <Button fx:id="exchange" mnemonicParsing="false" styleClass="actionButton" text="Exchange" />
-                  <Button fx:id="search" mnemonicParsing="false" styleClass="actionButton" text="Search" />
+                  <Button fx:id="akenohoshiButton" mnemonicParsing="false" styleClass="actionButton" text="Apply Geisha" />
+                <Button fx:id="playGuestButton" mnemonicParsing="false" onMouseClicked="#shiftPlayerGrid" styleClass="actionButton" text="Play as Guest" />
+                  <Button fx:id="advertiseButton" mnemonicParsing="false" styleClass="actionButton" text="Advertise" />
+                  <Button fx:id="introduceButton" mnemonicParsing="false" styleClass="actionButton" text="Introduce" />
+                  <Button fx:id="exchangeButton" mnemonicParsing="false" styleClass="actionButton" text="Exchange" />
+                  <Button fx:id="searchButton" mnemonicParsing="false" styleClass="actionButton" text="Search" />
                   <Button fx:id="endTurnButton" defaultButton="true" disable="true" mnemonicParsing="false" styleClass="actionButton" text="End Turn">
                      <effect>
                         <Glow />
@@ -285,21 +254,6 @@
             </ButtonBar>
             <GridPane fx:id="handGrid" alignment="CENTER_LEFT" prefHeight="140.0" prefWidth="600.0" snapToPixel="false" styleClass="handGrid">
               <columnConstraints>
-                <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="85.0" minWidth="10.0" />
-                  <ColumnConstraints />
               </columnConstraints>
               <rowConstraints>
                 <RowConstraints minHeight="10.0" prefHeight="130.0" vgrow="SOMETIMES" />
@@ -308,83 +262,6 @@
                <padding>
                   <Insets bottom="5.0" left="5.0" right="15.0" top="5.0" />
                </padding>
-                <children>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="0">
-                        <image>
-                            <Image url="file:cards/red_actor.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="1">
-                        <image>
-                            <Image url="file:cards/blue_daimyo.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="2">
-                        <image>
-                            <Image url="file:cards/green_emissary.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="3">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="4">
-                        <image>
-                            <Image url="file:cards/red_daimyo.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="5">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="6">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="7">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="8">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="9">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="10">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="11">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="12">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="13">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                    <ImageView fitHeight="120.0" fitWidth="200.0" onMouseClicked="#setShowcaseCard" onMouseEntered="#setShowcaseCard" onMouseExited="#setShowcaseCardDefault" pickOnBounds="true" preserveRatio="true" styleClass="card" GridPane.columnIndex="14">
-                        <image>
-                            <Image url="file:cards/blue_okaasan.png" />
-                        </image>
-                    </ImageView>
-                </children>
                <VBox.margin>
                   <Insets />
                </VBox.margin>

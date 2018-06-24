@@ -12,6 +12,10 @@
     -fx-border-radius: 5;
     -fx-border-color: #C0392B;
 }
+.scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
 .card:hover {
     -fx-cursor: hand;
     -fx-scale-y: 1.06;
@@ -20,17 +24,22 @@
 .card:pressed {
     -fx-scale-y: 0.99;
     -fx-scale-x: 0.99;
-    -fx-border-style: solid inside;
-    -fx-border-color: white;
-    -fx-pref-height: 42;
-    -fx-pref-width: 132;
-    -fx-border-width: 2;
-    -fx-border-insets: 3;
-    -fx-border-radius: 50px;
+    -fx-border-style: solid outside;
+    -fx-border-color: gold;
+    -fx-border-width: 2.5;
+    -fx-border-radius: 7.5;
 }
 .card:focused{
     -fx-scale-y: 1.06;
     -fx-scale-x: 1.06;
+}
+.card.selected {
+    -fx-scale-y: 0.99;
+    -fx-scale-x: 0.99;
+    -fx-border-style: solid outside;
+    -fx-border-color: gold;
+    -fx-border-width: 2.5;
+    -fx-border-radius: 7.5;
 }
 #heapImage:hover {
     -fx-cursor: hand;
@@ -40,9 +49,6 @@
 #heapImage:pressed {
     -fx-scale-y: 0.98;
     -fx-scale-x: 0.98;
-}
-.table:pressed {
-    -fx-background-image: url('file:images/faerun.jpg');
 }
 .actionButton {
     -fx-min-width: 95;
@@ -130,6 +136,33 @@
     -fx-border-width: 2;
     -fx-border-insets: 3;
     -fx-border-radius: 50px;
+}
+.playerCell {
+    -fx-background-color: linear-gradient(#A65230, #C49D5C);
+    -fx-background-radius: 10;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 10;
+    -fx-border-color: #3c3946;
+}
+.playerCell:hover {
+    -fx-cursor: hand;
+    -fx-border-width: 3;
+    -fx-background-insets: 0, 1 1 0 0 ;
+}
+.playerCell:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+}
+.playerCell.selected {
+    -fx-border-color: #DBD28F;
+}
+.gridCell {
+    -fx-border-style: solid OUTSIDE;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 10;
+    -fx-border-color: #3c3946;
+    -fx-background-insets: 0, 0 0 1 1 ;
 }
 .pileBox {
     -fx-background-color: null;
