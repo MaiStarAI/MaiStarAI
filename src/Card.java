@@ -130,6 +130,7 @@ public class Card {
     private State MonkEffect(State currentState) {
         State state = new State(currentState);
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
+        state.discardedCards.addAll(turnPlayer.hand);
         turnPlayer.hand.clear();
         state.turnPlayerIndex = state.getNextPlayer();
         return state;
@@ -198,6 +199,7 @@ public class Card {
             newState.players.get(targetPlayer).hand.get(i).known = true;
         }
         newState.players.get(targetPlayer).hand.remove(card);
+        newState.discardedCards.add(card);
         newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
@@ -298,6 +300,7 @@ public class Card {
     private State ThiefEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        newState.discardedCards.add(removed);
         newState.players.get(targetPlayer).score -= removed.guestReward;
         newState.turnPlayerIndex = newState.getNextPlayer();
 
@@ -314,6 +317,7 @@ public class Card {
     private State YakuzaEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+        newState.discardedCards.add(removed);
 
         int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
         newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));

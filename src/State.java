@@ -30,6 +30,7 @@ public class State {
     State parent;
     ArrayList<State> children;
     Action appliedAction;
+    ArrayList<Card> discardedCards;
 
     /**
      * Main constructor which is applicable only to start game
@@ -59,6 +60,7 @@ public class State {
         }
 
         drawDeck = cards.size();
+        discardedCards = new ArrayList<>();
     }
 
     /**
@@ -82,6 +84,7 @@ public class State {
             children = null;
         this.appliedAction = anotherState.appliedAction;
         this.AIPlayer = anotherState.AIPlayer;
+        this.discardedCards = new ArrayList<>(anotherState.discardedCards);
     }
 
     /**
@@ -118,7 +121,9 @@ public class State {
 
     public void updateGeishaEffect(){
         Player turnPlayer = this.players.get(turnPlayerIndex);
-        turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
+        if(turnPlayer.geisha.name != GeishasName.Akenohoshi) {
+            turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
+        }
     }
 
     /**

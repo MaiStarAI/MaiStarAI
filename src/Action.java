@@ -236,9 +236,11 @@ public class Action {
 
     private void applyIntroduce(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
+        state.discardedCards.add(firstCard);
         turnPlayer.hand.add(state.getRandomCard());
         if (turnPlayer.hand.size() > 1) {
             turnPlayer.hand.remove(secondCard);
+            state.discardedCards.add(secondCard);
             turnPlayer.hand.add(state.getRandomCard());
         }
 
