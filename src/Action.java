@@ -62,9 +62,9 @@ public class Action {
     /**
      * Constructor to create action Exchange or Introduce
      * @param name: name of action (Exchange or Introduce)
-     * @param firstCard: in case of Exchange: card from player's advertisers which we want to exchange
+     * @param firstCard: in case of Exchange: card from player's hand which we want to add as a new advertiser
      *                   in case of Introduce: card from player's hand which we want to remove
-     * @param secondCard: in case of Exchange: card from player's hand which we want to add as a new advertiser
+     * @param secondCard: in case of Exchange: card from player's advertisers which we want to exchange
      *                    in case of Introduce: card from player's hand which we want to remove
      */
 
