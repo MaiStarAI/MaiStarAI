@@ -90,9 +90,6 @@ public class State {
      */
 
     public int getNextPlayer(){
-        Player turnPlayer = this.players.get(turnPlayerIndex);
-        turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
-
         if(turnPlayerIndex == players.size() - 1){
             return 0;
         }
@@ -101,15 +98,27 @@ public class State {
         }
     }
 
-    public int getPreviousPlayer(){
-        Player turnPlayer = this.players.get(turnPlayerIndex);
+    /**
+     * Method to get previous turnPlayer
+     * @return index of previous turnPlayer
+     */
 
+    public int getPreviousPlayer(){
         if(turnPlayerIndex == 0){
             return players.size() - 1;
         }
         else{
             return turnPlayerIndex - 1;
         }
+    }
+
+    /**
+     * Method to update number of times when player can apply geisha effect
+     */
+
+    public void updateGeishaEffect(){
+        Player turnPlayer = this.players.get(turnPlayerIndex);
+        turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
     }
 
     /**
