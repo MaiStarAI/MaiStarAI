@@ -29,7 +29,7 @@ public class Geisha {
 
     Geisha(Geisha anotherGeisha) {
         this.name = anotherGeisha.name;
-        this.abilities = anotherGeisha.abilities;
+        this.abilities = new HashMap<>(anotherGeisha.abilities);
         this.numberEffect = anotherGeisha.numberEffect;
     }
 
@@ -84,7 +84,7 @@ public class Geisha {
         state.appliedAction.geishaAbility = ability;
         state.appliedAction.geishaTargetPlayer = targetPlayer;
         state.turnPlayerIndex = state.getPreviousPlayer();
-        State returnState = null;
+        State returnState;
 
         switch (this.name) {
             case Natsumi:
@@ -104,9 +104,11 @@ public class Geisha {
                 break;
             default:
                 System.out.println("Error: there is no ability for such geisha or no such geisha");
-                returnState = null;
+                returnState = state;
         }
-        returnState.turnPlayerIndex = returnState.getNextPlayer();
+        if (returnState != null) {
+            returnState.turnPlayerIndex = returnState.getNextPlayer();
+        }
 
         return returnState;
     }
