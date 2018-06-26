@@ -71,11 +71,11 @@ public class Main {
         }
         ArrayList<Player> players = new ArrayList<>();
 
-        Player AI_ISMCTS_1 = new Player("ISMCTS_1", mcts_1_cards, g_4);
+        Player AI_ISMCTS_1 = new Player("ISMCTS_1", mcts_1_cards, g_2);
         AI_ISMCTS_1.setType(PlayerType.ISMSTS);
         players.add(AI_ISMCTS_1);
 
-        Player AI_Random_1 = new Player("RANDOM_1", random_1_cards, g_2);
+        Player AI_Random_1 = new Player("RANDOM_1", random_1_cards, g_1);
         AI_Random_1.setType(PlayerType.RandomAI);
         players.add(AI_Random_1);
 
@@ -83,7 +83,7 @@ public class Main {
         AI_ISMCTS_2.setType(PlayerType.ISMSTS);
         players.add(AI_ISMCTS_2);*/
 
-        Player AI_Random_2 = new Player("RANDOM_2", random_2_cards, g_1);
+        Player AI_Random_2 = new Player("RANDOM_2", random_2_cards, g_6);
         AI_Random_2.setType(PlayerType.RandomAI);
         players.add(AI_Random_2);
 
@@ -129,6 +129,21 @@ public class Main {
             switch (initial_state.players.get(initial_state.turnPlayerIndex).type) {
                 case ISMSTS: {
                     initial_state.AIPlayer = initial_state.turnPlayerIndex;
+                    if (initial_state.players.get(initial_state.turnPlayerIndex).geisha.name == GeishasName.Akenohoshi) {
+                        int blue = 3;
+                        int red = 3;
+                        int green = 3;
+                        for (Card c : initial_state.players.get(initial_state.turnPlayerIndex).advertisers) {
+                            switch (c.color) {
+                                case Blue: { red += c.advReward.get(Colors.Blue); break; }
+                                case Red: { red += c.advReward.get(Colors.Red); break; }
+                                case Green: { red += c.advReward.get(Colors.Green); break; }
+                            }
+                        }
+                        initial_state.players.get(initial_state.turnPlayerIndex).geisha.abilities.put(Colors.Blue, blue);
+                        initial_state.players.get(initial_state.turnPlayerIndex).geisha.abilities.put(Colors.Red, red);
+                        initial_state.players.get(initial_state.turnPlayerIndex).geisha.abilities.put(Colors.Green, green);
+                    }
                     initial_state = ISMCTS_iter(new State(initial_state)).applyAction(new State(initial_state));
                     initial_state.parent = null;
                     initial_state.children = null;
@@ -726,25 +741,7 @@ public class Main {
                 for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
                     Action advertiser = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
                     if (advertiser.isApplicableAction(s)) {
-                        /* Akenohoshi */
-                        if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Akenohoshi)) {
-                            if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
-                                    s,
-                                    null,
-                                    true
-                            )) {
-                                advertiser.usedGeisha = true;
-                                advertiser.firstGeishaEffect = true;
-                                advertiser.geishaAbility = Colors.Blue;
-                                list.add(advertiser.applyAction(s));
-                                advertiser.geishaAbility = Colors.Red;
-                                list.add(advertiser.applyAction(s));
-                                advertiser.geishaAbility = Colors.Green;
-                                list.add(advertiser.applyAction(s));
-                            }
-                        } else {
-                            list.add(advertiser.applyAction(s));
-                        }
+                        list.add(advertiser.applyAction(s));
                     }
                 }
             }
