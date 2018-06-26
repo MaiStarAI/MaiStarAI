@@ -1,0 +1,193 @@
+.anchor {
+    -fx-background-image: url('file:images/background.jpg');
+    -fx-background-size: cover;
+}
+.vBoxLayout {
+    -fx-background-color: linear-gradient(#DA6346, #E2B978);
+}
+.handGrid {
+    -fx-border-style: solid inside;
+    -fx-border-width: 4;
+    -fx-border-insets: 5;
+    -fx-border-radius: 5;
+    -fx-border-color: #C0392B;
+}
+.scroll-pane {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+}
+.card:hover {
+    -fx-cursor: hand;
+    -fx-scale-y: 1.06;
+    -fx-scale-x: 1.06;
+}
+.card:pressed {
+    -fx-scale-y: 0.99;
+    -fx-scale-x: 0.99;
+    -fx-border-style: solid outside;
+    -fx-border-color: gold;
+    -fx-border-width: 2.5;
+    -fx-border-radius: 7.5;
+}
+.card:focused{
+    -fx-scale-y: 1.06;
+    -fx-scale-x: 1.06;
+}
+.card.selected {
+    -fx-scale-y: 0.99;
+    -fx-scale-x: 0.99;
+    -fx-border-style: solid outside;
+    -fx-border-color: gold;
+    -fx-border-width: 2.5;
+    -fx-border-radius: 7.5;
+}
+#heapImage:hover {
+    -fx-cursor: hand;
+    -fx-scale-y: 1.05;
+    -fx-scale-x: 1.05;
+}
+#heapImage:pressed {
+    -fx-scale-y: 0.98;
+    -fx-scale-x: 0.98;
+}
+.actionButton {
+    -fx-min-width: 95;
+    -fx-display-caret: inline-block;
+    -fx-text-fill: white;
+    -fx-text-alignment: center;
+    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(#C0392B, #C49D5C);
+}
+.actionButton:hover {
+    -fx-cursor: hand;
+    -fx-border-style: solid outside;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 5;
+    -fx-border-color: #C0392B;
+}
+.actionButton:pressed {
+    -fx-scale-y: 0.95;
+    -fx-scale-x: 0.95;
+}
+.actionButton:focused {
+    -fx-border-style: solid outside;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 5;
+    -fx-border-color: #C0392B;
+}
+.menuButton {
+    -fx-min-height: 50;
+    -fx-display-caret: inline-block;
+    -fx-text-fill: white;
+    -fx-text-alignment: center;
+    -fx-font-weight: bold;
+    -fx-background-color: linear-gradient(#C0392B, #C49D5C);
+}
+.menuButton:hover {
+    -fx-cursor: hand;
+    -fx-border-style: solid outside;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 5;
+    -fx-border-color: #C0392B;
+}
+.menuButton:pressed {
+    -fx-scale-y: 0.95;
+    -fx-scale-x: 0.95;
+}
+.menuButton:focused {
+    -fx-border-style: solid outside;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 5;
+    -fx-border-color: #C0392B;
+}
+.scoreLabel {
+    -fx-font-weight: bold;
+    -fx-font-size: 14;
+    -fx-text-fill: white;
+    -fx-border-style: solid inside;
+    -fx-border-color: white;
+    -fx-pref-height: 42;
+    -fx-pref-width: 42;
+    -fx-border-width: 2;
+    -fx-border-insets: 3;
+    -fx-border-radius: 50px;
+}
+.playerLabel {
+    -fx-font-weight: bold;
+    -fx-font-size: 14;
+}
+.player1Label {
+    -fx-font-weight: bold;
+    -fx-font-size: 18;
+    -fx-text-fill: #3c3946;
+}
+.statNameLabel {
+    -fx-font-weight: bold;
+    -fx-text-fill: #3c3946;
+}
+.statLabel {
+    -fx-font-weight: bold;
+    -fx-font-size: 13;
+    -fx-text-fill: #3c3946;
+    -fx-border-style: solid inside;
+    -fx-border-color: #3c3946;
+    -fx-pref-height: 33;
+    -fx-pref-width: 33;
+    -fx-border-width: 2;
+    -fx-border-insets: 3;
+    -fx-border-radius: 50px;
+}
+.playerCell {
+    -fx-background-color: linear-gradient(#A65230, #C49D5C);
+    -fx-background-radius: 10;
+    -fx-border-style: solid;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 10;
+    -fx-border-color: #3c3946;
+}
+.playerCell:hover {
+    -fx-cursor: hand;
+    -fx-border-width: 3;
+    -fx-background-insets: 0, 1 1 0 0 ;
+}
+.playerCell:pressed {
+    -fx-scale-x: 0.96;
+    -fx-scale-y: 0.96;
+}
+.playerCell.selected {
+    -fx-border-color: #DBD28F;
+}
+.gridCell {
+    -fx-border-style: solid OUTSIDE;
+    -fx-border-width: 1.5;
+    -fx-border-radius: 10;
+    -fx-border-color: #3c3946;
+    -fx-background-insets: 0, 0 0 1 1 ;
+}
+.pileBox {
+    -fx-background-color: null;
+}
+.pileLabel {
+    -fx-font-family: 'Handwrite';
+    -fx-font-weight: bold;
+    -fx-font-size: 17px;
+    -fx-text-fill: #3c3946;
+}
+.pileNumber {
+    -fx-alignment: center;
+    -fx-font-weight: bold;
+    -fx-font-size: 24px;
+    -fx-text-fill: #3c3946;
+    -fx-background-radius: 50%;
+    -fx-border-style: solid outside;
+    -fx-border-color: #3c3946/*linear-gradient(#C0392B 66%, #C49D5C)*/;
+    -fx-pref-height: 47;
+    -fx-pref-width: 47;
+    -fx-border-width: 2.5;
+    -fx-border-insets: 3;
+    -fx-border-radius: 50px;
+}
+@font-face {
+    font-family: Handwrite;
+    src: url('file:fonts/hzhandwrite.ttf');
+}
