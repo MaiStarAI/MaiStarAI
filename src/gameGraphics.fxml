@@ -236,7 +236,7 @@
          <children>
             <ButtonBar buttonMinWidth="65.0" prefHeight="40.0" prefWidth="200.0">
               <buttons>
-                  <Button fx:id="geishaButton" mnemonicParsing="false" styleClass="actionButton" text="Play Geisha" />
+                  <Button fx:id="geishaButton" mnemonicParsing="false" styleClass="actionButton" text="Use Geisha" />
                 <Button fx:id="playGuestButton" mnemonicParsing="false" styleClass="actionButton" text="Play as Guest" />
                   <Button fx:id="advertiseButton" mnemonicParsing="false" styleClass="actionButton" text="Advertise" />
                   <Button fx:id="introduceButton" mnemonicParsing="false" styleClass="actionButton" text="Introduce" />

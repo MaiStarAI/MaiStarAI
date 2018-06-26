@@ -612,7 +612,7 @@ public class SetupView extends Application {
             if (!loadHandsToArrays()) return;
             for (int i = 0; i < players.size(); i++) {
                 if (playerCards.get(i).size() == 0) { //todo change, just load random cards, leave geishas
-                    randomizeHands(i);
+                    randomizeHands(i, true);
                     /*Alert alert = new Alert(Alert.AlertType.ERROR,
                             "You cannot have empty hands for players! That would violate the rules of the game." +
                                     "\n\nPlease, ensure you have at least one card apart from Geisha in each of your hands.");
@@ -620,6 +620,7 @@ public class SetupView extends Application {
                     return;*/
                 }
             }
+            loadHandsToArrays();
 
             play();
         });
@@ -641,7 +642,6 @@ public class SetupView extends Application {
         HBox stateButtons = new HBox(20);
         stateButtons.setAlignment(Pos.CENTER);
         stateButtons.getChildren().addAll(clearHandsButton, startButton, randomizeHandsButton);
-        //box.getChildren().addcenterBox);
         box.getChildren().add(stateButtons);
 
         scene = new Scene(box, windowWidth, windowHeight);
@@ -1351,7 +1351,6 @@ public class SetupView extends Application {
                 playerCards.add(0, new ArrayList<>());
                 for (int k = 0; k < 5; k++)
                     playerCards.get(0).add(cardsRemaining.remove(new Random().nextInt(cardsRemaining.size())));
-
             }
 
             this.players.clear();

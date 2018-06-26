@@ -57,7 +57,7 @@ public class Card {
             case Ronin: { return true; }
             case Courtier: { return card.color == this.color &&
                     card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
-            case Doctor: { return true; }
+            case Doctor: { return state.players.get(targetPlayer).hand.size() > 0; }
             case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
             case Merchant: { return state.drawDeck > 1; }
             case Yakuza: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }

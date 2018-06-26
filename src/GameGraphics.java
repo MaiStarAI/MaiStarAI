@@ -9,7 +9,10 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.effect.Bloom;
 import javafx.scene.effect.Effect;
+import javafx.scene.effect.GaussianBlur;
+import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -63,7 +66,7 @@ public class GameGraphics {
 
     public ArrayList</*ImageView*/StackPane > selection;
 
-    private int actionsTakenCount;
+    private boolean actionTaken;
 
     /** Automatically accessed on successful .fxml load */
     @FXML
@@ -86,13 +89,14 @@ public class GameGraphics {
     }
 
     //todo action -> do actions multiple times
-    //todo disable all actions when its not players turn, the player can still look at cards, heap, score sheet, menu, tables. Do not stop the game when it's not your turn?
-    //todo update every table as players take turns
+    //todo disable all actions when its not players turn. Do not stop the game when it's not your turn? --thread? low priority
     //todo turnNumber, roundNumber? --See round number in scoreSheet
+    //todo update every table as players take turns
     //todo let player know what actions other players took
     //todo AI progress
-    //todo dialogue panes - apply card effect, use ronin,
-    //todo play geisha, end turn
+    //todo dialogue panes - apply card effect, use ronin/kanryou, sumo wrestler hand-peek, target player
+    //todo use effect, play geisha, end turn
+    //todo
     //todo dynamic update?
 
     /** Creates and updates player tables, access only once */
@@ -122,9 +126,9 @@ public class GameGraphics {
             }
 
             ColumnConstraints ccg = new ColumnConstraints();
-            ccg.setMinWidth(105); //10
-            ccg.setMaxWidth(105); //100
-            ccg.setPrefWidth(105);
+            ccg.setMinWidth(100);
+            ccg.setMaxWidth(120);
+            ccg.setPrefWidth(110);
             ccg.setHgrow(Priority.SOMETIMES);
             ccg.setHalignment(HPos.CENTER); //null
             tables[i].getColumnConstraints().add(ccg);
@@ -174,7 +178,7 @@ public class GameGraphics {
     public void updateAllGraphics() {
         fillHand();
         fillTables();
-        actionsTakenCount = 0; // todo leave if the Fill functions are called only once
+        actionTaken = false; // todo leave if the Fill functions are called only once
         updateLightGraphics();
         noButtonsWithoutRepresentation();
     }
@@ -209,7 +213,7 @@ public class GameGraphics {
         }
 
         //todo delete this SHIT
-        /*for (int i = 0; i < 2; i++) {
+        /*for (int i = 0; i < 10; i++) {
             Card shit = GameView.state.getRandomCard();
             GameView.state.players.get(GameView.playerIndex).advertisers.add(shit);
             addToTable(tables[GameView.playerIndex], GameView.playerIndex,
@@ -226,7 +230,7 @@ public class GameGraphics {
 
     /** Update the number on the Discard Pile */
     public void updateDiscard() {
-        heapLabel.setText(75-GameView.state.drawDeck + ""); //discardedCards.size() todo
+        heapLabel.setText(GameView.state.discardedCards.size() + "");
     }
 
     /** Update the number on the Score Sheet button */
@@ -237,7 +241,7 @@ public class GameGraphics {
     /** Update scores and hand numbers of players on the Player Card grid */
     public void updatePlayerGrid() {
         for (int i = 0; i < GameView.state.players.size(); i++) {
-            cardCounts[i].setText(GameView.state.players.get(i).cardsNumber+"");
+            cardCounts[i].setText(GameView.state.players.get(i).hand.size()+"");
             scoreCounts[i].setText(GameView.state.players.get(i).score+"");
         }
 
@@ -245,7 +249,7 @@ public class GameGraphics {
     }
 
     /** This is where selection magic happens */
-    private void onSelection(StackPane card, int index) {
+    private void onSelection(StackPane card) {
         if (selection.contains(card)) {
             selection.remove(selection.indexOf(card)).getStyleClass().remove("selected");
         } else {
@@ -255,7 +259,9 @@ public class GameGraphics {
 
             selection.add(card);
 
+            //Effect effect = new javafx.scene.effect.Lighting();
             selection.get(selection.size() - 1).getStyleClass().add("selected");
+            //selection.get(selection.size() - 1).setEffect(effect);
         }
 
         /* de-select all, select available buttons, if it's player's turn */
@@ -264,9 +270,6 @@ public class GameGraphics {
 
     /** Set buttons to be disabled, except for Search and Geisha. Use if selection is empty. */
     private void noButtonsWithoutRepresentation() {
-        /*for (int i = selection.size() - 1; i >= 0; i--) {
-            selection.remove(i).getStyleClass().remove("selected");
-        }*/
 
         playGuestButton.setDisable(true);
         advertiseButton.setDisable(true);
@@ -275,21 +278,29 @@ public class GameGraphics {
         searchButton.setDisable(true);
         geishaButton.setDisable(true);
 
+        //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
+
         turnCount = GameView.playerIndex; //todo delete
         if (turnCount == GameView.playerIndex) {
+
+            /* geisha */
+            isGeishaApplicable(null);
+
             /* end turn */
-            if (actionsTakenCount != 0) endTurnButton.setDisable(false);
+            if (actionTaken) {
+                endTurnButton.setDisable(false);
+                endTurnButton.setOnAction(e -> {
+
+                    //todo
+                });
+                return;
+            }
 
             /* search */
             if (GameView.state.drawDeck > 0) {
                 searchButton.setDisable(false);
                 searchButton.setOnAction(e -> executeAction(new Action())); // todo
             }
-
-            /* geisha */
-            isGeishaApplicable();
-
-            //Action action;
 
             if (selection.size() == 1) {
                 if (handGrid.getChildren().contains(selection.get(0))) {
@@ -298,6 +309,9 @@ public class GameGraphics {
                     if (actionGuest.isApplicableAction(GameView.state)) {
                         playGuestButton.setDisable(false);
                         playGuestButton.setOnAction(e -> {
+                            effectWindow(actionGuest.firstCard);
+                            if (effectAnswer == -1) return;
+
                             executeAction(actionGuest);
                             //todo
                         });
@@ -371,8 +385,10 @@ public class GameGraphics {
     private void isGeishaApplicable(Card card) {
         if (!geishaButton.isVisible()) return;
 
+        //if (card == null && GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momiji)) return;
+
         if (GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(
-                GameView.state, card, actionsTakenCount == 0)) {
+                GameView.state, card, turnCount == 0)) {
             geishaButton.setDisable(false);
             geishaButton.setOnAction(e -> {
                 //todo
@@ -380,29 +396,372 @@ public class GameGraphics {
         }
     }
 
-    private void isGeishaApplicable() {
-        if (!geishaButton.isVisible()) return;
-
-        if (!GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momiji)) {
-            if (GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(
-                    GameView.state, null, actionsTakenCount == 0)) {
-                geishaButton.setDisable(false);
-                geishaButton.setOnAction(e -> {
-                    //todo
-                });
-            }
-        }
-    }
-
     private void executeAction(Action action) {
         GameView.state = new State(action.applyAction(GameView.state));
+        //actionTaken = true;
         clearSelection();
         fillHand();
         fillTables();
         updateLightGraphics();
         noButtonsWithoutRepresentation();
-        actionsTakenCount++;
-        endTurnButton.setDisable(false);
+    }
+
+    private void effectWindow(Card card) {
+        //todo target, ok, do not use effect, cancel
+        effectAnswer = -1;
+
+        switch (card.name) {
+            case Daimyo:
+            case Monk:
+            case Shogun: confirmEffect(); return; //do you want to use this guest's effect?
+            case Merchant:
+            case Scholar:
+            case Thief:
+            case Yakuza:
+            case Samurai:
+            case Emissary: targetEffect(); return; // pick a target player
+            case Sumo_Wrestler: targetEffect(); sumoEffect(); return; // look at target player's hand and discard one card
+            case Courtier: //return; // pick your card
+            case Okaasan:
+            case Doctor: haveEffect(); return; // take an action afterwards
+            case Ronin: cancelEffect(); return; // he protec
+            //District_Kanryou
+            case Actor: effectAnswer = 1; return;
+        }
+    }
+
+    private int effectAnswer;
+    private void confirmEffect() {
+        Stage window = new Stage();
+        window.setResizable(false);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Confirm Effect");
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER_LEFT);
+
+        Label message = new Label("Do you want to use this guest's effect?");
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+        message.setPadding(new Insets(0, 0, 0, 20));
+
+        Button buttonOK = new Button("Yes");
+        buttonOK.setMnemonicParsing(true);
+        buttonOK.getStyleClass().add("actionButton");
+        buttonOK.setOnAction(e -> {
+            effectAnswer = 1;
+            window.close();
+        });
+
+        Button buttonNo = new Button("No");
+        buttonNo.setMnemonicParsing(true);
+        buttonNo.getStyleClass().add("actionButton");
+        buttonNo.setOnAction(e -> {
+            effectAnswer = 0;
+            window.close();
+        });
+
+        Button buttonCancel = new Button("Cancel");
+        buttonCancel.setMnemonicParsing(true);
+        buttonCancel.getStyleClass().add("actionButton");
+        buttonCancel.setOnAction(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        ButtonBar buttons = new ButtonBar();
+        buttons.setPadding(new Insets(0, 20,0,0));
+        buttons.getButtons().addAll(buttonOK, buttonNo, buttonCancel);
+
+        layout.getChildren().addAll(message, buttons);
+
+        Scene scene = new Scene(layout, 360, 130);
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    //todo make a variable for checking additional turn
+    private void haveEffect() {
+        Stage window = new Stage();
+        window.setResizable(false);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Guest Effect");
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER_LEFT);
+
+        Label message = new Label("You can now use this guest's effect.");
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+        message.setPadding(new Insets(0, 0, 0, 20));
+
+        Button buttonOK = new Button("OK");
+        buttonOK.setMnemonicParsing(true);
+        buttonOK.getStyleClass().add("actionButton");
+        buttonOK.setOnAction(e -> {
+            effectAnswer = 1;
+            window.close();
+        });
+
+        Button buttonCancel = new Button("Cancel");
+        buttonCancel.setMnemonicParsing(true);
+        buttonCancel.getStyleClass().add("actionButton");
+        buttonCancel.setOnAction(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        ButtonBar buttons = new ButtonBar();
+        buttons.setPadding(new Insets(0, 20,0,0));
+        buttons.getButtons().addAll(buttonOK, buttonCancel);
+
+        layout.getChildren().addAll(message, buttons);
+
+        Scene scene = new Scene(layout, 360, 130);
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    //todo sourcePlayerName, cardName, effect
+    private void cancelEffect() {
+        Stage window = new Stage();
+        window.setResizable(false);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Cancel Effect");
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER_LEFT);
+
+        Label message = new Label(GameView.state.players.get(GameView.state.turnPlayerIndex).name + " wants to use their effect on you."); //todo
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+        message.setPadding(new Insets(0, 0, 0, 20));
+
+        Button button1 = new Button("Use Ronin");
+        button1.setMnemonicParsing(true);
+        //button1.setManaged(false); todo if has the card on table
+        button1.getStyleClass().add("actionButton");
+        button1.setOnAction(e -> {
+            effectAnswer = 1;
+            window.close();
+        });
+
+        Button button2 = new Button("Use District Kanryou");
+        button2.setMnemonicParsing(true);
+        //button2.setManaged(false); todo if has the card in hand
+        button2.getStyleClass().add("actionButton");
+        button2.setOnAction(e -> {
+            effectAnswer = 2;
+            window.close();
+        });
+
+        Button buttonCancel = new Button("Do Nothing");
+        buttonCancel.setMnemonicParsing(true);
+        buttonCancel.getStyleClass().add("actionButton");
+        buttonCancel.setOnAction(e -> {
+            effectAnswer = 0;
+            window.close();
+        });
+
+        ButtonBar buttons = new ButtonBar();
+        buttons.setPadding(new Insets(0, 20,0,0));
+        buttons.getButtons().addAll(button1, button2, buttonCancel);
+
+        layout.getChildren().addAll(message, buttons);
+
+        Scene scene = new Scene(layout, 500, 130);
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    private void targetEffect() {
+        Stage window = new Stage();
+        //window.setResizable(false);
+        window.setMinWidth(720);
+        window.setMinHeight(210 + 70 * (GameView.state.players.size() > 3 ? 1 : 0));
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Pick Target for Effect");
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER);
+
+        Label message = new Label("Pick a target for your guest's effect."); //todo
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+        message.setPadding(new Insets(0, 0, 0, 20));
+
+        GridPane playerGrid = new GridPane();
+        playerGrid.setAlignment(Pos.CENTER);
+        playerGrid.getRowConstraints().add(new RowConstraints(70));
+        if (GameView.state.players.size() > 3) playerGrid.getRowConstraints().add(new RowConstraints(70));
+
+        Button[] player = new Button[GameView.state.players.size()];
+
+        for (int j = 0; j < 3; j++) {
+            ColumnConstraints ccRounds = new ColumnConstraints(200);
+            ccRounds.setHalignment(HPos.CENTER);
+            playerGrid.getColumnConstraints().add(ccRounds);
+
+            for (int i = 0; i < 2; i++) {
+                int k = j+i*3;
+                if (k >= GameView.state.players.size()) break;
+                player[k] = new Button(GameView.state.players.get(k).name);
+                player[k].getStyleClass().add("menuButton");
+                player[k].setMinWidth(190);
+                player[k].setMaxWidth(190);
+
+                player[k].setOnMouseClicked(e -> {
+                    if (effectAnswer != -1) player[effectAnswer].getStyleClass().remove("selected");
+                    effectAnswer = k;
+                    player[effectAnswer].getStyleClass().add("selected");
+                });
+
+                playerGrid.add(player[k], j, i);
+            }
+        }
+
+        effectAnswer = 0;
+        player[effectAnswer].getStyleClass().add("selected");
+
+        Button buttonOK = new Button("Apply");
+        buttonOK.setMnemonicParsing(true);
+        buttonOK.getStyleClass().add("actionButton");
+        buttonOK.setOnAction(e -> {
+            //effectAnswer = ; todo
+            window.close();
+        });
+
+        Button buttonNo = new Button("Do Not Apply");
+        buttonNo.setMnemonicParsing(true);
+        //button2.setManaged(false); todo if has the card in hand
+        buttonNo.getStyleClass().add("actionButton");
+        buttonNo.setOnAction(e -> {
+            effectAnswer = GameView.state.players.size();
+            window.close();
+        });
+
+        Button buttonCancel = new Button("Cancel");
+        buttonCancel.setMnemonicParsing(true);
+        buttonCancel.getStyleClass().add("actionButton");
+        buttonCancel.setOnAction(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        ButtonBar buttons = new ButtonBar();
+        buttons.setPadding(new Insets(0, 20,0,0));
+        buttons.getButtons().addAll(buttonOK, buttonNo, buttonCancel);
+
+        layout.getChildren().addAll(message, playerGrid, buttons);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    private void sumoEffect() {
+        Stage window = new Stage();
+        //window.setResizable(false);
+        window.setMinWidth(860);
+        window.setMinHeight(420);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Pick Target for Effect");
+
+        VBox layout = new VBox(7);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER);
+
+        Label message = new Label("Pick a card to discard from " + GameView.state.players.get(effectAnswer).name); //todo
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+        message.setPadding(new Insets(0, 0, 0, 20));
+
+        //fitHeight="300.0" fitWidth="225.0" preserveRatio
+        GridPane playerGrid = new GridPane();
+        //playerGrid.setPrefTileHeight(300);
+        playerGrid.getRowConstraints().add(new RowConstraints(300));
+        playerGrid.setPadding(new Insets(20));
+        playerGrid.getStyleClass().add("table");
+        playerGrid.setAlignment(Pos.CENTER_LEFT);
+        playerGrid.setPrefHeight(300.0);
+        playerGrid.setPrefWidth(600.0);
+
+        for (int i = 0; i < GameView.state.players.get(effectAnswer).hand.size(); i++) {
+            Card cardCard = GameView.state.players.get(effectAnswer).hand.get(i);
+            ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
+            img.setFitWidth(200);
+            img.setFitHeight(300);
+            img.setPickOnBounds(true);
+            img.setPreserveRatio(true);
+
+            StackPane card = new StackPane();
+            card.setMaxHeight(img.getFitHeight());
+            card.setMaxWidth(img.getFitHeight() * 0.7114);
+            card.getChildren().add(img);
+            card.getStyleClass().add("card");
+
+            ColumnConstraints cc = new ColumnConstraints();
+            cc.setHgrow(Priority.SOMETIMES);
+            cc.setHalignment(HPos.LEFT);
+            cc.setMaxWidth(200);
+            cc.setMinWidth(5);
+            playerGrid.getColumnConstraints().add(cc);
+
+            int k = i;
+            card.setOnMouseEntered(e -> {
+                playerGrid.getColumnConstraints().get(k).setMinWidth(200);
+                playerGrid.getColumnConstraints().get(k).setHgrow(Priority.NEVER);
+            });
+
+            card.setOnMouseExited(e -> {
+                playerGrid.getColumnConstraints().get(k).setMinWidth(5);
+                playerGrid.getColumnConstraints().get(k).setHgrow(Priority.SOMETIMES);
+            });
+
+            card.setOnMouseClicked(e -> {
+                playerGrid.getChildren().get(effectAnswer).getStyleClass().remove("target");
+                effectAnswer = k;
+                playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
+            });
+
+            playerGrid.add(card, i, 0);
+        }
+
+        //playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
+
+        effectAnswer = 0;
+        playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
+
+        Button buttonOK = new Button("Discard");
+        buttonOK.setMnemonicParsing(true);
+        buttonOK.getStyleClass().add("actionButton");
+        buttonOK.setOnAction(e -> {
+            //effectAnswer = ; todo
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
+            window.close();
+        });
+
+        ButtonBar buttons = new ButtonBar();
+        buttons.setPadding(new Insets(0, 20, 0, 0));
+        buttons.getButtons().addAll(buttonOK);
+
+        layout.getChildren().addAll(message, playerGrid, buttons);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
     }
 
     /**
@@ -449,14 +808,13 @@ public class GameGraphics {
         card.getChildren().add(img);
         card.getStyleClass().add("card");
 
-        //todo there be selection code, perhaps, place it in another function
         if (index != -1 && (isHandGrid || table.equals(tables[GameView.playerIndex]) && !isGuest))
             card.setOnMouseClicked(e -> {
                 if (e.getClickCount() > 1) {
                     clearSelection();
                     //removeFromTable((GridPane)card.getParent(), card);
                     noButtonsWithoutRepresentation();
-                } else onSelection(card, GridPane.getColumnIndex(card) - (isHandGrid ? 0 : 1));
+                } else onSelection(card);
             });
 
         card.setOnMouseEntered(ev -> setShowcaseCard(ev));
@@ -466,7 +824,7 @@ public class GameGraphics {
         if (table.getColumnConstraints().size() <= index + (isHandGrid ? 0 : 1)) {//+1 for the first column (geisha), +1 for size
             ColumnConstraints cc = new ColumnConstraints();
             cc.setHgrow(Priority.SOMETIMES);
-            cc.setHalignment(HPos.CENTER);
+            cc.setHalignment(HPos.LEFT);
             cc.setMaxWidth(100);
             cc.setMinWidth(5);
             if (isHandGrid) {
@@ -579,6 +937,7 @@ public class GameGraphics {
     int turnCount = 0; // todo delete, make access to State turn count
     @FXML
     public void shiftPlayerGrid() {
+        //for (int i = 0; i < playerTurn - current; i++) todo
         GridPane.setColumnIndex(playerGrid.getChildren().get(turnCount), GameView.state.players.size()-1);
         //playerGrid.getChildren().get(turnCount).getStyleClass().remove("selected");
 
@@ -593,7 +952,8 @@ public class GameGraphics {
             }
         }
 
-        if (++turnCount == GameView.state.players.size()) turnCount = 0;//todo delete, turnCount is dealt with in the state node
+        turnCount++;
+        if (turnCount == GameView.state.players.size()) turnCount = 0;//todo delete, turnCount is dealt with in the state node
         //playerGrid.getChildren().get(turnCount).getStyleClass().add("selected");
     }
 
@@ -641,7 +1001,6 @@ public class GameGraphics {
                     ButtonType.YES, ButtonType.NO);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
-                //todo
                 window.close();
 
                 GameView gameView = new GameView();
@@ -663,7 +1022,6 @@ public class GameGraphics {
                     ButtonType.YES, ButtonType.NO);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
-                //todo
                 window.close();
 
                 try {
@@ -733,7 +1091,7 @@ public class GameGraphics {
             cc.setHalignment(HPos.CENTER);
             scoreSheet.getColumnConstraints().add(cc);
 
-            Label label = new Label(GameView.state.players.get(i).name); //todo actual Player class (.getName)
+            Label label = new Label(GameView.state.players.get(i).name);
             label.setFont(Font.font("", FontWeight.BOLD, 12));
             scoreSheet.add(label, i+1, 0);
 
@@ -840,10 +1198,7 @@ public class GameGraphics {
         window.setMinWidth(940);
         window.setMinHeight(660);
 
-        ArrayList<String> heap = new ArrayList<>(); //todo delete
-        heap.addAll(Arrays.asList("red_actor", "red_emissary", "black_monk", "blue_thief", "red_doctor", "green_courtier", "blue_merchant", "green_merchant",
-                "red_actor", "red_emissary", "black_monk", "blue_thief", "red_doctor", "green_courtier", "blue_merchant", "green_merchant",
-                "red_actor", "red_emissary", "black_monk", "blue_thief", "red_doctor", "green_courtier", "blue_merchant", "green_merchant"));
+        ArrayList<Card> heap = GameView.state.discardedCards;
 
         GridPane discardGrid = new GridPane();
         discardGrid.setPadding(new Insets(25));
@@ -860,7 +1215,8 @@ public class GameGraphics {
         for (int i = 0; i < Math.ceil(1.0 * heap.size() / row); i++) { //actual heap.size()
             discardGrid.getRowConstraints().add(new RowConstraints(210));
             for (int j = 0; j < row && j+i*row < heap.size(); j++) {
-                ImageView card = getCardImage(heap.get(i*row+j)); //.name
+                String cardName = heap.get(i*row+j).color + "_" + heap.get(i*row+j).name.toString().replace(" ", "_");
+                ImageView card = getCardImage(cardName);
 
                 card.setFitWidth(200);
                 card.setFitHeight(200);
@@ -889,9 +1245,18 @@ public class GameGraphics {
 
         VBox layout = new VBox(25);
         layout.getStyleClass().add("vBoxLayout");
-        layout.getChildren().addAll(discardPane, resumeButton);
         layout.setPadding(new Insets(0, 0, 10, 0));
         layout.setAlignment(Pos.CENTER);
+
+        if (heap.size() == 0) {
+            Label label = new Label("The discard pile is empty.");
+            label.setFont(Font.font("", FontWeight.BOLD, 15));
+            layout.getChildren().add(label);
+
+            discardGrid.setManaged(false);
+        }
+
+        layout.getChildren().addAll(discardPane, resumeButton);
 
         Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());

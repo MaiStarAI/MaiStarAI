@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * Class state contains information about game state
@@ -132,7 +133,7 @@ public class State {
      */
 
     public Card getRandomCard(){
-        Card removed = this.cards.remove(0);
+        Card removed = this.cards.remove(new Random().nextInt(cards.size()));
         drawDeck -= 1;
         return removed;
     }

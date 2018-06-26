@@ -26,11 +26,6 @@ public class GameView {
         window = SetupView.window;
         window.setTitle("Mai-Star");
 
-        window.setMinWidth(windowWidth);
-        window.setWidth(windowWidth);
-        window.setMinHeight(windowHeight);
-        window.setHeight(windowHeight);
-
         window.setOnCloseRequest(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to quit?",
                     ButtonType.YES, ButtonType.CANCEL);
@@ -76,6 +71,11 @@ public class GameView {
             root = loader.load();
             GameGraphics gg = loader.getController();
             //gg.playGuestButton.fireEvent(new ActionEvent());
+
+            window.setMinWidth(windowWidth);
+            window.setWidth(windowWidth);
+            window.setMinHeight(windowHeight);
+            window.setHeight(windowHeight);
         } catch (IOException e) {
             System.out.println(e + "\nERROR: couldn't load 'gameGraphics.fxml'");
         } finally {

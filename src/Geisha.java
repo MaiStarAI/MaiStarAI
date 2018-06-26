@@ -52,11 +52,11 @@ public class Geisha {
             case Suzune:
                 return turnPlayer.geishaEffect > 0;
             case Momiji:
-                return first.color == Colors.Red && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
+                return first != null && first.color == Colors.Red && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
             case Akenohoshi:
                 return turnPlayer.geishaEffect > 0;
             case Harukaze:
-                return state.appliedAction.name == ActionsNames.Advertiser
+                return state.appliedAction != null && state.appliedAction.name == ActionsNames.Advertiser
                         && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
             default:
                 //System.out.println("Error: there is no ability for such geisha or no such geisha");
