@@ -14,6 +14,7 @@ public class Action {
     Card effectCard; //Card which used for effect
 
     boolean usedGeisha; //True if used effect of geisha
+    boolean firstGeishaEffect; //True if used effect of geisha
     Card geishaCard1; //Card which used for geisha effect
     Card geishaCard2; //Card which used for geisha effect
     int geishaTargetPlayer; //Targeted player by geisha effect
@@ -34,6 +35,7 @@ public class Action {
         targetPlayer = -1;
         effectCard = null;
         usedGeisha = false;
+        firstGeishaEffect = false;
         geishaCard1 = null;
         geishaCard2 = null;
         geishaTargetPlayer = -1;
@@ -53,6 +55,7 @@ public class Action {
         targetPlayer = -1;
         effectCard = null;
         usedGeisha = false;
+        firstGeishaEffect = false;
         geishaCard1 = null;
         geishaCard2 = null;
         geishaTargetPlayer = -1;
@@ -76,6 +79,7 @@ public class Action {
         targetPlayer = -1;
         effectCard = null;
         usedGeisha = false;
+        firstGeishaEffect = false;
         geishaCard1 = null;
         geishaCard2 = null;
         geishaTargetPlayer = -1;
@@ -94,10 +98,26 @@ public class Action {
         targetPlayer = -1;
         effectCard = null;
         usedGeisha = false;
+        firstGeishaEffect = false;
         geishaCard1 = null;
         geishaCard2 = null;
         geishaTargetPlayer = -1;
         geishaAbility = null;
+    }
+
+    Action(Action another) {
+        name = another.name;
+        if (another.firstCard != null) firstCard = new Card(another.firstCard);
+        if (another.secondCard != null) secondCard = new Card(another.secondCard);
+        usedEffect = another.usedEffect;
+        targetPlayer = another.targetPlayer;
+        if (another.effectCard != null) effectCard = new Card(another.effectCard);
+        usedGeisha = another.usedGeisha;
+        firstGeishaEffect = another.firstGeishaEffect;
+        if (another.geishaCard1 != null) geishaCard1 = new Card(another.geishaCard1);
+        if (another.geishaCard2 != null) geishaCard2 = new Card(another.geishaCard2);
+        geishaTargetPlayer = another.geishaTargetPlayer;
+        geishaAbility = another.geishaAbility;
     }
 
     /**
@@ -114,7 +134,7 @@ public class Action {
         this.targetPlayer = targetPlayer;
         this.effectCard = card;
 
-        if (this.name == ActionsNames.Guest && !usedEffect
+        if (this.name == ActionsNames.Guest && usedEffect
                 && firstCard.isApplicableEffect(state, card, targetPlayer)) {
             state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
             usedEffect = true;
@@ -135,25 +155,132 @@ public class Action {
     public State applyAction(State currentState) {
         State state = new State(currentState);
 
+        if (usedGeisha) {
+            switch (state.players.get(state.turnPlayerIndex).geisha.name) {
+                case Suzune: {
+                    if (firstGeishaEffect && state.players.get(state.turnPlayerIndex).geisha.isApplicableEffect(
+                            state,
+                            geishaCard1,
+                            true
+                    )) {
+                        state = state.players.get(state.turnPlayerIndex).geisha.applyGeisha(
+                                state,
+                                geishaCard1,
+                                null,
+                                false,
+                                null,
+                                true,
+                                -1
+                        );
+                        state.turnPlayerIndex = state.getPreviousPlayer();
+                    }
+                    break;
+                }
+                case Akenohoshi: {
+                    if (state.players.get(state.turnPlayerIndex).geisha.isApplicableEffect(
+                            state,
+                            null,
+                            true
+                    )) {
+                        state = state.players.get(state.turnPlayerIndex).geisha.applyGeisha(
+                                state,
+                                null,
+                                null,
+                                false,
+                                geishaAbility,
+                                true,
+                                -1
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+
         switch (this.name) {
-            case Guest:
+            case Guest: {
                 this.applyGuest(state.players.get(state.turnPlayerIndex));
+                if (usedGeisha &&
+                        state.players.get(state.turnPlayerIndex).geisha.name.equals(GeishasName.Natsumi)) {
+                    if (state.players.get(state.turnPlayerIndex).geisha.isApplicableEffect(
+                            state,
+                            null,
+                            false
+                    )) {
+                        state.players.get(state.turnPlayerIndex).geisha.applyGeisha(
+                                state,
+                                geishaCard1,
+                                null,
+                                usedEffect,
+                                null,
+                                false,
+                                geishaTargetPlayer
+                        );
+                    }
+                } else if (usedGeisha &&
+                        state.players.get(state.turnPlayerIndex).geisha.name.equals(GeishasName.Momiji)) {
+                    applyEffect(state, firstCard, geishaTargetPlayer, true);
+                }
                 break;
-            case Advertiser:
+            }
+            case Advertiser: {
                 this.applyAdvertiser(state, state.players.get(state.turnPlayerIndex));
+                if (usedGeisha &&
+                        state.players.get(state.turnPlayerIndex).geisha.name.equals(GeishasName.Harukaze)) {
+                    if (state.players.get(state.turnPlayerIndex).geisha.isApplicableEffect(
+                            state,
+                            null,
+                            false
+                    )) {
+                        state.players.get(state.turnPlayerIndex).geisha.applyGeisha(
+                                state,
+                                geishaCard1,
+                                geishaCard2,
+                                false,
+                                null,
+                                false,
+                                -1
+                        );
+                    }
+                }
                 break;
-            case Exchange:
+            }
+            case Exchange: {
                 this.applyExchange(state.players.get(state.turnPlayerIndex));
                 break;
-            case Introduce:
+            }
+            case Introduce: {
                 this.applyIntroduce(state, state.players.get(state.turnPlayerIndex));
                 break;
-            case Search:
+            }
+            case Search: {
                 this.applySearch(state, state.players.get(state.turnPlayerIndex));
                 break;
-            default:
-                System.out.println("Error in applyAction: there is no such name of action");
+            }
+            default: {}
+        }
 
+        if (usedGeisha) {
+            switch (state.players.get(state.turnPlayerIndex).geisha.name) {
+                case Suzune: {
+                    if (!firstGeishaEffect && state.players.get(state.turnPlayerIndex).geisha.isApplicableEffect(
+                            state,
+                            null,
+                            false
+                    )) {
+                        state = state.players.get(state.turnPlayerIndex).geisha.applyGeisha(
+                                state,
+                                geishaCard1,
+                                null,
+                                false,
+                                null,
+                                false,
+                                -1
+                        );
+                    }
+                    break;
+                }
+            }
         }
 
         state.parent = currentState;
@@ -177,10 +304,15 @@ public class Action {
      */
 
     private void applyGuest(Player turnPlayer) {
-        turnPlayer.hand.remove(firstCard);
+        for (Card c : turnPlayer.hand) {
+            if (Main.equalCards(c, firstCard)) {
+                turnPlayer.hand.remove(c);
+                break;
+            }
+        }
         turnPlayer.guests.add(firstCard);
         turnPlayer.score += firstCard.guestReward;
-        turnPlayer.cardsNumber --;
+        turnPlayer.cardsNumber--;
     }
 
     /**
@@ -190,7 +322,14 @@ public class Action {
      */
 
     private void applyAdvertiser(State state, Player turnPlayer) {
-        turnPlayer.hand.remove(firstCard);
+
+        for (Card c : turnPlayer.hand) {
+            if (Main.equalCards(c, firstCard)) {
+                turnPlayer.hand.remove(c);
+                break;
+            }
+        }
+
         turnPlayer.advertisers.add(firstCard);
 
         int n = turnPlayer.geisha.abilities.get(Colors.Red);
@@ -215,8 +354,21 @@ public class Action {
      */
 
     private void applyExchange(Player turnPlayer) {
-        turnPlayer.hand.remove(firstCard);
-        turnPlayer.advertisers.remove(secondCard);
+
+        for (Card c : turnPlayer.hand) {
+            if (Main.equalCards(c, firstCard)) {
+                turnPlayer.hand.remove(c);
+                break;
+            }
+        }
+
+        for (Card c : turnPlayer.advertisers) {
+            if (Main.equalCards(c, secondCard)) {
+                turnPlayer.advertisers.remove(c);
+                break;
+            }
+        }
+
         turnPlayer.hand.add(secondCard);
         turnPlayer.advertisers.add(firstCard);
 
@@ -234,11 +386,24 @@ public class Action {
      */
 
     private void applyIntroduce(State state, Player turnPlayer) {
-        turnPlayer.hand.remove(firstCard);
+        for (Card c : turnPlayer.hand) {
+            if (Main.equalCards(c, firstCard)) {
+                turnPlayer.hand.remove(c);
+                break;
+            }
+        }
+
         state.discardedCards.add(firstCard);
         turnPlayer.hand.add(state.getRandomCard());
         if (turnPlayer.hand.size() > 1) {
-            turnPlayer.hand.remove(secondCard);
+
+            for (Card c : turnPlayer.hand) {
+                if (Main.equalCards(c, secondCard)) {
+                    turnPlayer.hand.remove(c);
+                    break;
+                }
+            }
+
             state.discardedCards.add(secondCard);
             turnPlayer.hand.add(state.getRandomCard());
         }
