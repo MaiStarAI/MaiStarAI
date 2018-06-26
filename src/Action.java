@@ -10,6 +10,15 @@ public class Action {
     Card secondCard;
 
     boolean usedEffect;
+    int targetPlayer; //Targeted player by effect
+    Card effectCard; //Card which used for effect
+
+    boolean usedGeisha; //True if used effect of geisha
+    Card geishaCard1; //Card which used for geisha effect
+    Card geishaCard2; //Card which used for geisha effect
+    int geishaTargetPlayer; //Targeted player by geisha effect
+    Colors geishaAbility; //Ability which increased by geisha effect
+
 
     /**
      * Constructor to create action Guest
@@ -22,6 +31,13 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = usedEffect;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard1 = null;
+        geishaCard2 = null;
+        geishaTargetPlayer = -1;
+        geishaAbility = null;
     }
 
     /**
@@ -34,6 +50,13 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = null;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard1 = null;
+        geishaCard2 = null;
+        geishaTargetPlayer = -1;
+        geishaAbility = null;
     }
 
     /**
@@ -50,6 +73,13 @@ public class Action {
         this.firstCard = firstCard;
         this.secondCard = secondCard;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard1 = null;
+        geishaCard2 = null;
+        geishaTargetPlayer = -1;
+        geishaAbility = null;
     }
 
     /**
@@ -61,6 +91,13 @@ public class Action {
         this.firstCard = null;
         this.secondCard = null;
         this.usedEffect = false;
+        targetPlayer = -1;
+        effectCard = null;
+        usedGeisha = false;
+        geishaCard1 = null;
+        geishaCard2 = null;
+        geishaTargetPlayer = -1;
+        geishaAbility = null;
     }
 
     /**
@@ -74,9 +111,15 @@ public class Action {
 
     public State applyEffect(State currentState, Card card, int targetPlayer, boolean withEffect) {
         State state = new State(currentState);
-        if (this.name == ActionsNames.Guest /*&& this.played*/ && usedEffect
+        this.targetPlayer = targetPlayer;
+        this.effectCard = card;
+
+        if (this.name == ActionsNames.Guest && !usedEffect
                 && firstCard.isApplicableEffect(state, card, targetPlayer)) {
             state = firstCard.applyEffect(state, card, targetPlayer, withEffect);
+            usedEffect = true;
+            this.targetPlayer = targetPlayer;
+            effectCard = card;
             return state;
         } else {
             return null;
@@ -85,8 +128,8 @@ public class Action {
 
     /**
      * Apply action
-     * @param currentState
-     * @return
+     * @param currentState: game's state for which we apply action
+     * @return new state after applying action
      */
 
     public State applyAction(State currentState) {
@@ -115,7 +158,7 @@ public class Action {
 
         state.parent = currentState;
         state.children = null;
-        //state.turnPlayerIndex = state.getNextPlayer();
+        state.turnPlayerIndex = state.getNextPlayer();
         state.appliedAction = this;
         state.drawDeck = state.cards.size();
         if (currentState.children == null) {
@@ -128,11 +171,23 @@ public class Action {
         return state;
     }
 
+    /**
+     * Apply action guest
+     * @param turnPlayer: player who make this action
+     */
+
     private void applyGuest(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.guests.add(firstCard);
         turnPlayer.score += firstCard.guestReward;
+        turnPlayer.cardsNumber --;
     }
+
+    /**
+     * Apply action advertiser
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who make this action
+     */
 
     private void applyAdvertiser(State state, Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
@@ -146,27 +201,77 @@ public class Action {
         turnPlayer.geisha.abilities.put(Colors.Green, firstCard.advReward.get(Colors.Green) + n);
 
         if (state.drawDeck > 0) turnPlayer.hand.add(state.getRandomCard());
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
+
+    /**
+     * Apply action exchange
+     * @param turnPlayer: player who make this action
+     */
 
     private void applyExchange(Player turnPlayer) {
         turnPlayer.hand.remove(firstCard);
         turnPlayer.advertisers.remove(secondCard);
         turnPlayer.hand.add(secondCard);
         turnPlayer.advertisers.add(firstCard);
-    }
 
-    private void applyIntroduce(State state, Player turnPlayer) {
-        turnPlayer.hand.remove(firstCard);
-        turnPlayer.hand.add(state.getRandomCard());
-        if (turnPlayer.hand.size() > 1) {
-            turnPlayer.hand.remove(secondCard);
-            turnPlayer.hand.add(state.getRandomCard());
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
         }
     }
 
+    /**
+     * Apply action introduce
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who make this action
+     */
+
+    private void applyIntroduce(State state, Player turnPlayer) {
+        turnPlayer.hand.remove(firstCard);
+        state.discardedCards.add(firstCard);
+        turnPlayer.hand.add(state.getRandomCard());
+        if (turnPlayer.hand.size() > 1) {
+            turnPlayer.hand.remove(secondCard);
+            state.discardedCards.add(secondCard);
+            turnPlayer.hand.add(state.getRandomCard());
+        }
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
+    }
+
+    /**
+     * Apply action search
+     * @param state: game's state for which we apply action
+     * @param turnPlayer: player who make this action
+     */
+
     private void applySearch(State state, Player turnPlayer) {
         turnPlayer.hand.add(state.getRandomCard());
+        turnPlayer.cardsNumber ++;
+
+        for (int i = 0; i < turnPlayer.hand.size(); i++) {
+            if (turnPlayer.hand.get(i).name == CardsNames.District_Kanryou) {
+                turnPlayer.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
+
+    /**
+     * Method to check applicability current action to state (according to rules of the game)
+     * @param currentState: game's state for which we apply action
+     * @return true if we can apply such action
+     */
 
     public boolean isApplicableAction(State currentState) {
         Player turnPlayer = currentState.players.get(currentState.turnPlayerIndex);
@@ -200,21 +305,58 @@ public class Action {
         }
     }
 
+    public String print () {
+        return name + " - " + (firstCard == null ? "" : firstCard.color + " " + firstCard.name)
+                + (secondCard == null ? "" : "; " + secondCard.color + " " + secondCard.name) + ", [used geisha: " + usedGeisha
+                + "], [used effect: " + usedEffect + "]" + (targetPlayer == -1 ? "" : ", target player: " + targetPlayer);
+    }
+
+    /**
+     * Method to get main information about action
+     * @return string with main information
+     */
     public String toString() {
         String info = "";
         info += this.name.toString() + "\n";
-        info += "Name of card: " + firstCard.name + "\n" + "Color: " + firstCard.color + "\n" +
-                "Requirement: " + firstCard.requirement + "\n" + "Guest reward: " + firstCard.guestReward +
-                "\n" + "Advertiser reward: \n" + "Red: " + firstCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
-                firstCard.advReward.get(Colors.Blue) + "\n" + "Green: " + firstCard.advReward.get(Colors.Green) + "\n";
-        if (this.name == ActionsNames.Introduce || this.name == ActionsNames.Exchange) {
-            info += "Name of card: " + secondCard.name + "\n" + "Color: " + secondCard.color + "\n" +
-                    "Requirement: " + secondCard.requirement + "\n" + "Guest reward: " + secondCard.guestReward +
-                    "\n" + "Advertiser reward: \n" + "Red: " + secondCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
-                    secondCard.advReward.get(Colors.Blue) + "\n" + "Green: " + secondCard.advReward.get(Colors.Green) + "\n";
+        if(this.name != ActionsNames.Search) {
+            info += "Name of card: " + firstCard.name + "\n" + "Color: " + firstCard.color + "\n" +
+                    "Requirement: " + firstCard.requirement + "\n" + "Guest reward: " + firstCard.guestReward +
+                    "\n" + "Advertiser reward: \n" + "Red: " + firstCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
+                    firstCard.advReward.get(Colors.Blue) + "\n" + "Green: " + firstCard.advReward.get(Colors.Green) + "\n";
+            if (this.name == ActionsNames.Introduce || this.name == ActionsNames.Exchange) {
+                info += "Name of card: " + secondCard.name + "\n" + "Color: " + secondCard.color + "\n" +
+                        "Requirement: " + secondCard.requirement + "\n" + "Guest reward: " + secondCard.guestReward +
+                        "\n" + "Advertiser reward: \n" + "Red: " + secondCard.advReward.get(Colors.Red) + "\n" + "Blue: " +
+                        secondCard.advReward.get(Colors.Blue) + "\n" + "Green: " + secondCard.advReward.get(Colors.Green) + "\n";
+            }
         }
 
         info += "Used effect: " + this.usedEffect + "\n";
+        if(targetPlayer != -1) {
+            info += "Target player: " + this.targetPlayer + "\n";
+        }
+
+        if(effectCard != null){
+            info += "Card used for effect: " + this.effectCard.name + "\n";
+        }
+
+        info += "Used geisha: " + this.usedGeisha + "\n";
+
+        if(this.geishaCard1 != null){
+            info += "Card used for geisha effect: " + this.geishaCard1.name;
+        }
+
+        if(geishaCard2 != null){
+            info += ", " + this.geishaCard2.name + "\n";
+        }
+
+        if(geishaTargetPlayer != -1){
+            info += "\n" + "Player targeted by geisha effect: " + this.geishaTargetPlayer;
+        }
+
+        if(geishaAbility != null){
+            info += "\n" + "Ability increased by geisha effect: " + this.geishaAbility;
+        }
 
         return info;
     }

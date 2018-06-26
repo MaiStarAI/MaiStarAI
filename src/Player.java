@@ -4,6 +4,7 @@ import java.util.ArrayList;
  * Class player contains information about player
  *
  * name: name of player
+ * type: type of player
  * hand: cards in player's hand
  * cardsNumber: number of cards in hand
  * geisha: object of class Geisha which contains information about geisha of player
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 
 public class Player {
     String name;
+    PlayerType type;
     ArrayList<Card> hand;
     int cardsNumber;
     Geisha geisha;
@@ -42,6 +44,12 @@ public class Player {
         advertisers = new ArrayList<>();
         specialEffects = new ArrayList<>();
         this.geishaEffect = geisha.numberEffect;
+
+        for (Card aHand : this.hand) {
+            if (aHand.name == CardsNames.District_Kanryou) {
+                this.specialEffects.add(CardsNames.District_Kanryou);
+            }
+        }
     }
 
     /**
@@ -50,15 +58,26 @@ public class Player {
      */
 
     Player(Player anotherPlayer) {
-        this.name = anotherPlayer.name;
-        this.hand = new ArrayList<>(anotherPlayer.hand);
-        this.geisha = new Geisha(anotherPlayer.geisha);
+        name = anotherPlayer.name;
+        hand = new ArrayList<>(anotherPlayer.hand);
+        geisha = new Geisha(anotherPlayer.geisha);
+        type = anotherPlayer.type;
         cardsNumber = anotherPlayer.cardsNumber;
         score = anotherPlayer.score;
         guests = new ArrayList<>(anotherPlayer.guests);
         advertisers = new ArrayList<>(anotherPlayer.advertisers);
         specialEffects = new ArrayList<>(anotherPlayer.specialEffects);
-        this.geishaEffect = anotherPlayer.geishaEffect;
+        geishaEffect = anotherPlayer.geishaEffect;
+
+    }
+
+    /**
+     * Method to set type
+     * @param type: new type of player
+     */
+
+    public void setType(PlayerType type){
+        this.type = type;
     }
 
     /**
@@ -94,8 +113,8 @@ public class Player {
                         guests.remove(i);
                     }
                 }
-                default:
-                    System.out.println("Error: there is no such special effect");
+            default:
+                System.out.println("Error: there is no such special effect");
         }
     }
 

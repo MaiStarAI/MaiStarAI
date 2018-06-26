@@ -10,6 +10,7 @@ public class Card {
     int requirement;
     int guestReward;
     HashMap<Colors, Integer> advReward;
+    boolean known;
 
     /**
      * Main constructor for card
@@ -26,6 +27,7 @@ public class Card {
         this.requirement = requirement;
         this.guestReward = guestReward;
         this.advReward = advReward;
+        this.known = false;
     }
 
     /**
@@ -38,7 +40,8 @@ public class Card {
         this.color = anotherCard.color;
         this.requirement = anotherCard.requirement;
         this.guestReward = anotherCard.guestReward;
-        this.advReward = anotherCard.advReward;
+        this.advReward = new HashMap<>(anotherCard.advReward);
+        this.known = anotherCard.known;
     }
 
     /**
@@ -54,7 +57,6 @@ public class Card {
             case Ronin: { return true; }
             case Courtier: { return card.color == this.color &&
                     card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
-            case District_Kanryou: { return true; }
             case Doctor: { return true; }
             case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
             case Merchant: { return state.drawDeck > 1; }
@@ -82,6 +84,8 @@ public class Card {
      */
 
     public State applyEffect(State state, Card card, int targetPlayer, boolean withEffect) {
+        state.turnPlayerIndex = state.getPreviousPlayer();
+
         switch (this.name) {
             case Monk:
                 return this.MonkEffect(state);
@@ -101,8 +105,6 @@ public class Card {
                 return this.DaimyoEffect(state);
             case Ronin:
                 return this.RoninEffect(state);
-            case District_Kanryou:
-                return this.DistrictKanryouEffect(state);
             case Thief:
                 return this.ThiefEffect(state, targetPlayer);
             case Yakuza:
@@ -128,7 +130,9 @@ public class Card {
     private State MonkEffect(State currentState) {
         State state = new State(currentState);
         Player turnPlayer = state.players.get(state.turnPlayerIndex);
+        state.discardedCards.addAll(turnPlayer.hand);
         turnPlayer.hand.clear();
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -140,7 +144,6 @@ public class Card {
 
     private State DoctorEffect(State currentState) {
         State state = new State(currentState);
-        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -159,6 +162,7 @@ public class Card {
             turnPlayer.score += turnPlayer.hand.get(i).guestReward;
         }
         turnPlayer.hand.clear();
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -176,6 +180,7 @@ public class Card {
         newState.parent = state.parent;
         state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -190,7 +195,12 @@ public class Card {
 
     private State SumoWrestlerEffect(State state, int targetPlayer, Card card) {
         State newState = new State(state);
+        for (int i = 0; i < newState.players.get(targetPlayer).hand.size(); i++) {
+            newState.players.get(targetPlayer).hand.get(i).known = true;
+        }
         newState.players.get(targetPlayer).hand.remove(card);
+        newState.discardedCards.add(card);
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -205,13 +215,21 @@ public class Card {
     private State EmissaryEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = newState.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+
+        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
+        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
+        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
+
         Action action = new Action(removed);
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        if (state.children != null) state.children.remove(newState);
+        state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
-
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -226,12 +244,15 @@ public class Card {
     private State SamuraiEffect(State state, int targetPlayer) {
         State newState = new State(state);
         Card removed = newState.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        newState.players.get(targetPlayer).score -= removed.guestReward;
+
         Action action = new Action(removed, false);
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        if (state.children != null) state.children.remove(newState);
+        state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -252,6 +273,7 @@ public class Card {
                 turnPlayer.score += removed.guestReward;
             }
         }
+        state.turnPlayerIndex = state.getNextPlayer();
         return state;
     }
 
@@ -262,19 +284,10 @@ public class Card {
      */
 
     private State RoninEffect(State currentState) {
-        currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
-        return currentState;
-    }
-
-    /**
-     * Apply effect of card District Kanryou
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State DistrictKanryouEffect(State currentState) {
-        currentState.players.get(currentState.turnPlayerIndex).specialEffects.add(CardsNames.District_Kanryou);
-        return currentState;
+        State state = new State(currentState);
+        state.players.get(state.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
+        state.turnPlayerIndex = state.getNextPlayer();
+        return state;
     }
 
     /**
@@ -286,7 +299,10 @@ public class Card {
 
     private State ThiefEffect(State state, int targetPlayer) {
         State newState = new State(state);
-        state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        Card removed = state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
+        newState.discardedCards.add(removed);
+        newState.players.get(targetPlayer).score -= removed.guestReward;
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -300,7 +316,16 @@ public class Card {
 
     private State YakuzaEffect(State state, int targetPlayer) {
         State newState = new State(state);
-        state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+        Card removed = state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
+        newState.discardedCards.add(removed);
+
+        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
+        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
+        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
+        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -323,6 +348,7 @@ public class Card {
                 newState = action.applyEffect(newState, card, targetPlayer, true);
             }
         }
+        newState.turnPlayerIndex = newState.getNextPlayer();
         return newState;
     }
 
@@ -337,6 +363,7 @@ public class Card {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }
@@ -351,6 +378,7 @@ public class Card {
     private State ScholarEffect(State state, int targetPlayer) {
         State newState = new State(state);
         newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
+        newState.turnPlayerIndex = newState.getNextPlayer();
 
         return newState;
     }

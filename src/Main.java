@@ -1,87 +1,173 @@
+import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Scanner;
 
 public class Main {
 
     private static int c_calls = 0;
-    private static long time_to_compute = 40;
     private static long end_time;
-    private enum Mode { ITERATIONS, TIME }
+    private static int iterations = 6000;
+    private static long elapsedTime = 0;
+    private static ArrayList<Integer> numbers = new ArrayList<>();
 
-    public static void main(String[] args) {
-
-        Action action;
-
+    public static void main(String[] args) throws IOException {
         // Abilities
         HashMap<Colors, Integer> a_1 = new HashMap<>();
-        a_1.put(Colors.Red, 5);
-        a_1.put(Colors.Blue, 1);
+        a_1.put(Colors.Red, 3);
+        a_1.put(Colors.Blue, 3);
         a_1.put(Colors.Green, 3);
 
         HashMap<Colors, Integer> a_2 = new HashMap<>();
-        a_2.put(Colors.Red, 1);
-        a_2.put(Colors.Blue, 3);
+        a_2.put(Colors.Red, 5);
+        a_2.put(Colors.Blue, 5);
         a_2.put(Colors.Green, 5);
 
         HashMap<Colors, Integer> a_3 = new HashMap<>();
-        a_3.put(Colors.Red, 2);
-        a_3.put(Colors.Blue, 2);
-        a_3.put(Colors.Green, 2);
+        a_3.put(Colors.Red, 1);
+        a_3.put(Colors.Blue, 5);
+        a_3.put(Colors.Green, 3);
+
+        HashMap<Colors, Integer> a_4 = new HashMap<>();
+        a_4.put(Colors.Red, 5);
+        a_4.put(Colors.Blue, 1);
+        a_4.put(Colors.Green, 3);
+
+        HashMap<Colors, Integer> a_5 = new HashMap<>();
+        a_5.put(Colors.Red, 2);
+        a_5.put(Colors.Blue, 2);
+        a_5.put(Colors.Green, 2);
+
+        HashMap<Colors, Integer> a_6 = new HashMap<>();
+        a_6.put(Colors.Red, 3);
+        a_6.put(Colors.Blue, 5);
+        a_6.put(Colors.Green, 1);
 
         // Geisha
-        Geisha g_1 = new Geisha(GeishasName.Momiji, a_1, 1);
-        Geisha g_2 = new Geisha(GeishasName.Harukaze, a_2, 1);
-        Geisha g_3 = new Geisha(GeishasName.Suzune, a_3, 1);
+        Geisha g_1 = new Geisha(GeishasName.Oboro, a_2, 0);
+        Geisha g_2 = new Geisha(GeishasName.Akenohoshi, a_1, 1);
+        Geisha g_3 = new Geisha(GeishasName.Momiji, a_4, 1);
+        Geisha g_4 = new Geisha(GeishasName.Harukaze, a_3, 1);
+        Geisha g_5 = new Geisha(GeishasName.Natsumi, a_6, 1);
+        Geisha g_6 = new Geisha(GeishasName.Suzune, a_5, 1);
 
         Random rand = new Random();
         ArrayList<Card> deck = deckFill();
 
-        ArrayList<Card> ai_cards = new ArrayList<>();
-        ArrayList<Card> p2_cards = new ArrayList<>();
-        ArrayList<Card> p3_cards = new ArrayList<>();
+        ArrayList<Card> mcts_1_cards = new ArrayList<>();
+        ArrayList<Card> random_1_cards = new ArrayList<>();
+        ArrayList<Card> mcts_2_cards = new ArrayList<>();
+        ArrayList<Card> random_2_cards = new ArrayList<>();
+        ArrayList<Card> mcts_3_cards = new ArrayList<>();
+        ArrayList<Card> random_3_cards = new ArrayList<>();
         for (int i = 0; i < 5; ++i) {
-            ai_cards.add(deck.remove(rand.nextInt(deck.size())));
-            p2_cards.add(deck.remove(rand.nextInt(deck.size())));
-            p3_cards.add(deck.remove(rand.nextInt(deck.size())));
+            mcts_1_cards.add(deck.remove(rand.nextInt(deck.size())));
+            random_1_cards.add(deck.remove(rand.nextInt(deck.size())));
+            mcts_2_cards.add(deck.remove(rand.nextInt(deck.size())));
+            random_2_cards.add(deck.remove(rand.nextInt(deck.size())));
+            mcts_3_cards.add(deck.remove(rand.nextInt(deck.size())));
+            random_3_cards.add(deck.remove(rand.nextInt(deck.size())));
         }
         ArrayList<Player> players = new ArrayList<>();
 
-        Player AI_ISMCTS = new Player("ISMCTS", ai_cards, g_1); players.add(AI_ISMCTS);
-        Player AI_Random = new Player("RANDOM", p2_cards, g_2); players.add(AI_Random);
-        Player human = new Player("HUMAN", p3_cards, g_3); players.add(human);
+        Player AI_ISMCTS_1 = new Player("ISMCTS_1", mcts_1_cards, g_2);
+        AI_ISMCTS_1.setType(PlayerType.ISMCTS);
+        players.add(AI_ISMCTS_1);
 
-        /* Initial state with some players and cards
-           and without parent and appliedAction. */
+        Player AI_Random_1 = new Player("RANDOM_1", random_1_cards, g_2);
+        AI_Random_1.setType(PlayerType.RandomAI);
+        //players.add(AI_Random_1);
+
+        Player AI_ISMCTS_2 = new Player("ISMCTS_2", mcts_2_cards, g_4);
+        AI_ISMCTS_2.setType(PlayerType.ISMCTS);
+        players.add(AI_ISMCTS_2);
+
+        Player AI_Random_2 = new Player("RANDOM_2", random_2_cards, g_4);
+        AI_Random_2.setType(PlayerType.RandomAI);
+        //players.add(AI_Random_2);
+
+        Player AI_ISMCTS_3 = new Player("ISMCTS_3", mcts_3_cards, g_6);
+        AI_ISMCTS_3.setType(PlayerType.ISMCTS);
+        players.add(AI_ISMCTS_3);
+
+        Player AI_Random_3 = new Player("RANDOM_3", random_3_cards, g_6);
+        AI_Random_3.setType(PlayerType.RandomAI);
+        //players.add(AI_Random_3);
+
+    /* Initial state with some players and cards
+       and without parent and appliedAction. */
         State initial_state = new State(players, deck, 0);
 
-        Mode mode = Mode.TIME;
-        long start_time;
+        long time_to_compute = 10;
+        end_time = System.currentTimeMillis() + time_to_compute * 1000;
 
-        switch (mode) {
-            case ITERATIONS: {
-                start_time = System.currentTimeMillis();
-                action = ISMCTS_iter(new State(initial_state), 1000);
-                end_time = System.currentTimeMillis();
+        Scanner in = null;
+        PrintWriter out = null;
+        try {
+            in = new Scanner(new FileReader("statistics.log"));
 
-                System.out.println();
-                System.out.println("Elapsed time: " + (end_time - start_time)/1000 + " seconds");
-                System.out.println();
-                System.out.println(action);
-                break;
+            while (in.hasNext()) {
+                String next = in.next();
+                try {
+                    numbers.add(Integer.parseInt(next));
+                } catch (NumberFormatException e) {
+                    //e.printStackTrace();
+                }
             }
-            case TIME: {
-                end_time = System.currentTimeMillis() + time_to_compute * 1000;
-                action = ISMCTS_time (new State(initial_state));
 
-                System.out.println();
-                System.out.println("Elapsed time: " + time_to_compute + " seconds");
-                System.out.println();
-                System.out.println(action);
-                break;
-            }
+            out = new PrintWriter(new FileWriter("game_" + numbers.get(0) + ".log"));
+            out.println("Game " + numbers.get(0) + " history:");
+
+        } finally {
+            if (in != null) in.close();
+            if (out != null) out.close();
         }
 
+        while (!initial_state.isTerminal()) {
+            long start = System.currentTimeMillis();
+            switch (initial_state.players.get(initial_state.turnPlayerIndex).type) {
+                case ISMCTS: {
+                    initial_state.AIPlayer = initial_state.turnPlayerIndex;
+                    initial_state = ISMCTS_iter(new State(initial_state)).applyAction(initial_state);
+                    initial_state.parent = null;
+                    initial_state.children = null;
+                    initial_state.victories = 0;
+                    initial_state.visits = 0;
+                    initial_state.availability = 1;
+                    break;
+                }
+                case RandomAI: {
+                    initial_state = randomAI(new State(initial_state)).applyAction(initial_state);
+                    initial_state.parent = null;
+                    initial_state.children = null;
+                    initial_state.victories = 0;
+                    initial_state.visits = 0;
+                    initial_state.availability = 1;
+                    break;
+                }
+            }
+
+            elapsedTime = System.currentTimeMillis() - start;
+            saveAction(initial_state);
+
+            System.out.print(initial_state.players.get(initial_state.getPreviousPlayer()).name);
+            System.out.print(" {");
+            System.out.print(initial_state.players.get(initial_state.getPreviousPlayer()).geisha.name);
+            System.out.print("} ");
+            System.out.print(initial_state.appliedAction.print());
+            System.out.print(" ");
+            System.out.print(" [" + initial_state.cards.size() + "] ");
+            System.out.println((elapsedTime / 1000f) + " sec");
+
+            end_time = System.currentTimeMillis() + time_to_compute * 1000;
+        }
+
+        for (Player p : initial_state.players) {
+            System.out.println(p.name + "'s score: " + p.score);
+        }
+
+        saveGame(initial_state);
     }
 
     /** AI that makes random turns */
@@ -93,10 +179,9 @@ public class Main {
         return children.get(rand_i).appliedAction;
     }
 
-    private static Action ISMCTS_iter (State s, int n) {
-        for (int i = 0; i < n; ++i) {
-            System.out.println(((i*1f / n*1f) * 100f) + " %");
-
+    private static Action ISMCTS_iter (State s) {
+        for (int i = 0; i < iterations; ++i) {
+            if (i % 300 == 0) System.out.println((Math.round(((float)i / (float)iterations) * 100f)) + " %");
             s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
@@ -119,8 +204,6 @@ public class Main {
 
     private static Action ISMCTS_time(State s) {
         while (System.currentTimeMillis() <= end_time) {
-            System.out.println((100f - (float)(end_time - System.currentTimeMillis())/(time_to_compute * 1000)*100) + " %");
-
             s.getDeterminization();
             State selected = select(s);
             if (u(selected).size() != 0) {
@@ -152,10 +235,10 @@ public class Main {
     /** Selection stage */
     private static State select (State s0) {
         State selected = s0;
-        double bestValue = Double.MIN_VALUE;
         while (u(selected).size() == 0 && !selected.isTerminal()) {
-            if (selected.turnPlayerIndex == 1) {
-                selected = randomAI(selected).applyAction(selected);
+            double bestValue = Double.MIN_VALUE;
+            if (s0.players.get(s0.turnPlayerIndex).type == PlayerType.RandomAI) {
+                selected = randomAI(s0).applyAction(s0);
             } else {
                 for (State s : selected.children) {
                     double value = uct(s);
@@ -252,9 +335,9 @@ public class Main {
                     (a1.firstCard == a2.firstCard);
         else if (a1.secondCard == null || a2.secondCard == null)
             return (a1.name == a2.name) &&
-                (a1.usedEffect == a2.usedEffect) &&
-                (a1.firstCard.equals(a2.firstCard)) &&
-                (a1.secondCard == a2.secondCard);
+                    (a1.usedEffect == a2.usedEffect) &&
+                    (a1.firstCard.equals(a2.firstCard)) &&
+                    (a1.secondCard == a2.secondCard);
         else
             return (a1.name == a2.name) &&
                     (a1.usedEffect == a2.usedEffect) &&
@@ -467,16 +550,16 @@ public class Main {
                                             );
                                             if (temp != null)
                                                 list.add(
-                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                            temp,
-                                                            sa_guest.players.get(last_pi).hand.get(k),
-                                                            null,
-                                                            false,
-                                                            null,
-                                                            false,
-                                                            -1
-                                                    )
-                                            );
+                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                temp,
+                                                                sa_guest.players.get(last_pi).hand.get(k),
+                                                                null,
+                                                                false,
+                                                                null,
+                                                                false,
+                                                                -1
+                                                        )
+                                                );
                                         }
                                     }
                                 }
@@ -499,15 +582,15 @@ public class Main {
                                                 );
                                                 if (temp != null)
                                                     list.add(
-                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                temp,
-                                                                sa_guest.players.get(last_pi).hand.get(k),
-                                                                null,
-                                                                true,
-                                                                null,
-                                                                false,
-                                                                m
-                                                        )
+                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                    temp,
+                                                                    sa_guest.players.get(last_pi).hand.get(k),
+                                                                    null,
+                                                                    true,
+                                                                    null,
+                                                                    false,
+                                                                    m
+                                                            )
                                                     );
                                             }
                                         }
@@ -670,15 +753,15 @@ public class Main {
                                                 );
                                                 if (temp != null)
                                                     list.add(
-                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                temp,
-                                                                sa_guest.players.get(last_pi).hand.get(m),
-                                                                null,
-                                                                false,
-                                                                null,
-                                                                false,
-                                                                -1
-                                                        )
+                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
+                                                                    temp,
+                                                                    sa_guest.players.get(last_pi).hand.get(m),
+                                                                    null,
+                                                                    false,
+                                                                    null,
+                                                                    false,
+                                                                    -1
+                                                            )
                                                     );
                                             }
                                         }
@@ -732,7 +815,6 @@ public class Main {
                     /* Harukaze */
                     if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Harukaze)) {
                         State last_state = list.get(list.size() - 1);
-                        last_state.turnPlayerIndex = s.turnPlayerIndex;
                         if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
                                 last_state,
                                 null,
@@ -815,7 +897,7 @@ public class Main {
     }
 
     /** Returns draw deck */
-    public static ArrayList<Card> deckFill () {
+    public static ArrayList<Card> deckFill() {
         ArrayList<Card> deck = new ArrayList<>();
         HashMap<Colors, Integer> bonus;
 
@@ -1121,6 +1203,82 @@ public class Main {
         deck.add(new Card(CardsNames.Shogun, Colors.Black, 10, 10, bonus));
 
         return deck;
+    }
+
+    private static void saveGame (State s) throws IOException {
+        //
+        PrintWriter out_1 = null;
+        PrintWriter out_2 = null;
+
+        try {
+
+            out_1 = new PrintWriter(new FileWriter("games.log", true));
+
+            StringBuilder temp = new StringBuilder();
+            temp.append("Game ").append(numbers.get(0)).append(" results:\r\n");
+            for (Player p : s.players) {
+                temp.append(p.name).append(" score: ").append(p.score).append("\r\n");
+            }
+            temp.append("\r\n");
+            out_1.print(temp.toString());
+            out_1.flush();
+            out_1.close();
+
+            numbers.set(0, numbers.get(0) + 1); // Increase games number
+
+            int best_index = -1;
+            int best_score = -1;
+            for (int i = 0; i < s.players.size(); ++i) {
+                if (s.players.get(i).score  > best_score) {
+                    best_score = s.players.get(i).score;
+                    best_index = i;
+                }
+            }
+
+            if (s.players.get(best_index).type.equals(PlayerType.ISMCTS)) {
+                numbers.set(1, numbers.get(1) + 1);
+            }
+
+            numbers.set(2, (numbers.get(1) / numbers.get(0)) * 100);
+
+            out_2 = new PrintWriter(new FileWriter("statistics.log", false));
+            temp = new StringBuilder();
+            temp.append("Game statistics;\r\n").append("Games played: ").append(numbers.get(0)).append("\r\n");
+            temp.append("ISMCTS wins: ").append(numbers.get(1)).append("\r\n");
+            temp.append("Win rate: ").append(numbers.get(2)).append(" %\r\n");
+            out_2.print(temp.toString());
+
+        } finally {
+            if (out_1 != null) out_1.close();
+            if (out_2 != null) out_2.close();
+        }
+
+        //
+    }
+
+    private static void saveAction(State s) throws IOException {
+        //
+        PrintWriter out = null;
+
+        try {
+
+            out = new PrintWriter(new FileWriter("game_" + numbers.get(0) + ".log", true));
+
+            String temp = s.players.get(s.getPreviousPlayer()).name + ":" +
+                    " {" +
+                    s.players.get(s.getPreviousPlayer()).geisha.name +
+                    "} " +
+                    s.appliedAction.print() +
+                    " [" + s.cards.size() + "] " + (elapsedTime / 1000f) + " sec\r\n";
+            out.print(temp);
+            out.flush();
+            out.close();
+
+        } finally {
+            if (out != null) out.close();
+        }
+
+        //
     }
 
 }

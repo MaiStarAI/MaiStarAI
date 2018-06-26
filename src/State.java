@@ -30,6 +30,7 @@ public class State {
     State parent;
     ArrayList<State> children;
     Action appliedAction;
+    ArrayList<Card> discardedCards;
 
     /**
      * Main constructor which is applicable only to start game
@@ -42,6 +43,7 @@ public class State {
         this.players = players;
         this.cards = cards;
         this.turnPlayerIndex = 0;
+        this.drawDeck = cards.size();
         victories = 0;
         visits = 0;
         availability = 1;
@@ -58,6 +60,7 @@ public class State {
         }
 
         drawDeck = cards.size();
+        discardedCards = new ArrayList<>();
     }
 
     /**
@@ -81,6 +84,7 @@ public class State {
             children = null;
         this.appliedAction = anotherState.appliedAction;
         this.AIPlayer = anotherState.AIPlayer;
+        this.discardedCards = new ArrayList<>(anotherState.discardedCards);
     }
 
     /**
@@ -98,17 +102,39 @@ public class State {
     }
 
     /**
+     * Method to get previous turnPlayer
+     * @return index of previous turnPlayer
+     */
+
+    public int getPreviousPlayer(){
+        if(turnPlayerIndex == 0){
+            return players.size() - 1;
+        }
+        else{
+            return turnPlayerIndex - 1;
+        }
+    }
+
+    /**
+     * Method to update number of times when player can apply geisha effect
+     */
+
+    public void updateGeishaEffect(){
+        Player turnPlayer = this.players.get(turnPlayerIndex);
+        if(turnPlayer.geisha.name != GeishasName.Akenohoshi) {
+            turnPlayer.geishaEffect = turnPlayer.geisha.numberEffect;
+        }
+    }
+
+    /**
      * Method to get random card from cards which in game
      * @return object of class Card
      */
 
     public Card getRandomCard(){
-        int random = (int) (Math.random() * drawDeck);
-        Card randomCard = new Card(cards.get(random).name, cards.get(random).color, cards.get(random).requirement,
-                cards.get(random).guestReward, cards.get(random).advReward);
-        cards.remove(cards.get(random));
+        Card removed = this.cards.remove(0);
         drawDeck -= 1;
-        return randomCard;
+        return removed;
     }
 
     /**
@@ -150,15 +176,79 @@ public class State {
      */
 
     public void getDeterminization(){
+        for (int i = 0; i < this.cards.size(); i++) {
+            int random = (int) (Math.random() * drawDeck);
+            if(!cards.get(i).known && !cards.get(random).known){
+                Card oneCard = cards.get(i);
+                cards.set(i, cards.get(random));
+                cards.set(random, oneCard);
+            }
+        }
+
         for (int i = 0; i < this.players.size(); i++) {
             if(i != this.AIPlayer){
-                drawDeck += this.players.get(i).hand.size();
-                cards.addAll(this.players.get(i).hand);
                 for (int j = 0; j < this.players.get(i).hand.size(); j++) {
-                    this.players.get(i).hand.set(j, this.getRandomCard());
+                    if(!this.players.get(i).hand.get(j).known) {
+                        drawDeck += 1;
+                        this.cards.add(this.players.get(i).hand.get(j));
+                        this.players.get(i).hand.set(j, this.getRandomCard());
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Method to get main information about state
+     * @return string with main information
+     */
+
+    @Override
+    public String toString() {
+        StringBuilder info = new StringBuilder();
+        for (Player iPlayer : players) {
+            info.append(iPlayer.name).append("\n").append("Hand: \n");
+
+            for (int j = 0; j < iPlayer.hand.size(); j++) {
+                info.append(iPlayer.hand.get(j).name).append(" ").append(iPlayer.hand.get(j).color).append(", ");
+            }
+
+            info.append("\n Cards number: ").append(iPlayer.cardsNumber).append("\n Geisha: ")
+                    .append(iPlayer.geisha.name).append(" ").append(iPlayer.geisha.abilities.get(Colors.Red))
+                    .append(" ").append(iPlayer.geisha.abilities.get(Colors.Blue)).append(" ").
+                    append(iPlayer.geisha.abilities.get(Colors.Green)).append("\n Score: ").
+                    append(iPlayer.score).append("\n Guests: ");
+
+            for (int j = 0; j < iPlayer.guests.size(); j++) {
+                info.append(iPlayer.guests.get(j).name).append(" ").append(iPlayer.guests.get(j).color).append(", ");
+            }
+
+            info.append("\n Advertisers: ");
+
+            for (int j = 0; j < iPlayer.advertisers.size(); j++) {
+                info.append(iPlayer.advertisers.get(j).name).append(" ").append(iPlayer.advertisers.get(j).color)
+                        .append(", ");
+            }
+
+            info.append("\n Special effects: ");
+
+            for (int j = 0; j < iPlayer.specialEffects.size(); j++) {
+                info.append(iPlayer.specialEffects.get(j)).append(" ");
+            }
+
+            info.append("\n Number possible geisha's effect: \n").append(iPlayer.geishaEffect).append("\n");
+        }
+
+        info.append("Draw deck: \n");
+
+        for (Card card : cards) {
+            info.append(card.name).append(" ").append(card.color).append(", ");
+        }
+
+        info.append("\n Number of cards in draw deck: ").append(drawDeck).append("\n Turn player: ").
+                append(players.get(turnPlayerIndex).name).append("\n AI player: ").append(players.get(AIPlayer).name);
+
+        return info.toString();
     }
 
 }
