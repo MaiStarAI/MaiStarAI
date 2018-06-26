@@ -424,9 +424,10 @@ public class GameGraphics {
             case Courtier: //return; // pick your card
             case Okaasan:
             case Doctor: haveEffect(); return; // take an action afterwards
+            case Actor: effectAnswer = 1; return;
+            //todo
             case Ronin: cancelEffect(); return; // he protec
             //District_Kanryou
-            case Actor: effectAnswer = 1; return;
         }
     }
 
@@ -688,7 +689,7 @@ public class GameGraphics {
         GridPane playerGrid = new GridPane();
         //playerGrid.setPrefTileHeight(300);
         playerGrid.getRowConstraints().add(new RowConstraints(300));
-        playerGrid.setPadding(new Insets(20));
+        playerGrid.setPadding(new Insets(10, 30, 10, 30));
         playerGrid.getStyleClass().add("table");
         playerGrid.setAlignment(Pos.CENTER_LEFT);
         playerGrid.setPrefHeight(300.0);
@@ -697,7 +698,7 @@ public class GameGraphics {
         for (int i = 0; i < GameView.state.players.get(effectAnswer).hand.size(); i++) {
             Card cardCard = GameView.state.players.get(effectAnswer).hand.get(i);
             ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
-            img.setFitWidth(200);
+            img.setFitWidth(220);
             img.setFitHeight(300);
             img.setPickOnBounds(true);
             img.setPreserveRatio(true);
@@ -711,7 +712,7 @@ public class GameGraphics {
             ColumnConstraints cc = new ColumnConstraints();
             cc.setHgrow(Priority.SOMETIMES);
             cc.setHalignment(HPos.LEFT);
-            cc.setMaxWidth(200);
+            cc.setMaxWidth(220);
             cc.setMinWidth(5);
             playerGrid.getColumnConstraints().add(cc);
 
@@ -722,6 +723,7 @@ public class GameGraphics {
             });
 
             card.setOnMouseExited(e -> {
+                if (k == playerGrid.getColumnCount() - 1) return;
                 playerGrid.getColumnConstraints().get(k).setMinWidth(5);
                 playerGrid.getColumnConstraints().get(k).setHgrow(Priority.SOMETIMES);
             });
@@ -735,7 +737,8 @@ public class GameGraphics {
             playerGrid.add(card, i, 0);
         }
 
-        //playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
+        playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setMinWidth(200);
+        playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
 
         effectAnswer = 0;
         playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
