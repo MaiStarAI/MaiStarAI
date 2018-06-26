@@ -155,6 +155,8 @@ public class SetupView extends Application {
         TextField[] playerName = new TextField[6];
         ChoiceBox<String>[] playerType = new ChoiceBox[6];
 
+        VBox playerNamesBoxesBox = new VBox(20);
+        playerNamesBoxesBox.setAlignment(Pos.CENTER);
         HBox[] playerNamesBox = new HBox[2];
         playerNamesBox[0] = new HBox(10);
         playerNamesBox[0].setAlignment(Pos.BASELINE_LEFT);
@@ -192,8 +194,8 @@ public class SetupView extends Application {
                 }
             });/**/
         }
-
-        box.getChildren().addAll(new Separator(), playerNamesBox[0], playerNamesBox[1]);
+        playerNamesBoxesBox.getChildren().addAll(playerNamesBox[0], playerNamesBox[1]);
+        box.getChildren().addAll(new Separator(), playerNamesBoxesBox);
 
         Button beginGame = new Button("Start Game");
         beginGame.setDefaultButton(true);

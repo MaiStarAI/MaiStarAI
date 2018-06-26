@@ -46,18 +46,18 @@ public class Geisha {
 
         switch (this.name) {
             case Natsumi:
-                return state.appliedAction.firstCard.color == Colors.Blue &&
-                        state.appliedAction.name == ActionsNames.Guest && turnPlayer.geishaEffect > 0
-                        && !firstGeishaEffect;
+                return !firstGeishaEffect &&
+                        state.appliedAction.firstCard.color == Colors.Blue &&
+                        state.appliedAction.name == ActionsNames.Guest && turnPlayer.geishaEffect > 0;
             case Suzune:
                 return turnPlayer.geishaEffect > 0;
             case Momiji:
-                return first.color == Colors.Red && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
+                return !firstGeishaEffect && first.color == Colors.Red && turnPlayer.geishaEffect > 0;
             case Akenohoshi:
                 return turnPlayer.geishaEffect > 0;
             case Harukaze:
-                return state.appliedAction.name == ActionsNames.Advertiser
-                        && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
+                return !firstGeishaEffect &&
+                        state.appliedAction.name == ActionsNames.Advertiser && turnPlayer.geishaEffect > 0;
             default:
                 System.out.println("Error: there is no ability for such geisha or no such geisha");
                 return false;

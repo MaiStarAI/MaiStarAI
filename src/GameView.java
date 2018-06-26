@@ -1,3 +1,4 @@
+import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -71,7 +72,10 @@ public class GameView {
 
         //todo THIS IS WHERE THE GRAPHICS ARE LOADED
         try {
-            root = FXMLLoader.load(getClass().getResource("gameGraphics.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("gameGraphics.fxml"));
+            root = loader.load();
+            GameGraphics gg = loader.getController();
+            //gg.playGuestButton.fireEvent(new ActionEvent());
         } catch (IOException e) {
             System.out.println(e + "\nERROR: couldn't load 'gameGraphics.fxml'");
         } finally {

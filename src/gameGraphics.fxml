@@ -17,7 +17,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane prefHeight="660.0" prefWidth="940.0" styleClass="anchor" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameGraphics">
+<AnchorPane prefHeight="660.0" prefWidth="940.0" styleClass="anchor" fx:id="anchor" xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="GameGraphics">
     <stylesheets>
         <URL value="@graphics.css" />
     </stylesheets>
@@ -214,10 +214,10 @@
              </VBox>
          </children>
       </GridPane>
-       <VBox fx:id="table" alignment="BOTTOM_CENTER" layoutX="23.0" layoutY="190.0" prefHeight="300.0" prefWidth="600.0" AnchorPane.bottomAnchor="185.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="270.0">
+       <VBox fx:id="table" alignment="BOTTOM_CENTER" layoutX="23.0" layoutY="190.0" prefHeight="300.0" prefWidth="600.0" AnchorPane.bottomAnchor="185.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="250.0">
           <GridPane alignment="CENTER_LEFT" prefHeight="270.0" prefWidth="600.0" styleClass="table">
             <columnConstraints>
-                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="105.0" minWidth="98.0" prefWidth="105.0" />
+                <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="105.0" minWidth="105.0" prefWidth="105.0" />
               <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="10.0" />
               <ColumnConstraints hgrow="SOMETIMES" maxWidth="100.0" minWidth="10.0" />
             </columnConstraints>
@@ -236,8 +236,8 @@
          <children>
             <ButtonBar buttonMinWidth="65.0" prefHeight="40.0" prefWidth="200.0">
               <buttons>
-                  <Button fx:id="akenohoshiButton" mnemonicParsing="false" styleClass="actionButton" text="Apply Geisha" />
-                <Button fx:id="playGuestButton" mnemonicParsing="false" onMouseClicked="#shiftPlayerGrid" styleClass="actionButton" text="Play as Guest" />
+                  <Button fx:id="geishaButton" mnemonicParsing="false" styleClass="actionButton" text="Play Geisha" />
+                <Button fx:id="playGuestButton" mnemonicParsing="false" styleClass="actionButton" text="Play as Guest" />
                   <Button fx:id="advertiseButton" mnemonicParsing="false" styleClass="actionButton" text="Advertise" />
                   <Button fx:id="introduceButton" mnemonicParsing="false" styleClass="actionButton" text="Introduce" />
                   <Button fx:id="exchangeButton" mnemonicParsing="false" styleClass="actionButton" text="Exchange" />
