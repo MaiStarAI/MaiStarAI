@@ -46,20 +46,20 @@ public class Geisha {
 
         switch (this.name) {
             case Natsumi:
-                return state.appliedAction != null && state.appliedAction.firstCard.color == Colors.Blue &&
+                return state.appliedAction != null && state.appliedAction.firstCard != null &&
+                        state.appliedAction.firstCard.color == Colors.Blue &&
                         state.appliedAction.name == ActionsNames.Guest && turnPlayer.geishaEffect > 0
                         && !firstGeishaEffect;
             case Suzune:
-                return turnPlayer.geishaEffect > 0;
+                return turnPlayer.geishaEffect > 0 && turnPlayer.hand.size() > 0;
             case Momiji:
                 return first != null && first.color == Colors.Red && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
             case Akenohoshi:
                 return turnPlayer.geishaEffect > 0;
             case Harukaze:
-                return state.appliedAction != null && state.appliedAction.name == ActionsNames.Advertiser
+                return state.drawDeck > 2 && state.appliedAction != null && state.appliedAction.name == ActionsNames.Advertiser
                         && turnPlayer.geishaEffect > 0 && !firstGeishaEffect;
             default:
-                //System.out.println("Error: there is no ability for such geisha or no such geisha");
                 return false;
         }
     }
@@ -79,14 +79,13 @@ public class Geisha {
     public State applyGeisha(State state, Card first, Card second, boolean withEffect,
                              Colors ability, boolean firstGeishaEffect, int targetPlayer) {
         State returnState = new State(state);
-        if (returnState.appliedAction != null) {
+        /*if (returnState.appliedAction != null) {
             returnState.appliedAction.usedGeisha = true;
             returnState.appliedAction.geishaCard1 = first;
             returnState.appliedAction.geishaCard2 = second;
             returnState.appliedAction.geishaAbility = ability;
             returnState.appliedAction.geishaTargetPlayer = targetPlayer;
-            if (!firstGeishaEffect) returnState.turnPlayerIndex = returnState.getPreviousPlayer();
-        }
+        }*/
 
         switch (this.name) {
             case Natsumi: {
@@ -115,9 +114,7 @@ public class Geisha {
                 break;
             }
         }
-        if (returnState != null) {
-            returnState.turnPlayerIndex = returnState.getNextPlayer();
-        } else {
+        if (returnState == null) {
             return state;
         }
         return returnState;

@@ -83,7 +83,7 @@ public class State {
             children = new ArrayList<>(anotherState.children);
         else
             children = null;
-        this.appliedAction = anotherState.appliedAction;
+        if (anotherState.appliedAction != null) this.appliedAction = new Action(anotherState.appliedAction);
         this.AIPlayer = anotherState.AIPlayer;
         this.discardedCards = new ArrayList<>(anotherState.discardedCards);
     }

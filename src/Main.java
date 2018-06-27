@@ -1,14 +1,20 @@
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
+
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Scanner;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Main {
 
     private static int c_calls = 0;
     private static long end_time;
-    private static int iterations = 6000;
+    private static int iterations = 3000;
     private static long elapsedTime = 0;
     private static ArrayList<Integer> numbers = new ArrayList<>();
 
@@ -26,8 +32,8 @@ public class Main {
 
         HashMap<Colors, Integer> a_3 = new HashMap<>();
         a_3.put(Colors.Red, 1);
-        a_3.put(Colors.Blue, 5);
-        a_3.put(Colors.Green, 3);
+        a_3.put(Colors.Blue, 3);
+        a_3.put(Colors.Green, 5);
 
         HashMap<Colors, Integer> a_4 = new HashMap<>();
         a_4.put(Colors.Red, 5);
@@ -64,10 +70,10 @@ public class Main {
         for (int i = 0; i < 5; ++i) {
             mcts_1_cards.add(deck.remove(rand.nextInt(deck.size())));
             random_1_cards.add(deck.remove(rand.nextInt(deck.size())));
-            mcts_2_cards.add(deck.remove(rand.nextInt(deck.size())));
+            //mcts_2_cards.add(deck.remove(rand.nextInt(deck.size())));
             random_2_cards.add(deck.remove(rand.nextInt(deck.size())));
-            mcts_3_cards.add(deck.remove(rand.nextInt(deck.size())));
-            random_3_cards.add(deck.remove(rand.nextInt(deck.size())));
+            //mcts_3_cards.add(deck.remove(rand.nextInt(deck.size())));
+            //random_3_cards.add(deck.remove(rand.nextInt(deck.size())));
         }
         ArrayList<Player> players = new ArrayList<>();
 
@@ -75,25 +81,25 @@ public class Main {
         AI_ISMCTS_1.setType(PlayerType.ISMCTS);
         players.add(AI_ISMCTS_1);
 
-        Player AI_Random_1 = new Player("RANDOM_1", random_1_cards, g_2);
+        Player AI_Random_1 = new Player("RANDOM_1", random_1_cards, g_1);
         AI_Random_1.setType(PlayerType.RandomAI);
-        //players.add(AI_Random_1);
+        players.add(AI_Random_1);
 
-        Player AI_ISMCTS_2 = new Player("ISMCTS_2", mcts_2_cards, g_4);
+        /*Player AI_ISMCTS_2 = new Player("ISMCTS_2", mcts_2_cards, g_4);
         AI_ISMCTS_2.setType(PlayerType.ISMCTS);
-        players.add(AI_ISMCTS_2);
+        players.add(AI_ISMCTS_2);*/
 
-        Player AI_Random_2 = new Player("RANDOM_2", random_2_cards, g_4);
+        Player AI_Random_2 = new Player("RANDOM_2", random_2_cards, g_6);
         AI_Random_2.setType(PlayerType.RandomAI);
-        //players.add(AI_Random_2);
+        players.add(AI_Random_2);
 
-        Player AI_ISMCTS_3 = new Player("ISMCTS_3", mcts_3_cards, g_6);
+        /*Player AI_ISMCTS_3 = new Player("ISMCTS_3", mcts_3_cards, g_5);
         AI_ISMCTS_3.setType(PlayerType.ISMCTS);
-        players.add(AI_ISMCTS_3);
+        players.add(AI_ISMCTS_3);*/
 
-        Player AI_Random_3 = new Player("RANDOM_3", random_3_cards, g_6);
+        /*Player AI_Random_3 = new Player("RANDOM_3", random_3_cards, g_6);
         AI_Random_3.setType(PlayerType.RandomAI);
-        //players.add(AI_Random_3);
+        players.add(AI_Random_3);*/
 
     /* Initial state with some players and cards
        and without parent and appliedAction. */
@@ -105,6 +111,8 @@ public class Main {
         Scanner in = null;
         PrintWriter out = null;
         try {
+            Path file = Paths.get("statistics.log");
+            if (!Files.exists(file)) Files.write(file, Arrays.asList("0"), Charset.forName("UTF-8"));
             in = new Scanner(new FileReader("statistics.log"));
 
             while (in.hasNext()) {
@@ -124,50 +132,148 @@ public class Main {
             if (out != null) out.close();
         }
 
-        while (!initial_state.isTerminal()) {
-            long start = System.currentTimeMillis();
-            switch (initial_state.players.get(initial_state.turnPlayerIndex).type) {
-                case ISMCTS: {
-                    initial_state.AIPlayer = initial_state.turnPlayerIndex;
-                    initial_state = ISMCTS_iter(new State(initial_state)).applyAction(initial_state);
-                    initial_state.parent = null;
-                    initial_state.children = null;
-                    initial_state.victories = 0;
-                    initial_state.visits = 0;
-                    initial_state.availability = 1;
-                    break;
-                }
-                case RandomAI: {
-                    initial_state = randomAI(new State(initial_state)).applyAction(initial_state);
-                    initial_state.parent = null;
-                    initial_state.children = null;
-                    initial_state.victories = 0;
-                    initial_state.visits = 0;
-                    initial_state.availability = 1;
-                    break;
-                }
-            }
-
-            elapsedTime = System.currentTimeMillis() - start;
-            saveAction(initial_state);
-
-            System.out.print(initial_state.players.get(initial_state.getPreviousPlayer()).name);
-            System.out.print(" {");
-            System.out.print(initial_state.players.get(initial_state.getPreviousPlayer()).geisha.name);
-            System.out.print("} ");
-            System.out.print(initial_state.appliedAction.print());
-            System.out.print(" ");
-            System.out.print(" [" + initial_state.cards.size() + "] ");
-            System.out.println((elapsedTime / 1000f) + " sec");
-
-            end_time = System.currentTimeMillis() + time_to_compute * 1000;
-        }
-
         for (Player p : initial_state.players) {
             System.out.println(p.name + "'s score: " + p.score);
         }
 
         saveGame(initial_state);
+    }
+
+    public static void loop()
+    {
+        Service<Void> service = new Service<>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        //Background work
+                        final CountDownLatch latch = new CountDownLatch(1);
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                try{
+                                    Main.cycle();
+                                }finally{
+                                    latch.countDown();
+                                }
+                            }
+                        });
+                        latch.await();
+                        //Keep with the background work
+                        return null;
+                    }
+                };
+            }
+        };
+        service.start();
+        /*
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Callable<State> callable = new Callable<>() {
+            @Override
+            public State call() {
+                Main.cycle();
+                return GameView.state;
+            }
+        };
+        Future<State> future = executor.submit(callable);
+        /*try {
+            System.out.println(future.get());
+        } catch (Exception e) {
+            System.out.println(e + "\nERROR: Failed to execute AI's algorithm in a concurrent thread.");
+        }*/
+        new Thread() {
+
+            // runnable for that thread
+            public void run() {
+                for (int i = 0; i < 20; i++) {
+                    try {
+                        // imitating work
+                        Thread.sleep(new Random().nextInt(1000));
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    final double progress = i*0.05;
+                    // update ProgressIndicator on FX thread
+                    Platform.runLater(new Runnable() {
+
+                        public void run() {
+                            System.out.println(progress);
+                        }
+                    });
+                }
+            }
+        }.start();
+    }
+
+    public static void cycle () {
+        while (!GameView.state.isTerminal()) {
+            long start = System.currentTimeMillis();
+
+            switch (GameView.state.players.get(GameView.state.turnPlayerIndex).type) {
+                case ISMCTS: {
+                    GameView.gg.openLoadingScreen();
+
+                    GameView.state.AIPlayer = GameView.state.turnPlayerIndex;
+                    if (GameView.state.players.get(GameView.state.turnPlayerIndex).geisha.name == GeishasName.Akenohoshi) {
+                        int blue = 3;
+                        int red = 3;
+                        int green = 3;
+                        for (Card c : GameView.state.players.get(GameView.state.turnPlayerIndex).advertisers) {
+                            switch (c.color) {
+                                case Blue: { red += c.advReward.get(Colors.Blue); break; }
+                                case Red: { red += c.advReward.get(Colors.Red); break; }
+                                case Green: { red += c.advReward.get(Colors.Green); break; }
+                            }
+                        }
+                        GameView.state.players.get(GameView.state.turnPlayerIndex).geisha.abilities.put(Colors.Blue, blue);
+                        GameView.state.players.get(GameView.state.turnPlayerIndex).geisha.abilities.put(Colors.Red, red);
+                        GameView.state.players.get(GameView.state.turnPlayerIndex).geisha.abilities.put(Colors.Green, green);
+                    }
+                    GameView.state = ISMCTS_iter(new State(GameView.state)).applyAction(new State(GameView.state));
+                    GameView.state.parent = null;
+                    GameView.state.children = null;
+                    GameView.state.victories = 0;
+                    GameView.state.visits = 0;
+                    GameView.state.availability = 1;
+
+                    GameView.gg.closeLoadingScreen();
+                    break;
+                }
+                case RandomAI: {
+                    GameView.state = randomAI(new State(GameView.state)).applyAction(new State(GameView.state));
+                    GameView.state.parent = null;
+                    GameView.state.children = null;
+                    GameView.state.victories = 0;
+                    GameView.state.visits = 0;
+                    GameView.state.availability = 1;
+                    break;
+                }
+                case Human: {
+                    return;
+                }
+            }
+
+            elapsedTime = System.currentTimeMillis() - start;
+            /*try {
+                saveAction(GameView.state);
+            } catch (IOException e) {
+                System.out.println(e + "\nERROR: Error while saving action.");
+            }*/
+
+            System.out.print(GameView.state.players.get(GameView.state.getPreviousPlayer()).name);
+            System.out.print(" {");
+            System.out.print(GameView.state.players.get(GameView.state.getPreviousPlayer()).geisha.name);
+            System.out.print("} ");
+            System.out.print(GameView.state.appliedAction.print());
+            System.out.print(" ");
+            System.out.print(" [" + GameView.state.cards.size() + "] ");
+            System.out.println((elapsedTime / 1000f) + " sec");
+
+            //end_time = System.currentTimeMillis() + time_to_compute * 1000;
+
+            GameView.gg.updateAllGraphics();
+        }
     }
 
     /** AI that makes random turns */
@@ -181,33 +287,15 @@ public class Main {
 
     private static Action ISMCTS_iter (State s) {
         for (int i = 0; i < iterations; ++i) {
-            if (i % 300 == 0) System.out.println((Math.round(((float)i / (float)iterations) * 100f)) + " %");
+            if (i % 150 == 0) {
+                System.out.println((Math.round(((float)i / (float)iterations) * 100f)) + " %");
+                GameView.gg.updateLoadingScreen(i / 3000.0);
+            }
             s.getDeterminization();
             State selected = select(s);
-            if (u(selected).size() != 0) {
-                selected = expand(selected);
-            }
-            int reward = simulate(selected);
-            backpropagate(selected, reward);
-        }
-        /* Choose the most visited node. */
-        int max_visits = Integer.MIN_VALUE;
-        State s_c = s.children.get(0);
-        for (int i = 0; i < s.children.size(); ++i) {
-            if (s.children.get(i).visits > max_visits) {
-                max_visits = s.children.get(i).visits;
-                s_c = s.children.get(i);
-            }
-        }
-        return s_c.appliedAction;
-    }
-
-    private static Action ISMCTS_time(State s) {
-        while (System.currentTimeMillis() <= end_time) {
-            s.getDeterminization();
-            State selected = select(s);
-            if (u(selected).size() != 0) {
-                selected = expand(selected);
+            ArrayList<State> u_children = u(selected);
+            if (u_children.size() != 0) {
+                selected = expand(selected, u_children);
             }
             int reward = simulate(selected);
             backpropagate(selected, reward);
@@ -253,9 +341,8 @@ public class Main {
     }
 
     /** Expansion stage */
-    private static State expand (State s) {
+    private static State expand (State s, ArrayList<State> u_children) {
         Random rand = new Random();
-        ArrayList<State> u_children = u(s);
         State new_state = new State(u_children.get(rand.nextInt(u_children.size())));
         new_state.parent = s;
         if (s.children != null) {
@@ -321,9 +408,9 @@ public class Main {
     }
 
     private static boolean actionContains (ArrayList<Action> list, Action a) {
-        boolean contains = false;
-        for (Action action : list) if (equalActions(a, action)) contains = true;
-        return contains;
+        for (int i = 0; i < list.size(); ++i)
+            if (equalActions(a, list.get(i))) return true;
+        return false;
     }
 
     private static boolean equalActions (Action a1, Action a2) {
@@ -336,13 +423,24 @@ public class Main {
         else if (a1.secondCard == null || a2.secondCard == null)
             return (a1.name == a2.name) &&
                     (a1.usedEffect == a2.usedEffect) &&
-                    (a1.firstCard.equals(a2.firstCard)) &&
+                    (equalCards(a1.firstCard, a2.firstCard)) &&
                     (a1.secondCard == a2.secondCard);
         else
             return (a1.name == a2.name) &&
                     (a1.usedEffect == a2.usedEffect) &&
-                    (a1.firstCard.equals(a2.firstCard)) &&
-                    (a1.secondCard.equals(a2.secondCard));
+                    (equalCards(a1.firstCard, a2.firstCard)) &&
+                    (equalCards(a1.secondCard, a2.secondCard));
+    }
+
+    public static boolean equalCards(Card c1, Card c2) {
+        if (c1 == null || c2 == null) {
+            return c1 == c2;
+        } else {
+            boolean result = c1.color.equals(c2.color) &&
+                    c1.name.equals(c2.name);
+            //if (result) System.out.println("***Result is true***");
+            return result;
+        }
     }
 
     /** Returns all possible actions of state 's'. */
@@ -350,79 +448,17 @@ public class Main {
         if (s != null) {
 
             c_calls++;
-            //System.out.println(c_calls);
 
             ArrayList<State> list = new ArrayList<>();
-            ArrayList<State> s_list = new ArrayList<>();
-            ArrayList<State> a_list = new ArrayList<>();
 
             /* Suzune */
             if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Suzune)) {
                 for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
-                    if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
-                            s,
-                            null,
-                            true
-                    )) s_list.add(
-                            s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
-                                    s,
-                                    s.players.get(s.turnPlayerIndex).hand.get(i),
-                                    null,
-                                    false,
-                                    null,
-                                    true,
-                                    -1
-                            )
-                    );
-                }
-                for (State state : s_list) {
-                    list.addAll(c(state));
-                }
-            }
-
-            /* Akenohoshi */
-            if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Akenohoshi)) {
-                if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
-                        s,
-                        null,
-                        true
-                )) {
-                    a_list.add(
-                            s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
-                                    s,
-                                    null,
-                                    null,
-                                    false,
-                                    Colors.Blue,
-                                    true,
-                                    -1
-                            )
-                    );
-                    a_list.add(
-                            s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
-                                    s,
-                                    null,
-                                    null,
-                                    false,
-                                    Colors.Red,
-                                    true,
-                                    -1
-                            )
-                    );
-                    a_list.add(
-                            s.players.get(s.turnPlayerIndex).geisha.applyGeisha(
-                                    s,
-                                    null,
-                                    null,
-                                    false,
-                                    Colors.Green,
-                                    true,
-                                    -1
-                            )
-                    );
-                }
-                for (State state : a_list) {
-                    list.addAll(c(state));
+                    Action suzune = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
+                    suzune.usedGeisha = true;
+                    suzune.firstGeishaEffect = true;
+                    suzune.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(i);
+                    list.add(suzune.applyAction(s));
                 }
             }
 
@@ -430,168 +466,144 @@ public class Main {
             for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
                 Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
                 if (guest.isApplicableAction(s)) {
-                    list.add(guest.applyAction(s));
 
-                    int last_pi = s.turnPlayerIndex;
-                    State sa_guest = list.get(list.size() - 1);
-                    sa_guest.turnPlayerIndex = s.turnPlayerIndex;
+                    /* Akenohoshi */
+                    if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Akenohoshi)) {
+                        if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                                s,
+                                null,
+                                true
+                        )) {
+                            guest.usedGeisha = true;
+                            guest.firstGeishaEffect = true;
+                            guest.geishaAbility = Colors.Blue;
+                            list.add(guest.applyAction(s));
+                            guest.geishaAbility = Colors.Red;
+                            list.add(guest.applyAction(s));
+                            guest.geishaAbility = Colors.Green;
+                            list.add(guest.applyAction(s));
+                        }
+                    } else {
+                        list.add(guest.applyAction(s));
+                    }
 
                     /* Natsumi */
                     if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Natsumi)) {
-                        if (sa_guest.players.get(last_pi).geisha.isApplicableEffect(
-                                sa_guest,
+                        if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                                s,
                                 null,
                                 false
                         )) {
                             // Play one guest without effect
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue)) {
-                                    list.add(
-                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                    sa_guest,
-                                                    sa_guest.players.get(last_pi).hand.get(j),
-                                                    null,
-                                                    false,
-                                                    null,
-                                                    false,
-                                                    -1
-                                            )
-                                    );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                if (j != i) {
+                                    Action natsumi = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+                                    natsumi.usedGeisha = true;
+                                    natsumi.usedEffect = false;
+                                    natsumi.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                    natsumi.targetPlayer = -1;
+                                    list.add(natsumi.applyAction(s));
                                 }
                             }
                             // Play one guest with effect
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                for (int k = 0; k < sa_guest.players.size(); ++k) {
-                                    if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue)) {
-                                        list.add(
-                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                        sa_guest,
-                                                        sa_guest.players.get(last_pi).hand.get(j),
-                                                        null,
-                                                        true,
-                                                        null,
-                                                        false,
-                                                        k
-                                                )
-                                        );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = 0; k < s.players.size(); ++k) {
+                                    if (j != i) {
+                                        Action natsumi = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), true);
+                                        natsumi.usedGeisha = true;
+                                        natsumi.usedEffect = true;
+                                        natsumi.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                        natsumi.geishaTargetPlayer = k;
+                                        list.add(natsumi.applyAction(s));
                                     }
                                 }
                             }
                             // Play two guests without effects
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
-                                            sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
-                                        list.add(
-                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                sa_guest,
-                                                                sa_guest.players.get(last_pi).hand.get(j),
-                                                                null,
-                                                                false,
-                                                                null,
-                                                                false,
-                                                                -1
-                                                        ),
-                                                        sa_guest.players.get(last_pi).hand.get(k),
-                                                        null,
-                                                        false,
-                                                        null,
-                                                        false,
-                                                        -1
-                                                )
-                                        );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = j + 1; k < s.players.get(s.turnPlayerIndex).hand.size(); ++k) {
+                                    if (j != i && k != i) {
+                                        Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+                                        Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+                                        natsumi_1.usedGeisha = true;
+                                        natsumi_2.usedGeisha = true;
+                                        natsumi_1.usedEffect = false;
+                                        natsumi_2.usedEffect = false;
+                                        natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                        natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(k);
+                                        natsumi_1.geishaTargetPlayer = -1;
+                                        natsumi_2.geishaTargetPlayer = -1;
+                                        State temp = natsumi_2.applyAction(s);
+                                        temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                        list.add(natsumi_1.applyAction(temp));
                                     }
                                 }
                             }
                             // Play one guest without and another guest with effect
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = 0; l < sa_guest.players.size(); ++l) {
-                                        if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
-                                                sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
-                                            list.add(
-                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                    sa_guest,
-                                                                    sa_guest.players.get(last_pi).hand.get(j),
-                                                                    null,
-                                                                    false,
-                                                                    null,
-                                                                    false,
-                                                                    -1
-                                                            ),
-                                                            sa_guest.players.get(last_pi).hand.get(k),
-                                                            null,
-                                                            true,
-                                                            null,
-                                                            false,
-                                                            l
-                                                    )
-                                            );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = j + 1; k < s.players.get(s.turnPlayerIndex).hand.size(); ++k) {
+                                    for (int l = 0; l < s.players.size(); ++l) {
+                                        if (j != i && k != i) {
+                                            Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+                                            Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), true);
+                                            natsumi_1.usedGeisha = true;
+                                            natsumi_2.usedGeisha = true;
+                                            natsumi_1.usedEffect = false;
+                                            natsumi_2.usedEffect = true;
+                                            natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                            natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(k);
+                                            natsumi_1.geishaTargetPlayer = -1;
+                                            natsumi_2.geishaTargetPlayer = l;
+                                            State temp = natsumi_2.applyAction(s);
+                                            temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                            list.add(natsumi_1.applyAction(temp));
                                         }
                                     }
                                 }
                             }
                             // Play one guest with effect and another without
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = 0; l < sa_guest.players.size(); ++l) {
-                                        if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
-                                                sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
-                                            State temp = sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                    sa_guest,
-                                                    sa_guest.players.get(last_pi).hand.get(j),
-                                                    null,
-                                                    true,
-                                                    null,
-                                                    false,
-                                                    l
-                                            );
-                                            if (temp != null)
-                                                list.add(
-                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                temp,
-                                                                sa_guest.players.get(last_pi).hand.get(k),
-                                                                null,
-                                                                false,
-                                                                null,
-                                                                false,
-                                                                -1
-                                                        )
-                                                );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = j + 1; k < s.players.get(s.turnPlayerIndex).hand.size(); ++k) {
+                                    for (int l = 0; l < s.players.size(); ++l) {
+                                        if (j != i && k != i) {
+                                            Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), true);
+                                            Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), false);
+                                            natsumi_1.usedGeisha = true;
+                                            natsumi_2.usedGeisha = true;
+                                            natsumi_1.usedEffect = true;
+                                            natsumi_2.usedEffect = false;
+                                            natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                            natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(k);
+                                            natsumi_1.geishaTargetPlayer = l;
+                                            natsumi_2.geishaTargetPlayer = -1;
+                                            State temp = natsumi_2.applyAction(s);
+                                            temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                            list.add(natsumi_1.applyAction(temp));
                                         }
                                     }
                                 }
                             }
                             // Play two guests with effect
-                            for (int j = 0; j < sa_guest.players.get(last_pi).hand.size(); ++j) {
-                                for (int k = j + 1; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = 0; l < sa_guest.players.size(); ++l) {
-                                        for (int m = 0; m < sa_guest.players.size(); ++m) {
-                                            if (sa_guest.players.get(last_pi).hand.get(j).color.equals(Colors.Blue) &&
-                                                    sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
-                                                State temp = sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                        sa_guest,
-                                                        sa_guest.players.get(last_pi).hand.get(j),
-                                                        null,
-                                                        true,
-                                                        null,
-                                                        false,
-                                                        l
-                                                );
-                                                if (temp != null)
-                                                    list.add(
-                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                    temp,
-                                                                    sa_guest.players.get(last_pi).hand.get(k),
-                                                                    null,
-                                                                    true,
-                                                                    null,
-                                                                    false,
-                                                                    m
-                                                            )
-                                                    );
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = j + 1; k < s.players.get(s.turnPlayerIndex).hand.size(); ++k) {
+                                    for (int l = 0; l < s.players.size(); ++l) {
+                                        for (int m = 0; m < s.players.size(); ++m) {
+                                            if (j != i && k != i) {
+                                                Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), true);
+                                                Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(i), true);
+                                                natsumi_1.usedGeisha = true;
+                                                natsumi_2.usedGeisha = true;
+                                                natsumi_1.usedEffect = true;
+                                                natsumi_2.usedEffect = true;
+                                                natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                                natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(k);
+                                                natsumi_1.geishaTargetPlayer = l;
+                                                natsumi_2.geishaTargetPlayer = m;
+                                                State temp_1 = natsumi_2.applyAction(s);
+                                                temp_1.turnPlayerIndex = temp_1.getPreviousPlayer();
+                                                State temp_2 = natsumi_1.applyAction(s);
+                                                temp_2.turnPlayerIndex = temp_2.getPreviousPlayer();
+                                                list.add(natsumi_1.applyAction(temp_1));
+                                                list.add(natsumi_2.applyAction(temp_2));
                                             }
                                         }
                                     }
@@ -606,195 +618,162 @@ public class Main {
             for (int i = 0; i < s.players.size(); ++i) {
                 for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
 
-                    int last_pi = s.turnPlayerIndex;
-                    State sa_guest;
-                    Card played_card = s.players.get(s.turnPlayerIndex).hand.get(j);
-
                     Action guest = new Action(s.players.get(s.turnPlayerIndex).hand.get(j), true);
                     if (guest.isApplicableAction(s)) {
 
-                        list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
-                        sa_guest = list.get(list.size() - 1);
-                        if (sa_guest != null) sa_guest.turnPlayerIndex = s.turnPlayerIndex;
+                        /* Akenohoshi */
+                        if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Akenohoshi)) {
+                            if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                                    s,
+                                    null,
+                                    true
+                            )) {
+                                guest.usedGeisha = true;
+                                guest.firstGeishaEffect = true;
+                                guest.geishaAbility = Colors.Blue;
+                                list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+                                guest.geishaAbility = Colors.Red;
+                                list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+                                guest.geishaAbility = Colors.Green;
+                                list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+                            }
+                        } else {
+                            list.add(guest.applyEffect(guest.applyAction(s), s.players.get(s.turnPlayerIndex).hand.get(j), i, true));
+                        }
 
                         /* Momiji */
-                        if (sa_guest != null && sa_guest.players.get(last_pi).geisha.name.equals(GeishasName.Momiji)) {
-                            if (sa_guest.players.get(last_pi).geisha.isApplicableEffect(
-                                    sa_guest,
-                                    played_card,
-                                    false
-                            )) {
-                                for (int k = 0; k < sa_guest.players.size(); ++k) {
-
-                                    list.add(sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                            sa_guest,
-                                            null,
-                                            null,
-                                            true,
-                                            null,
-                                            false,
-                                            k
-                                    ));
+                        if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Momiji)) {
+                            for (int k = 0; k < s.players.size(); ++k) {
+                                if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                                        s,
+                                        s.players.get(s.turnPlayerIndex).hand.get(j),
+                                        false
+                                )) {
+                                    Action momiji = new Action(s.players.get(s.turnPlayerIndex).hand.get(j), true);
+                                    momiji.usedGeisha = true;
+                                    momiji.geishaTargetPlayer = k;
+                                    list.add(momiji.applyAction(s));
                                 }
                             }
                         }
 
                         /* Natsumi */
                         if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Natsumi)) {
-                            if (sa_guest != null && sa_guest.players.get(last_pi).geisha.isApplicableEffect(
-                                    sa_guest,
+                            if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                                    s,
                                     null,
                                     false
                             )) {
                                 // Play one guest without effect
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    if (sa_guest.players.get(last_pi).hand.get(k).color.equals(Colors.Blue)) {
-                                        list.add(
-                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                        sa_guest,
-                                                        sa_guest.players.get(last_pi).hand.get(k),
-                                                        null,
-                                                        false,
-                                                        null,
-                                                        false,
-                                                        -1
-                                                )
-                                        );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    if (a != i) {
+                                        Action natsumi = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), false);
+                                        natsumi.usedGeisha = true;
+                                        natsumi.usedEffect = false;
+                                        natsumi.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                        natsumi.geishaTargetPlayer = -1;
+                                        list.add(natsumi.applyAction(s));
                                     }
                                 }
                                 // Play one guest with effect
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = 0; l < sa_guest.players.size(); ++l) {
-                                        if (sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue)) {
-                                            list.add(
-                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                            sa_guest,
-                                                            sa_guest.players.get(last_pi).hand.get(l),
-                                                            null,
-                                                            true,
-                                                            null,
-                                                            false,
-                                                            l
-                                                    )
-                                            );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    for (int b = 0; b < s.players.size(); ++b) {
+                                        if (a != i) {
+                                            Action natsumi = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), true);
+                                            natsumi.usedGeisha = true;
+                                            natsumi.usedEffect = true;
+                                            natsumi.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                            natsumi.geishaTargetPlayer = b;
+                                            list.add(natsumi.applyAction(s));
                                         }
                                     }
                                 }
                                 // Play two guests without effects
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
-                                        if (sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue) &&
-                                                sa_guest.players.get(last_pi).hand.get(l).color.equals(Colors.Blue)) {
-                                            list.add(
-                                                    sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                    sa_guest,
-                                                                    sa_guest.players.get(last_pi).hand.get(l),
-                                                                    null,
-                                                                    false,
-                                                                    null,
-                                                                    false,
-                                                                    -1
-                                                            ),
-                                                            sa_guest.players.get(last_pi).hand.get(l),
-                                                            null,
-                                                            false,
-                                                            null,
-                                                            false,
-                                                            -1
-                                                    )
-                                            );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    for (int b = a + 1; b < s.players.get(s.turnPlayerIndex).hand.size(); ++b) {
+                                        if (a != i && b != i) {
+                                            Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), false);
+                                            Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(b), false);
+                                            natsumi_1.usedGeisha = true;
+                                            natsumi_2.usedGeisha = true;
+                                            natsumi_1.usedEffect = false;
+                                            natsumi_2.usedEffect = false;
+                                            natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                            natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(b);
+                                            natsumi_1.geishaTargetPlayer = -1;
+                                            natsumi_2.geishaTargetPlayer = -1;
+                                            State temp = natsumi_2.applyAction(s);
+                                            temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                            list.add(natsumi_1.applyAction(temp));
                                         }
                                     }
                                 }
                                 // Play one guest without and another guest with effect
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
-                                        for (int m = 0; m < sa_guest.players.size(); ++m) {
-                                            if (sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue) &&
-                                                    sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue)) {
-                                                list.add(
-                                                        sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                        sa_guest,
-                                                                        sa_guest.players.get(last_pi).hand.get(m),
-                                                                        null,
-                                                                        false,
-                                                                        null,
-                                                                        false,
-                                                                        -1
-                                                                ),
-                                                                sa_guest.players.get(last_pi).hand.get(m),
-                                                                null,
-                                                                true,
-                                                                null,
-                                                                false,
-                                                                m
-                                                        )
-                                                );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    for (int b = a + 1; b < s.players.get(s.turnPlayerIndex).hand.size(); ++b) {
+                                        for (int c = 0; c < s.players.size(); ++c) {
+                                            if (a != i && b != i) {
+                                                Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), false);
+                                                Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(b), true);
+                                                natsumi_1.usedGeisha = true;
+                                                natsumi_2.usedGeisha = true;
+                                                natsumi_1.usedEffect = false;
+                                                natsumi_2.usedEffect = true;
+                                                natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                                natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(b);
+                                                natsumi_1.geishaTargetPlayer = -1;
+                                                natsumi_2.geishaTargetPlayer = c;
+                                                State temp = natsumi_2.applyAction(s);
+                                                temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                                list.add(natsumi_1.applyAction(temp));
                                             }
                                         }
                                     }
                                 }
                                 // Play one guest with effect and another without
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
-                                        for (int m = 0; m < sa_guest.players.size(); ++m) {
-                                            if (sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue) &&
-                                                    sa_guest.players.get(last_pi).hand.get(m).color.equals(Colors.Blue)) {
-                                                State temp = sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                        sa_guest,
-                                                        sa_guest.players.get(last_pi).hand.get(m),
-                                                        null,
-                                                        true,
-                                                        null,
-                                                        false,
-                                                        m
-                                                );
-                                                if (temp != null)
-                                                    list.add(
-                                                            sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                    temp,
-                                                                    sa_guest.players.get(last_pi).hand.get(m),
-                                                                    null,
-                                                                    false,
-                                                                    null,
-                                                                    false,
-                                                                    -1
-                                                            )
-                                                    );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    for (int b = a + 1; b < s.players.get(s.turnPlayerIndex).hand.size(); ++b) {
+                                        for (int c = 0; c < s.players.size(); ++c) {
+                                            if (a != i && b != i) {
+                                                Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), true);
+                                                Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(b), false);
+                                                natsumi_1.usedGeisha = true;
+                                                natsumi_2.usedGeisha = true;
+                                                natsumi_1.usedEffect = true;
+                                                natsumi_2.usedEffect = false;
+                                                natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                                natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(b);
+                                                natsumi_1.geishaTargetPlayer = c;
+                                                natsumi_2.geishaTargetPlayer = -1;
+                                                State temp = natsumi_2.applyAction(s);
+                                                temp.turnPlayerIndex = temp.getPreviousPlayer();
+                                                list.add(natsumi_1.applyAction(temp));
                                             }
                                         }
                                     }
                                 }
                                 // Play two guests with effect
-                                for (int k = 0; k < sa_guest.players.get(last_pi).hand.size(); ++k) {
-                                    for (int l = k + 1; l < sa_guest.players.get(last_pi).hand.size(); ++l) {
-                                        for (int m = 0; m < sa_guest.players.size(); ++m) {
-                                            for (int n = 0; n < sa_guest.players.size(); ++n) {
-                                                if (sa_guest.players.get(last_pi).hand.get(n).color.equals(Colors.Blue) &&
-                                                        sa_guest.players.get(last_pi).hand.get(n).color.equals(Colors.Blue)) {
-                                                    State temp = sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                            sa_guest,
-                                                            sa_guest.players.get(last_pi).hand.get(n),
-                                                            null,
-                                                            true,
-                                                            null,
-                                                            false,
-                                                            n
-                                                    );
-                                                    if (temp != null)
-                                                        list.add(
-                                                                sa_guest.players.get(last_pi).geisha.applyGeisha(
-                                                                        temp,
-                                                                        sa_guest.players.get(last_pi).hand.get(n),
-                                                                        null,
-                                                                        true,
-                                                                        null,
-                                                                        false,
-                                                                        n
-                                                                )
-                                                        );
+                                for (int a = 0; a < s.players.get(s.turnPlayerIndex).hand.size(); ++a) {
+                                    for (int b = a + 1; b < s.players.get(s.turnPlayerIndex).hand.size(); ++b) {
+                                        for (int c = 0; c < s.players.size(); ++c) {
+                                            for (int d = 0; d < s.players.size(); ++d) {
+                                                if (a != i && b != i) {
+                                                    Action natsumi_1 = new Action(s.players.get(s.turnPlayerIndex).hand.get(a), true);
+                                                    Action natsumi_2 = new Action(s.players.get(s.turnPlayerIndex).hand.get(b), true);
+                                                    natsumi_1.usedGeisha = true;
+                                                    natsumi_2.usedGeisha = true;
+                                                    natsumi_1.usedEffect = true;
+                                                    natsumi_2.usedEffect = true;
+                                                    natsumi_1.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(a);
+                                                    natsumi_2.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(b);
+                                                    natsumi_1.geishaTargetPlayer = c;
+                                                    natsumi_2.geishaTargetPlayer = d;
+                                                    State temp_1 = natsumi_2.applyAction(s);
+                                                    temp_1.turnPlayerIndex = temp_1.getPreviousPlayer();
+                                                    State temp_2 = natsumi_1.applyAction(s);
+                                                    temp_2.turnPlayerIndex = temp_2.getPreviousPlayer();
+                                                    list.add(natsumi_1.applyAction(temp_1));
+                                                    list.add(natsumi_2.applyAction(temp_2));
                                                 }
                                             }
                                         }
@@ -806,36 +785,35 @@ public class Main {
                 }
             }
 
-            // Advertiser actions
-            for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
-                Action advertiser = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
-                if (advertiser.isApplicableAction(s)) {
-                    list.add(advertiser.applyAction(s));
-
-                    /* Harukaze */
-                    if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Harukaze)) {
-                        State last_state = list.get(list.size() - 1);
-                        if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
-                                last_state,
-                                null,
-                                false
-                        )) {
-                            if (last_state.drawDeck > 2) {
-                                for (int j = 0; j < last_state.players.get(last_state.turnPlayerIndex).hand.size(); ++j) {
-                                    for (int k = j + 1; k < last_state.players.get(last_state.turnPlayerIndex).hand.size(); ++k) {
-                                        list.add(last_state.players.get(last_state.turnPlayerIndex).geisha.applyGeisha(
-                                                last_state,
-                                                last_state.players.get(last_state.turnPlayerIndex).hand.get(j),
-                                                last_state.players.get(last_state.turnPlayerIndex).hand.get(k),
-                                                false,
-                                                null,
-                                                false,
-                                                -1
-                                        ));
+            /* Harukaze */
+            if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Harukaze)) {
+                if (s.players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
+                        s,
+                        null,
+                        false
+                )) {
+                    for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+                        Action harukaze = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
+                        if (harukaze.isApplicableAction(s)) {
+                            for (int j = 0; j < s.players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                                for (int k = j + 1; k < s.players.get(s.turnPlayerIndex).hand.size(); ++k) {
+                                    if (j != i && k != i) {
+                                        harukaze.usedGeisha = true;
+                                        harukaze.geishaCard1 = s.players.get(s.turnPlayerIndex).hand.get(j);
+                                        harukaze.geishaCard2 = s.players.get(s.turnPlayerIndex).hand.get(k);
+                                        list.add(harukaze.applyAction(s));
                                     }
                                 }
                             }
                         }
+                    }
+                }
+            } else {
+                // Advertiser actions
+                for (int i = 0; i < s.players.get(s.turnPlayerIndex).hand.size(); ++i) {
+                    Action advertiser = new Action(s.players.get(s.turnPlayerIndex).hand.get(i));
+                    if (advertiser.isApplicableAction(s)) {
+                        list.add(advertiser.applyAction(s));
                     }
                 }
             }
@@ -870,22 +848,14 @@ public class Main {
             if (s.players.get(s.turnPlayerIndex).geisha.name.equals(GeishasName.Suzune)) {
                 for (int i = 0; i < list.size(); ++i) {
                     if (list.get(i) != null) {
-                        if (list.get(i).players.get(s.turnPlayerIndex).geisha.isApplicableEffect(
-                                list.get(i),
-                                null,
-                                false
-                        )) {
-                            for (int j = 0; j < list.get(i).players.get(s.turnPlayerIndex).hand.size(); ++j) {
-                                final_list.add(list.get(i).players.get(s.turnPlayerIndex).geisha.applyGeisha(
-                                        list.get(i),
-                                        list.get(i).players.get(s.turnPlayerIndex).hand.get(j),
-                                        null,
-                                        false,
-                                        null,
-                                        false,
-                                        -1
-                                ));
-                            }
+                        for (int j = 0; j < list.get(i).players.get(s.turnPlayerIndex).hand.size(); ++j) {
+                            State copy = new State(list.get(i));
+                            copy.turnPlayerIndex = s.turnPlayerIndex;
+                            Action suzune = new Action(copy.players.get(s.turnPlayerIndex).hand.get(j));
+                            suzune.usedGeisha = true;
+                            suzune.firstGeishaEffect = false;
+                            suzune.geishaCard1 = list.get(i).players.get(s.turnPlayerIndex).hand.get(j);
+                            final_list.add(suzune.applyAction(copy));
                         }
                     }
                 }

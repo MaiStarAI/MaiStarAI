@@ -1,3 +1,4 @@
+import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
@@ -83,7 +84,8 @@ public class GameGraphics {
         }
 
         createTables();
-        updateAllGraphics();
+        updateTables();
+        noButtonsWithoutRepresentation();
 
         menuButton.requestFocus();
     }
@@ -96,7 +98,7 @@ public class GameGraphics {
     //todo AI progress
     //todo dialogue panes - apply card effect, use ronin/kanryou, sumo wrestler hand-peek, target player
     //todo use effect, play geisha, end turn
-    //todo
+    //todo variables for determinization
     //todo dynamic update?
 
     /** Creates and updates player tables, access only once */
@@ -176,11 +178,16 @@ public class GameGraphics {
     }
 
     public void updateAllGraphics() {
+        updateTables();
+        shiftPlayerGrid();
+        actionTaken = false; // todo leave if the Fill functions are called only once
+        noButtonsWithoutRepresentation();
+    }
+
+    public void updateTables() {
         fillHand();
         fillTables();
-        actionTaken = false; // todo leave if the Fill functions are called only once
         updateLightGraphics();
-        noButtonsWithoutRepresentation();
     }
 
     public void updateLightGraphics() {
@@ -280,8 +287,8 @@ public class GameGraphics {
 
         //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
 
-        turnCount = GameView.playerIndex; //todo delete
-        if (turnCount == GameView.playerIndex) {
+        //turnCount = GameView.playerIndex; //todo delete
+        if (GameView.state.turnPlayerIndex == GameView.playerIndex) {
 
             /* geisha */
             isGeishaApplicable(null);
@@ -290,7 +297,7 @@ public class GameGraphics {
             if (actionTaken) {
                 endTurnButton.setDisable(false);
                 endTurnButton.setOnAction(e -> {
-
+                    finishTurn();
                     //todo
                 });
                 return;
@@ -388,9 +395,10 @@ public class GameGraphics {
         //if (card == null && GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momiji)) return;
 
         if (GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(
-                GameView.state, card, turnCount == 0)) {
+                GameView.state, card, actionTaken)) {
             geishaButton.setDisable(false);
             geishaButton.setOnAction(e -> {
+                //GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(GameView.state, card, actionTaken);
                 //todo
             });
         }
@@ -398,13 +406,15 @@ public class GameGraphics {
 
     private void executeAction(Action action) {
         GameView.state = new State(action.applyAction(GameView.state));
-        //actionTaken = true;
+        GameView.state.turnPlayerIndex = GameView.state.getPreviousPlayer();
+        actionTaken = true;
         clearSelection();
         fillHand();
         fillTables();
         updateLightGraphics();
         noButtonsWithoutRepresentation();
     }
+    //todo endturn state.nextPlayer
 
     private void effectWindow(Card card) {
         //todo target, ok, do not use effect, cancel
@@ -420,7 +430,15 @@ public class GameGraphics {
             case Yakuza:
             case Samurai:
             case Emissary: targetEffect(); return; // pick a target player
-            case Sumo_Wrestler: targetEffect(); sumoEffect(); return; // look at target player's hand and discard one card
+            case Sumo_Wrestler:
+                targetEffect();
+                int targetPlayer = effectAnswer;
+                if (targetPlayer == -1 || targetPlayer == GameView.state.players.size()) return;
+
+                sumoEffect();
+                int targetCard = effectAnswer;
+                //card.applyEffect()
+                return; // look at target player's hand and discard one card
             case Courtier: //return; // pick your card
             case Okaasan:
             case Doctor: haveEffect(); return; // take an action afterwards
@@ -765,6 +783,33 @@ public class GameGraphics {
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
+    }
+
+    //todo
+    private void finishTurn() {
+        GameView.state.turnPlayerIndex = GameView.state.getNextPlayer();
+        updateAllGraphics();
+        openLoadingScreen();
+        Main.loop();
+    }
+
+    public void openLoadingScreen() {
+        ProgressBar bar = new ProgressBar();
+        bar.setLayoutX(anchor.getWidth() / 2);
+        bar.setLayoutY(anchor.getHeight() / 2);
+        bar.setPrefWidth(300);
+        bar.setPrefHeight(25);
+        bar.setProgress(0.0);
+
+        anchor.getChildren().add(bar);
+    }
+
+    public void updateLoadingScreen(double value) {
+        ((ProgressBar) anchor.getChildren().get(anchor.getChildren().size() - 1)).setProgress(value);
+    }
+
+    public void closeLoadingScreen() {
+        anchor.getChildren().remove(anchor.getChildren().size() - 1);
     }
 
     /**

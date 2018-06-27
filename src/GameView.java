@@ -1,3 +1,6 @@
+import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -9,6 +12,7 @@ import javafx.stage.Stage;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.CountDownLatch;
 
 public class GameView {
     public static Stage window;
@@ -19,6 +23,7 @@ public class GameView {
 
     public static int playerIndex;
     public static State state;
+    public static GameGraphics gg;
     private ArrayList<Card> deck;
 
     //todo GameView -- basically, Main. SetupView only calls one function from here, GameGraphics depends entirely.
@@ -60,6 +65,7 @@ public class GameView {
             }
 
             players.add(new Player(SetupView.players.get(i), cards, getGeisha(GeishasName.valueOf(SetupView.playerGeishas.get(i)))));
+            players.get(players.size()-1).setType(SetupView.aiType[i] == 0 ? PlayerType.Human : (SetupView.aiType[i] == 1 ? PlayerType.ISMCTS : PlayerType.RandomAI));
         }
 
         state = new State(players, deck, 0);
@@ -69,18 +75,21 @@ public class GameView {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("gameGraphics.fxml"));
             root = loader.load();
-            GameGraphics gg = loader.getController();
+            gg = loader.getController();
             //gg.playGuestButton.fireEvent(new ActionEvent());
 
             window.setMinWidth(windowWidth);
             window.setWidth(windowWidth);
             window.setMinHeight(windowHeight);
             window.setHeight(windowHeight);
+
+            window.setScene(new Scene(root, windowWidth, windowHeight));
         } catch (IOException e) {
             System.out.println(e + "\nERROR: couldn't load 'gameGraphics.fxml'");
         } finally {
-            window.setScene(new Scene(root, windowWidth, windowHeight));
             window.show();
+
+            Main.loop();
         }
     }
 
@@ -98,6 +107,7 @@ public class GameView {
 
     //todo CREATES GEISHA BY HER NAME
     public Geisha getGeisha(GeishasName name) {
+        int effect = 1;
         HashMap<Colors, Integer> reputation = new HashMap<>();
         switch (name.toString()) {
             case "Momiji":
@@ -124,6 +134,7 @@ public class GameView {
                 reputation.put(Colors.Red, 5);
                 reputation.put(Colors.Blue, 5);
                 reputation.put(Colors.Green, 5);
+                effect = 0;
                 break;
             case "Harukaze":
                 reputation.put(Colors.Red, 1);
@@ -132,6 +143,6 @@ public class GameView {
                 break;
         }
 
-        return new Geisha(name, reputation, 1);
+        return new Geisha(name, reputation, effect);
     }
 }

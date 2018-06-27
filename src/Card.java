@@ -57,7 +57,7 @@ public class Card {
             case Ronin: { return true; }
             case Courtier: { return card.color == this.color &&
                     card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
-            case Doctor: { return state.players.get(targetPlayer).hand.size() > 0; }
+            case Doctor: { return state.players.get(state.turnPlayerIndex).hand.size() > 0; }
             case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
             case Merchant: { return state.drawDeck > 1; }
             case Yakuza: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
@@ -144,6 +144,7 @@ public class Card {
 
     private State DoctorEffect(State currentState) {
         State state = new State(currentState);
+        state.turnPlayerIndex = state.getPreviousPlayer();
         return state;
     }
 
@@ -198,7 +199,14 @@ public class Card {
         for (int i = 0; i < newState.players.get(targetPlayer).hand.size(); i++) {
             newState.players.get(targetPlayer).hand.get(i).known = true;
         }
-        newState.players.get(targetPlayer).hand.remove(card);
+
+        for (Card c : newState.players.get(targetPlayer).hand) {
+            if (Main.equalCards(c, card)) {
+                newState.players.get(targetPlayer).hand.remove(c);
+                break;
+            }
+        }
+
         newState.discardedCards.add(card);
         newState.turnPlayerIndex = newState.getNextPlayer();
 
@@ -227,7 +235,7 @@ public class Card {
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        state.children.remove(newState);
+        if (state.children != null) state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
         newState.turnPlayerIndex = newState.getNextPlayer();
 
@@ -250,7 +258,7 @@ public class Card {
         newState = action.applyAction(newState);
 
         newState.parent = state.parent;
-        state.children.remove(newState);
+        if (state.children != null) state.children.remove(newState);
         newState.turnPlayerIndex = state.turnPlayerIndex;
         newState.turnPlayerIndex = newState.getNextPlayer();
 
@@ -348,7 +356,7 @@ public class Card {
                 newState = action.applyEffect(newState, card, targetPlayer, true);
             }
         }
-        newState.turnPlayerIndex = newState.getNextPlayer();
+        if (newState != null) newState.turnPlayerIndex = newState.getNextPlayer();
         return newState;
     }
 
