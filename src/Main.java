@@ -141,25 +141,19 @@ public class Main {
 
     public static void loop()
     {
-        Service<Void> service = new Service<>() {
+        Service<Void> service = new Service<Void>() {
             @Override
             protected Task<Void> createTask() {
                 return new Task<>() {
                     @Override
                     protected Void call() throws Exception {
                         //Background work
-                        final CountDownLatch latch = new CountDownLatch(1);
                         Platform.runLater(new Runnable() {
                             @Override
                             public void run() {
-                                try{
-                                    Main.cycle();
-                                }finally{
-                                    latch.countDown();
-                                }
+                                Main.cycle();
                             }
                         });
-                        latch.await();
                         //Keep with the background work
                         return null;
                     }
@@ -167,43 +161,6 @@ public class Main {
             }
         };
         service.start();
-        /*
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Callable<State> callable = new Callable<>() {
-            @Override
-            public State call() {
-                Main.cycle();
-                return GameView.state;
-            }
-        };
-        Future<State> future = executor.submit(callable);
-        /*try {
-            System.out.println(future.get());
-        } catch (Exception e) {
-            System.out.println(e + "\nERROR: Failed to execute AI's algorithm in a concurrent thread.");
-        }*/
-        new Thread() {
-
-            // runnable for that thread
-            public void run() {
-                for (int i = 0; i < 20; i++) {
-                    try {
-                        // imitating work
-                        Thread.sleep(new Random().nextInt(1000));
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    }
-                    final double progress = i*0.05;
-                    // update ProgressIndicator on FX thread
-                    Platform.runLater(new Runnable() {
-
-                        public void run() {
-                            System.out.println(progress);
-                        }
-                    });
-                }
-            }
-        }.start();
     }
 
     public static void cycle () {
@@ -212,8 +169,6 @@ public class Main {
 
             switch (GameView.state.players.get(GameView.state.turnPlayerIndex).type) {
                 case ISMCTS: {
-                    GameView.gg.openLoadingScreen();
-
                     GameView.state.AIPlayer = GameView.state.turnPlayerIndex;
                     if (GameView.state.players.get(GameView.state.turnPlayerIndex).geisha.name == GeishasName.Akenohoshi) {
                         int blue = 3;
@@ -236,8 +191,6 @@ public class Main {
                     GameView.state.victories = 0;
                     GameView.state.visits = 0;
                     GameView.state.availability = 1;
-
-                    GameView.gg.closeLoadingScreen();
                     break;
                 }
                 case RandomAI: {
@@ -272,7 +225,31 @@ public class Main {
 
             //end_time = System.currentTimeMillis() + time_to_compute * 1000;
 
-            GameView.gg.updateAllGraphics();
+
+            Service<Void> service = new Service<Void>() {
+                @Override
+                protected Task<Void> createTask() {
+                    return new Task<Void>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            final CountDownLatch latch = new CountDownLatch(1);
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try{
+                                        GameView.gg.updateAllGraphics();
+                                    }finally{
+                                        latch.countDown();
+                                    }
+                                }
+                            });
+                            latch.await();
+                            return null;
+                        }
+                    };
+                }
+            };
+            service.start();
         }
     }
 
@@ -288,8 +265,7 @@ public class Main {
     private static Action ISMCTS_iter (State s) {
         for (int i = 0; i < iterations; ++i) {
             if (i % 150 == 0) {
-                System.out.println((Math.round(((float)i / (float)iterations) * 100f)) + " %");
-                GameView.gg.updateLoadingScreen(i / 3000.0);
+                System.out.println((Math.round(((float) i / (float) iterations) * 100f)) + " %");
             }
             s.getDeterminization();
             State selected = select(s);
@@ -309,6 +285,7 @@ public class Main {
                 s_c = s.children.get(i);
             }
         }
+
         return s_c.appliedAction;
     }
 

@@ -1,3 +1,4 @@
+import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -36,6 +37,7 @@ import java.util.Random;
  */
 public class GameGraphics {
     @FXML public GridPane playerGrid;
+    @FXML public Label lastAction;
     @FXML public VBox table;
     public GridPane[] tables;
     public Label[] cardCounts;
@@ -78,7 +80,8 @@ public class GameGraphics {
 
         selection = new ArrayList<>();
 
-        if (GameView.state.players.get(GameView.playerIndex).geisha.name.toString().equals("Oboro")) {
+        if (GameView.state.players.get(GameView.playerIndex).geisha.name.toString().equals("Oboro")
+                || GameView.state.players.get(GameView.playerIndex).geisha.name.toString().equals("Harukaze")) {
             geishaButton.setManaged(false);
             geishaButton.setVisible(false);
         }
@@ -98,8 +101,9 @@ public class GameGraphics {
     //todo AI progress
     //todo dialogue panes - apply card effect, use ronin/kanryou, sumo wrestler hand-peek, target player
     //todo use effect, play geisha, end turn
-    //todo variables for determinization
+    //todo variables for determinization - courtier, okaasan, doctor, geishas?, ronin?, district kanryou?
     //todo dynamic update?
+    //todo win screen
 
     /** Creates and updates player tables, access only once */
     private void createTables() {
@@ -192,6 +196,7 @@ public class GameGraphics {
 
     public void updateLightGraphics() {
         updatePlayerGrid();
+        updateLastAction();
         updateScore();
         updateDeck();
         updateDiscard();
@@ -245,6 +250,20 @@ public class GameGraphics {
         scoreLabel.setText(GameView.state.players.get(GameView.playerIndex).score + "");
     }
 
+    public void updateLastAction() {
+        String[] vibes = {
+                "THIS IS A LABEL", "LIFE IS REAL", "RANDOM ALWAYS WINS", "HAMNA DOESN'T TELL ME THE TRUTH", "FUCK ALL YA ALL", "I'M SORRY",
+                "SPARROW", "MAI-STAR IS A GREAT GAME", "WE WILL FIX IT!", "FALLOUT", "SHE GAVE TO ME ON THE 8TH DAY", "RUN, BOY, RUN",
+                "IT'S ALWAYS FUCKING LEMONS", "WE ALL COULD USE SOME GRAMMARLY", "LIFE IS STRANGE", "FROM RANDOM, XOXO", "DO NOT POKE THE CERBERUS",
+                "LIFE IS CAKE", "DANCING UNDER THE MOONLIGHT", "I AM DOING MY JOB!", "6:30", "I LOVE CYBERPUNK",
+                "IT'S FINE!", "GOOGLE DOOGLE MOOGLE CLASH!", "PRESS ON THE HEADPHONES", "ZZAP!", "HOW DO YOU WANNA DO THIS?",
+                "AKENOHOSHI IS A SWEET NAME", "LEMONADE IS GOOD", "NATURAL SURVIVOR", "SIR RANDOM, ESQ.",
+                "KAMIKAZE SHOUTS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
+        };
+        lastAction.setText("Last action: " + "");
+                //vibes[new Random().nextInt(vibes.length)]);
+    }
+
     /** Update scores and hand numbers of players on the Player Card grid */
     public void updatePlayerGrid() {
         for (int i = 0; i < GameView.state.players.size(); i++) {
@@ -284,6 +303,7 @@ public class GameGraphics {
         exchangeButton.setDisable(true);
         searchButton.setDisable(true);
         geishaButton.setDisable(true);
+        endTurnButton.setDisable(true);
 
         //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
 
@@ -330,6 +350,7 @@ public class GameGraphics {
                         advertiseButton.setDisable(false);
                         advertiseButton.setOnAction(e -> {
                             executeAction(actionAdvertise);
+                            // if (geisha.name == Harukaze) evoke selection window, select two cards from hand, discard todo
                             //todo
                         });
                     }
@@ -399,14 +420,20 @@ public class GameGraphics {
             geishaButton.setDisable(false);
             geishaButton.setOnAction(e -> {
                 //GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(GameView.state, card, actionTaken);
+                useGeishaWindow(GameView.state.players.get(GameView.playerIndex).geisha);
+                if (effectAnswer == -1) return;
+                System.out.println(effectAnswer);
                 //todo
+                // Suzune, Natsumi, Momiji - click, play
+                // Akenohoshi - new window, select one of the three reputations
+                // Harukaze - when taken advertisement action, select two cards from new hand
             });
         }
     }
 
     private void executeAction(Action action) {
         GameView.state = new State(action.applyAction(GameView.state));
-        GameView.state.turnPlayerIndex = GameView.state.getPreviousPlayer();
+        GameView.state.turnPlayerIndex = GameView.state.getPreviousPlayer(); //todo
         actionTaken = true;
         clearSelection();
         fillHand();
@@ -421,31 +448,66 @@ public class GameGraphics {
         effectAnswer = -1;
 
         switch (card.name) {
+            case Courtier: //return; // pick your card
+            case Okaasan:
+            case Doctor:
+                haveEffect();
+                if (effectAnswer == -1) return;
+                //todo
+                return; // take an action afterwards
             case Daimyo:
             case Monk:
-            case Shogun: confirmEffect(); return; //do you want to use this guest's effect?
+            case Shogun:
+                confirmEffect();
+                if (effectAnswer == -1) return;
+                //todo
+                return; //do you want to use this guest's effect?
             case Merchant:
             case Scholar:
             case Thief:
             case Yakuza:
             case Samurai:
-            case Emissary: targetEffect(); return; // pick a target player
+            case Emissary:
+                targetEffect();
+                if (effectAnswer == -1) return;
+                //todo
+                return; // pick a target player
             case Sumo_Wrestler:
                 targetEffect();
                 int targetPlayer = effectAnswer;
                 if (targetPlayer == -1 || targetPlayer == GameView.state.players.size()) return;
 
-                sumoEffect();
+                sumoEffect(card);
                 int targetCard = effectAnswer;
+                //todo
+                //GameView.state = new State(card.applyEffect());
                 //card.applyEffect()
                 return; // look at target player's hand and discard one card
-            case Courtier: //return; // pick your card
-            case Okaasan:
-            case Doctor: haveEffect(); return; // take an action afterwards
             case Actor: effectAnswer = 1; return;
+
             //todo
             case Ronin: cancelEffect(); return; // he protec
             //District_Kanryou
+
+            //Akenohoshi - select reputation to add to
+            //Harukaze - select two cards to discard, use the same interface from Sumo Wrestler
+
+            //Natsumi, Suzune, Momiji - select card, click Use Geisha to play them / apply their effect the second time
+        }
+    }
+
+    private void useGeishaWindow(Geisha geisha) {
+        effectAnswer = -1;
+
+        switch (geisha.name) {
+            case Akenohoshi:
+                akenohoshiEffect();
+                //todo
+                return;
+            case Harukaze:
+                harukazeEffect();
+                //todo
+                return;
         }
     }
 
@@ -466,6 +528,7 @@ public class GameGraphics {
 
         Button buttonOK = new Button("Yes");
         buttonOK.setMnemonicParsing(true);
+        buttonOK.setDefaultButton(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
             effectAnswer = 1;
@@ -482,6 +545,7 @@ public class GameGraphics {
 
         Button buttonCancel = new Button("Cancel");
         buttonCancel.setMnemonicParsing(true);
+        buttonCancel.setCancelButton(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
             effectAnswer = -1;
@@ -517,6 +581,8 @@ public class GameGraphics {
 
         Button buttonOK = new Button("OK");
         buttonOK.setMnemonicParsing(true);
+        buttonOK.setDefaultButton(true);
+        buttonOK.setCancelButton(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
             effectAnswer = 1;
@@ -544,7 +610,9 @@ public class GameGraphics {
     }
 
     //todo sourcePlayerName, cardName, effect
-    private void cancelEffect() {
+    public int cancelEffect() {
+        // todo check if the player has district kanryou OR ronin, then proceed
+
         Stage window = new Stage();
         window.setResizable(false);
         window.initModality(Modality.APPLICATION_MODAL);
@@ -560,19 +628,23 @@ public class GameGraphics {
 
         Button button1 = new Button("Use Ronin");
         button1.setMnemonicParsing(true);
+        //if (GameView.state.players.get(GameView.playerIndex).guests. has Ronin)
         //button1.setManaged(false); todo if has the card on table
         button1.getStyleClass().add("actionButton");
         button1.setOnAction(e -> {
             effectAnswer = 1;
+            //todo maybe remove from guests
             window.close();
         });
 
         Button button2 = new Button("Use District Kanryou");
         button2.setMnemonicParsing(true);
+        //if (GameView.state.players.get(GameView.playerIndex).hand. has District Kanryou)
         //button2.setManaged(false); todo if has the card in hand
         button2.getStyleClass().add("actionButton");
         button2.setOnAction(e -> {
             effectAnswer = 2;
+            //todo maybe remove from hand
             window.close();
         });
 
@@ -580,6 +652,11 @@ public class GameGraphics {
         buttonCancel.setMnemonicParsing(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
+            effectAnswer = 0;
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
             effectAnswer = 0;
             window.close();
         });
@@ -594,6 +671,8 @@ public class GameGraphics {
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
+
+        return effectAnswer;
     }
 
     private void targetEffect() {
@@ -647,6 +726,7 @@ public class GameGraphics {
 
         Button buttonOK = new Button("Apply");
         buttonOK.setMnemonicParsing(true);
+        buttonOK.setDefaultButton(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
             //effectAnswer = ; todo
@@ -664,6 +744,7 @@ public class GameGraphics {
 
         Button buttonCancel = new Button("Cancel");
         buttonCancel.setMnemonicParsing(true);
+        buttonCancel.setCancelButton(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
             effectAnswer = -1;
@@ -687,7 +768,7 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    private void sumoEffect() {
+    private void sumoEffect(Card source) {
         Stage window = new Stage();
         //window.setResizable(false);
         window.setMinWidth(860);
@@ -713,8 +794,11 @@ public class GameGraphics {
         playerGrid.setPrefHeight(300.0);
         playerGrid.setPrefWidth(600.0);
 
+        int forbidden = -1;
+
         for (int i = 0; i < GameView.state.players.get(effectAnswer).hand.size(); i++) {
             Card cardCard = GameView.state.players.get(effectAnswer).hand.get(i);
+
             ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
             img.setFitWidth(220);
             img.setFitHeight(300);
@@ -747,18 +831,24 @@ public class GameGraphics {
             });
 
             card.setOnMouseClicked(e -> {
+                if (cardCard.equals(source)) return;
                 playerGrid.getChildren().get(effectAnswer).getStyleClass().remove("target");
                 effectAnswer = k;
                 playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
             });
 
             playerGrid.add(card, i, 0);
+
+            if (cardCard.equals(source)) {
+                card.setOpacity(0.74);
+                forbidden = i;
+            }
         }
 
         playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setMinWidth(200);
         playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
 
-        effectAnswer = 0;
+        effectAnswer = forbidden != 0 ? 0 : 1;
         playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
 
         Button buttonOK = new Button("Discard");
@@ -785,11 +875,185 @@ public class GameGraphics {
         window.showAndWait();
     }
 
+    private void akenohoshiEffect() {
+        Stage window = new Stage();
+        window.setResizable(false);
+        window.setMinWidth(360);
+        window.setMinHeight(290);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Increase Reputation");
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER);
+
+        Label message = new Label("Pick a reputation skill you want to increase (+3).");
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+
+        Button buttonPerformance = new Button("PERFORMANCE");
+        buttonPerformance.getStyleClass().add("menuButton");
+        buttonPerformance.setStyle("-fx-background-color: linear-gradient(#E24624 33%, #C49D5C);");
+        buttonPerformance.setMinWidth(200);
+        buttonPerformance.setOnAction(e -> {
+            effectAnswer = 0;
+            window.close();
+        });
+
+        Button buttonService = new Button("SERVICE");
+        buttonService.getStyleClass().add("menuButton");
+        buttonService.setStyle("-fx-background-color: linear-gradient(#2F76B5 33%, #C49D5C);");
+        buttonService.setMinWidth(200);
+        buttonService.setOnAction(e -> {
+            effectAnswer = 1;
+            window.close();
+        });
+
+        Button buttonIntelligence = new Button("INTELLIGENCE");
+        buttonIntelligence.getStyleClass().add("menuButton");
+        buttonIntelligence.setStyle("-fx-background-color: linear-gradient(#216F36 33%, #C49D5C);");
+        buttonIntelligence.setMinWidth(200);
+        buttonIntelligence.setOnAction(e -> {
+            effectAnswer = 2;
+            window.close();
+        });
+
+        VBox skills = new VBox(8);
+        skills.setAlignment(Pos.CENTER);
+        skills.getChildren().addAll(buttonPerformance, buttonService, buttonIntelligence);
+
+        Button buttonCancel = new Button("Cancel");
+        buttonCancel.setMnemonicParsing(true);
+        buttonCancel.setCancelButton(true);
+        buttonCancel.setMinWidth(125);
+        buttonCancel.setMinHeight(30);
+        buttonCancel.getStyleClass().add("actionButton");
+        buttonCancel.setOnAction(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        layout.getChildren().addAll(message, skills, buttonCancel);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    private ArrayList harukazeSelection = new ArrayList();
+    private void harukazeEffect() {
+        //table.setDisable(true);
+        //playerGrid.setDisable(true);
+        Stage window = new Stage();
+        //window.setResizable(false);
+        window.setMinWidth(860);
+        window.setMinHeight(420);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Harukaze's Effect");
+
+        VBox layout = new VBox(7);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER);
+
+        Label message = new Label("Pick 2 cards to discard from your hand.");
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+
+        //fitHeight="300.0" fitWidth="225.0" preserveRatio
+        GridPane playerGrid = new GridPane();
+        //playerGrid.setPrefTileHeight(300);
+        playerGrid.getRowConstraints().add(new RowConstraints(300));
+        playerGrid.setPadding(new Insets(10, 30, 10, 30));
+        playerGrid.getStyleClass().add("table");
+        playerGrid.setAlignment(Pos.CENTER_LEFT);
+        playerGrid.setPrefHeight(300.0);
+        playerGrid.setPrefWidth(600.0);
+
+        for (int i = 0; i < GameView.state.players.get(GameView.playerIndex).hand.size(); i++) {
+            Card cardCard = GameView.state.players.get(GameView.playerIndex).hand.get(i);
+
+
+            ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
+            img.setFitWidth(220);
+            img.setFitHeight(300);
+            img.setPickOnBounds(true);
+            img.setPreserveRatio(true);
+
+            StackPane card = new StackPane();
+            card.setMaxHeight(img.getFitHeight());
+            card.setMaxWidth(img.getFitHeight() * 0.7114);
+            card.getChildren().add(img);
+            card.getStyleClass().add("card");
+
+            ColumnConstraints cc = new ColumnConstraints();
+            cc.setHgrow(Priority.SOMETIMES);
+            cc.setHalignment(HPos.LEFT);
+            cc.setMaxWidth(220);
+            cc.setMinWidth(5);
+            playerGrid.getColumnConstraints().add(cc);
+
+            int k = i;
+            card.setOnMouseEntered(e -> {
+                playerGrid.getColumnConstraints().get(k).setMinWidth(200);
+                playerGrid.getColumnConstraints().get(k).setHgrow(Priority.NEVER);
+            });
+
+            card.setOnMouseExited(e -> {
+                if (k == playerGrid.getColumnCount() - 1) return;
+                playerGrid.getColumnConstraints().get(k).setMinWidth(5);
+                playerGrid.getColumnConstraints().get(k).setHgrow(Priority.SOMETIMES);
+            });
+
+            card.setOnMouseClicked(e -> {
+                if (harukazeSelection.get(0).equals(k) || harukazeSelection.get(1).equals(k)) return;
+                playerGrid.getChildren().get((Integer)harukazeSelection.remove(0)).getStyleClass().remove("target");
+                harukazeSelection.add(k);
+                playerGrid.getChildren().get((Integer)harukazeSelection.get(1)).getStyleClass().add("target");
+            });
+
+            playerGrid.add(card, i, 0);
+        }
+
+        playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setMinWidth(200);
+        playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
+
+        //effectAnswer = 0;
+        //playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
+        harukazeSelection.clear();
+        harukazeSelection.add(0);
+        harukazeSelection.add(1);
+        playerGrid.getChildren().get(0).getStyleClass().add("target");
+        playerGrid.getChildren().get(1).getStyleClass().add("target");
+
+        Button buttonOK = new Button("Discard");
+        buttonOK.setMnemonicParsing(true);
+        buttonOK.getStyleClass().add("actionButton");
+        buttonOK.setOnAction(e -> {
+            //effectAnswer = ; todo
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
+            window.close();
+        });
+
+        layout.getChildren().addAll(message, playerGrid, buttonOK);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+
+    }
+
     //todo
     private void finishTurn() {
         GameView.state.turnPlayerIndex = GameView.state.getNextPlayer();
         updateAllGraphics();
-        openLoadingScreen();
         Main.loop();
     }
 
@@ -797,19 +1061,34 @@ public class GameGraphics {
         ProgressBar bar = new ProgressBar();
         bar.setLayoutX(anchor.getWidth() / 2);
         bar.setLayoutY(anchor.getHeight() / 2);
-        bar.setPrefWidth(300);
-        bar.setPrefHeight(25);
+        bar.setPrefWidth(350);
+        bar.setPrefHeight(28);
         bar.setProgress(0.0);
 
-        anchor.getChildren().add(bar);
+        /*Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                anchor.getChildren().add(bar);
+            }
+        });*/
     }
 
     public void updateLoadingScreen(double value) {
-        ((ProgressBar) anchor.getChildren().get(anchor.getChildren().size() - 1)).setProgress(value);
+        /*Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                ((ProgressBar) anchor.getChildren().get(anchor.getChildren().size() - 1)).setProgress(value);
+            }
+        });*/
     }
 
     public void closeLoadingScreen() {
-        anchor.getChildren().remove(anchor.getChildren().size() - 1);
+        /*Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                anchor.getChildren().remove(anchor.getChildren().size() - 1);
+            }
+        });*/
     }
 
     /**
@@ -857,13 +1136,7 @@ public class GameGraphics {
         card.getStyleClass().add("card");
 
         if (index != -1 && (isHandGrid || table.equals(tables[GameView.playerIndex]) && !isGuest))
-            card.setOnMouseClicked(e -> {
-                if (e.getClickCount() > 1) {
-                    clearSelection();
-                    //removeFromTable((GridPane)card.getParent(), card);
-                    noButtonsWithoutRepresentation();
-                } else onSelection(card);
-            });
+            card.setOnMouseClicked(e -> onSelection(card));
 
         card.setOnMouseEntered(ev -> setShowcaseCard(ev));
         card.setOnMouseExited(ev -> setShowcaseCardDefault());
@@ -1024,6 +1297,107 @@ public class GameGraphics {
         }
     }
 
+    //todo
+    @FXML
+    public void logScreen() {
+        Stage window = new Stage();
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Action Log");
+        //window.getIcons().add(Window.icon);
+        window.setMinWidth(660);
+        window.setMinHeight(450);
+
+        ListView<String> log = new ListView();
+        //log.setPadding(new Insets(0, 0, 0, 10));
+        log.setEditable(false);
+        log.setFocusTraversable(false);
+        for (int i = 0; i < 100; i++) { //todo replace
+            log.getItems().add(i + ": Player " + i % GameView.state.players.size() + " decided he is too good for this game. This player has been eliminated.");
+        }
+
+        Button resumeButton = new Button("OK");
+        resumeButton.getStyleClass().add("actionButton");
+        resumeButton.setMaxWidth(200);
+        resumeButton.setDefaultButton(true);
+        resumeButton.setCancelButton(true);
+        resumeButton.setOnAction(e -> {
+            window.close();
+        });
+
+        VBox layout = new VBox(15);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setPadding(new Insets(0, 0, 15, 0));
+        layout.setAlignment(Pos.TOP_CENTER);
+
+        layout.getChildren().addAll(log, resumeButton);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    //todo
+    public void winScreen() {
+        Stage window = new Stage();
+        window.setResizable(false);
+        window.initModality(Modality.APPLICATION_MODAL);
+        window.setTitle("Game Results");
+
+        VBox layout = new VBox(20);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.setAlignment(Pos.CENTER);
+
+        Label messageWin = new Label("YOU WON!"); //todo won or lost
+        messageWin.setFont(Font.font("", FontWeight.BOLD, 24));
+
+        Label message = new Label("Round has ended - deck has been exhausted."); //todo GameView.state.round == 3 ? "Game" : "Round", player.name has exhausted their hand
+        message.setFont(Font.font("", FontWeight.BOLD, 14));
+
+        Label messageWinner = new Label(GameView.state.players.get(GameView.playerIndex).name + " won."); //todo winner player, or check if draw, consult the rules
+        messageWinner.setFont(Font.font("", FontWeight.BOLD, 14));
+
+        Button restartButton = new Button("Restart");
+        restartButton.getStyleClass().add("actionButton");
+        restartButton.setMinWidth(50);
+        restartButton.setOnAction(e -> {
+            window.close();
+            GameView gameView = new GameView();
+        });
+
+        Button quitToMenuButton = new Button("Quit to Main Menu");
+        quitToMenuButton.getStyleClass().add("actionButton");
+        quitToMenuButton.setMinWidth(50);
+        quitToMenuButton.setOnAction(e -> {
+            window.close();
+            try {
+                SetupView setupView = new SetupView();
+                setupView.start(SetupView.window);
+            } catch (Exception exception) {
+                System.out.println(exception + "\nERROR: Failed to reload SetupView.");
+            }
+        });
+
+        Button quitButton = new Button("Quit");
+        quitButton.getStyleClass().add("actionButton");
+        quitButton.setMinWidth(50);
+        quitButton.setOnAction(e -> {
+            GameView.window.close();
+            window.close();
+        });
+
+        HBox buttons = new HBox(10);
+        buttons.setAlignment(Pos.CENTER);
+        buttons.getChildren().addAll(restartButton, quitToMenuButton, quitButton);
+
+        layout.getChildren().addAll(messageWin, message, messageWinner, loadScoreSheet(), buttons);
+
+        Scene scene = new Scene(layout, 540, 450);
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
     @FXML
     public void openMenu() {
         Stage window = new Stage();
@@ -1116,6 +1490,27 @@ public class GameGraphics {
         window.setMinWidth(550 + 135 * (GameView.state.players.size()-3));
         window.setMinHeight(305);
 
+        Button resumeButton = new Button("Resume");
+        resumeButton.getStyleClass().add("actionButton");
+        resumeButton.setMaxWidth(200);
+        resumeButton.setDefaultButton(true);
+        resumeButton.setCancelButton(true);
+        resumeButton.setOnAction(e -> {
+            window.close();
+        });
+
+        VBox layout = new VBox(25);
+        layout.getStyleClass().add("vBoxLayout");
+        layout.getChildren().addAll(loadScoreSheet(), resumeButton);
+        layout.setAlignment(Pos.CENTER);
+
+        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
+        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
+        window.setScene(scene);
+        window.showAndWait();
+    }
+
+    private GridPane loadScoreSheet() {
         GridPane scoreSheet = new GridPane();
         scoreSheet.setAlignment(Pos.CENTER);
         scoreSheet.setGridLinesVisible(true);
@@ -1150,24 +1545,7 @@ public class GameGraphics {
             }
         }
 
-        Button resumeButton = new Button("Resume");
-        resumeButton.getStyleClass().add("actionButton");
-        resumeButton.setMaxWidth(200);
-        resumeButton.setDefaultButton(true);
-        resumeButton.setCancelButton(true);
-        resumeButton.setOnAction(e -> {
-            window.close();
-        });
-
-        VBox layout = new VBox(25);
-        layout.getStyleClass().add("vBoxLayout");
-        layout.getChildren().addAll(scoreSheet, resumeButton);
-        layout.setAlignment(Pos.CENTER);
-
-        Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
-        scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
-        window.setScene(scene);
-        window.showAndWait();
+        return scoreSheet;
     }
 
     private void openHelp() {

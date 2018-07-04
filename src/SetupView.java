@@ -244,6 +244,12 @@ public class SetupView extends Application {
                         (!playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText())
                         + (aiType[i] == 0 ? "" : aiType[i] == 1 ? " [ISMCTS]" : " [Random]")
                 );
+                if (players.indexOf(players.get(i)) != i) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR,
+                            "Please, ensure you have different names for your players.");
+                    alert.showAndWait();
+                    return;
+                }
             }
             setScene2();
         });
@@ -255,6 +261,12 @@ public class SetupView extends Application {
                         (!playerName[i].getText().equals("") ? playerName[i].getText().trim() : playerName[i].getPromptText())
                                 + (aiType[i] == 0 ? "" : aiType[i] == 1 ? " [ISMCTS]" : " [Random]")
                 );
+                if (players.indexOf(players.get(i)) != i) {
+                    Alert alert = new Alert(Alert.AlertType.ERROR,
+                            "Please, ensure you have different names for your players.");
+                    alert.showAndWait();
+                    return;
+                }
             }
 
             playerGeishas.clear();

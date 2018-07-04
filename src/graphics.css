@@ -16,6 +16,13 @@
     -fx-background: transparent;
     -fx-background-color: transparent;
 }
+.list-cell {
+    -fx-background: transparent;
+    -fx-font-weight: bold;
+}
+.list-view {
+    -fx-background-color: transparent;
+}
 .card:hover {
     -fx-cursor: hand;
     -fx-scale-y: 1.06;
@@ -171,6 +178,13 @@
 }
 .playerCell.selected {
     -fx-border-color: #DBD28F;
+}
+.playerCell.actionCell {
+    -fx-background-color: linear-gradient(#A65230, #CAA361);
+}
+.playerCell.actionCell:pressed {
+    -fx-scale-x: 1;
+    -fx-scale-y: 1;
 }
 .gridCell {
     -fx-border-style: solid OUTSIDE;

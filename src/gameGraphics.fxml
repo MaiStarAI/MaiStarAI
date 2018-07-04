@@ -53,7 +53,7 @@
             <Label fx:id="heapLabel" pickOnBounds="false" styleClass="pileNumber" text="0" />
          </children>
       </VBox>
-      <GridPane fx:id="playerGrid" alignment="CENTER" layoutX="65.0" layoutY="27.0" prefHeight="150.0" prefWidth="600.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="270.0" AnchorPane.topAnchor="0.0">
+      <GridPane fx:id="playerGrid" alignment="CENTER" layoutX="65.0" layoutY="27.0" prefHeight="120.0" prefWidth="600.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="270.0" AnchorPane.topAnchor="0.0">
         <columnConstraints>
           <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
               <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
@@ -69,9 +69,9 @@
             <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
          </padding>
          <children>
-           <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="0">
+           <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="0">
                <children>
-                   <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
+                   <VBox alignment="CENTER" prefHeight="40.0" prefWidth="100.0">
                        <ImageView fitHeight="36.0" fitWidth="36.0" preserveRatio="true">
                            <image>
                                <Image url="file:images/orchid.png" />
@@ -80,7 +80,6 @@
                                <Bloom threshold="0.38" />
                            </effect>
                        </ImageView>
-                       <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
                    </VBox>
                    <Label styleClass="playerLabel" text="Player 1" />
                    <GridPane alignment="CENTER" styleClass="gridCell">
@@ -102,10 +101,9 @@
                   <Glow level="0.4" />
                </effect>
            </VBox>
-             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="1">
+             <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="1">
                  <children>
-                     <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
-                         <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
+                     <VBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
                      <GridPane alignment="CENTER" styleClass="gridCell">
@@ -124,10 +122,9 @@
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="2">
+             <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="2">
                  <children>
-                     <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
-                         <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
+                     <VBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
                      <GridPane alignment="CENTER" styleClass="gridCell">
@@ -146,10 +143,9 @@
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="3">
+             <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="3">
                  <children>
-                     <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
-                         <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
+                     <VBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
                      <GridPane alignment="CENTER" styleClass="gridCell">
@@ -168,10 +164,9 @@
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="4">
+             <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="4">
                  <children>
-                     <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
-                         <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
+                     <VBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
                      <GridPane alignment="CENTER" styleClass="gridCell">
@@ -190,10 +185,9 @@
                      </GridPane>
                  </children>
              </VBox>
-             <VBox alignment="TOP_CENTER" onMouseClicked="#changeTable" prefHeight="120.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="5">
+             <VBox alignment="BOTTOM_CENTER" onMouseClicked="#changeTable" prefHeight="90.0" prefWidth="100.0" styleClass="playerCell" GridPane.columnIndex="5">
                  <children>
-                     <VBox alignment="CENTER" prefHeight="76.0" prefWidth="100.0">
-                         <Label styleClass="playerLabel" text="Click to see..." wrapText="true" />
+                     <VBox alignment="CENTER" prefHeight="50.0" prefWidth="100.0">
                      </VBox>
                      <Label styleClass="playerLabel" text="Player 1" />
                      <GridPane alignment="CENTER" styleClass="gridCell">
@@ -214,6 +208,14 @@
              </VBox>
          </children>
       </GridPane>
+       <VBox styleClass="playerCell, actionCell" onMouseClicked="#logScreen" alignment="CENTER_LEFT" layoutX="65.0" layoutY="27.0" prefHeight="30.0" prefWidth="600.0" AnchorPane.leftAnchor="25.0" AnchorPane.rightAnchor="270.0" AnchorPane.topAnchor="120.0">
+           <Label fx:id="lastAction" style="-fx-font-weight: bold; -fx-font-size: 13;" text="Last action: " >
+               <padding>
+                   <Insets left="5.0" right="5.0" />
+               </padding>
+           </Label>
+           <effect><Glow></Glow></effect>
+       </VBox>
        <VBox fx:id="table" alignment="BOTTOM_CENTER" layoutX="23.0" layoutY="190.0" prefHeight="300.0" prefWidth="600.0" AnchorPane.bottomAnchor="185.0" AnchorPane.leftAnchor="15.0" AnchorPane.rightAnchor="250.0">
           <GridPane alignment="CENTER_LEFT" prefHeight="270.0" prefWidth="600.0" styleClass="table">
             <columnConstraints>
