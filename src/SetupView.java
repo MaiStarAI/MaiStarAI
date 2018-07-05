@@ -106,11 +106,11 @@ public class SetupView extends Application {
         geishasPrioritized = new ArrayList<>();
 
         ArrayList<Card> deck = new ArrayList<>();
-        deck.addAll(Main.deckFill());
+        deck.addAll(Main.getAllCards());
 
         cardsDeck = new String[deck.size()];
         for (int i = 0; i < deck.size(); i++) {
-            cardsDeck[i] = deck.get(i).color + "_" + deck.get(i).name.toString().replace("_", " ");
+            cardsDeck[i] = deck.get(i).getColor() + "_" + deck.get(i).getName().toString().replace("_", " ");
         }
 
         cardsRemaining.clear();
@@ -1305,19 +1305,20 @@ public class SetupView extends Application {
     }
 
     public static ImageView getCardImage(Card card) {
-        String cardName = card.color.toString().toLowerCase().concat("_").concat(card.name.toString().toLowerCase());
+        String cardName = card.getColor().toString().toLowerCase().concat("_").concat(card.getName().toString().toLowerCase());
         return getCardImage(cardName);
     }
 
     public static ImageView getCardImage(Geisha geisha) {
-        String cardName = geisha.name.toString().toLowerCase();
+        String cardName = geisha.getName().toString().toLowerCase();
         return getCardImage(cardName);
     }
 
     private void play() {
         if (playerGeishas.size() == 0) {
             geishasPrioritized.clear();
-            geishasPrioritized.addAll(Arrays.asList(2, 5, 3, 0, 1, 4));
+            geishasPrioritized.addAll(Arrays.asList(0, 1, 3, 5, 2, 4));
+            //"Momiji", "Akenohoshi", "Suzune", "Natsumi", "Oboro", "Harukaze"
 
             playerGeishas.clear();
             playerCards.clear();
@@ -1370,6 +1371,7 @@ public class SetupView extends Application {
             this.aiType = aiType.toArray(new Integer[aiType.size()]);
         }
 
-        GameView game = new GameView();
+        Main.setGraphics();
+        //TODO GameView game = new GameView();
     }
 }

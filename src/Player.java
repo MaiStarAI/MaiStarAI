@@ -1,121 +1,125 @@
 import java.util.ArrayList;
 
-/**
- * Class player contains information about player
- *
- * name: name of player
- * type: type of player
- * hand: cards in player's hand
- * cardsNumber: number of cards in hand
- * geisha: object of class Geisha which contains information about geisha of player
- * score: sum of guest rewards of all cards which played as a guest
- * guests: array of cards which played as guests
- * advertiser: array of cards which played as advertisers
- * specialEffects: array with names of cards which have special effect (Ronin, District Kanryou)
- * geishaEffect: how much times player can play effect of his geisha
- */
+class Player {
 
-public class Player {
-    String name;
-    PlayerType type;
-    ArrayList<Card> hand;
-    int cardsNumber;
-    Geisha geisha;
-    int score;
-    ArrayList<Card> guests;
-    ArrayList<Card> advertisers;
-    ArrayList<CardsNames> specialEffects;
-    int geishaEffect;
-
-    /**
-     * Main constructor for class Player
-     * @param name: name of player
-     * @param hand: array with cards which is in player's hand
-     * @param geisha: object of class Geisha which contains information about geisha of player
-     */
-
-    Player(String name, ArrayList<Card> hand, Geisha geisha) {
-        this.name = name;
-        this.hand = hand;
-        this.geisha = geisha;
-        cardsNumber = hand.size();
-        score = 0;
-        guests = new ArrayList<>();
-        advertisers = new ArrayList<>();
-        specialEffects = new ArrayList<>();
-        this.geishaEffect = geisha.numberEffect;
-
-        for (Card aHand : this.hand) {
-            if (aHand.name == CardsNames.District_Kanryou) {
-                this.specialEffects.add(CardsNames.District_Kanryou);
-            }
-        }
+    enum Type {
+        Human, ISMCTS, Random
     }
 
-    /**
-     * Constructor to create copies of players
-     * @param anotherPlayer: player which new object need to create
-     */
+    private String name;
+    private Type type;
+    private Geisha geisha;
+    private int geishaUsages;
 
-    Player(Player anotherPlayer) {
-        name = anotherPlayer.name;
-        hand = new ArrayList<>(anotherPlayer.hand);
-        geisha = new Geisha(anotherPlayer.geisha);
-        type = anotherPlayer.type;
-        cardsNumber = anotherPlayer.cardsNumber;
-        score = anotherPlayer.score;
-        guests = new ArrayList<>(anotherPlayer.guests);
-        advertisers = new ArrayList<>(anotherPlayer.advertisers);
-        specialEffects = new ArrayList<>(anotherPlayer.specialEffects);
-        geishaEffect = anotherPlayer.geishaEffect;
+    private Reputation akenohoshi_bonus;
 
-    }
+    private ArrayList<Card> hand;
+    private ArrayList<Card> a_line;
+    private ArrayList<Card> g_line;
 
-    /**
-     * Method to set type
-     * @param type: new type of player
-     */
-
-    public void setType(PlayerType type){
+    /** Constructor for creation of the new player */
+    Player (Type type, String name, Geisha geisha) {
         this.type = type;
+        this.name = name;
+        this.geisha = geisha;
+        geishaUsages = 0;
+        hand = new ArrayList<>();
+        a_line = new ArrayList<>();
+        g_line = new ArrayList<>();
     }
 
-    /**
-     * Update array with special effects and player's hand in case application of such effect
-     * @param cardName: card which effect was applied
-     */
+    /** Copy constructor */
+    Player (Player another) {
+        this(another.getType(), another.getName(), another.getGeisha());
+        setGeishaUsages(another.getGeishaUsages());
+        for (Card c : another.getHand()) addCard(c); // New instances
+        for (Card c : another.getGuests()) g_line.add(new Card(c));
+        for (Card c : another.getAdverts()) a_line.add(new Card(c));
 
-    public void updateSpecialEffect(CardsNames cardName) {
-        switch (cardName) {
-            case Ronin:
-                for (int i = 0; i < specialEffects.size(); i++) {
-                    if (specialEffects.get(i) == CardsNames.Ronin) {
-                        specialEffects.remove(i);
-                    }
-                }
+    }
 
-                for (int i = 0; i < guests.size(); i++) {
-                    if (guests.get(i).name == CardsNames.Ronin) {
-                        guests.remove(i);
-                    }
-                }
-                break;
+    /** Adds new card instance to the hand */
+    void addCard (Card card) {
+        hand.add(new Card(card));
+    }
+    void addAdv (Card card) { a_line.add(new Card(card)); }
+    void addGuest (Card card) { g_line.add(new Card(card)); }
 
-            case District_Kanryou:
-                for (int i = 0; i < specialEffects.size(); i++) {
-                    if (specialEffects.get(i) == CardsNames.District_Kanryou) {
-                        specialEffects.remove(i);
-                    }
-                }
+    /** Discards one of the cards of given type and color */
+    void discardCard (Card card) {
+        hand.removeIf(c -> c.equals(card));
+    }
+    void discardAdv (Card card) { a_line.removeIf(c -> c.equals(card)); }
+    void discardGuest (Card card) { g_line.removeIf(c -> c.equals(card)); }
 
-                for (int i = 0; i < guests.size(); i++) {
-                    if (guests.get(i).name == CardsNames.District_Kanryou) {
-                        guests.remove(i);
-                    }
-                }
-            default:
-                System.out.println("Error: there is no such special effect");
+    /** Discards the i'th card */
+    void discardCard (int i) {
+        hand.remove(i);
+    }
+    void discardAdv (int i) { a_line.remove(i); }
+    void discardGuest (int i) { g_line.remove(i); }
+
+    /** Returns the score based on current guests */
+    int getScore () {
+        int score = 0;
+        for (Card c : getGuests())
+            score += c.getReward();
+        score -= 2 * getHand().size();
+        return score  < 0 ? 0 : score;
+    }
+    /** Returns overall reputation */
+    Reputation getReputation () {
+        int red = 0, blue = 0, green = 0, black = 0;
+        red += geisha.getRed();
+        blue += geisha.getBlue();
+        green += geisha.getGreen();
+
+        for (Card c : getAdverts()) {
+            red += c.getBonus().getRed();
+            blue += c.getBonus().getBlue();
+            green += c.getBonus().getGreen();
         }
+
+        black = Math.max(Math.max(red, blue), green);
+
+        return new Reputation(red, blue, green, black);
     }
 
+    /** Geisha usages */
+    int getGeishaUsages() {
+        return geishaUsages;
+    }
+    void setGeishaUsages(int geishaUsages) {
+        this.geishaUsages = geishaUsages;
+    }
+    void increaseGeishaUsages () { geishaUsages++; }
+
+    /** Getters and setters */
+    Type getType () { return type; }
+    String getName () { return name; }
+    Geisha getGeisha () { return geisha; }
+
+    ArrayList<Card> getHand () { return hand; }
+    ArrayList<Card> getGuests () { return g_line; }
+    ArrayList<Card> getAdverts () { return a_line; }
+
+    Reputation getAkenohoshiBonus () { return akenohoshi_bonus; }
+    void setAkenohoshiBonus (Reputation rep) { akenohoshi_bonus = rep; }
+
+    public String toString () {
+        StringBuilder hand = new StringBuilder();
+        StringBuilder advs = new StringBuilder();
+        StringBuilder guests = new StringBuilder();
+
+        for (Card c : getHand()) hand.append("\t\t").append(c.toString()).append("\r\n");
+        for (Card c : getAdverts()) advs.append("\t\t").append(c.toString()).append("\r\n");
+        for (Card c : getGuests()) guests.append("\t\t").append(c.toString()).append("\r\n");
+
+        return getName() + "(" + getType().toString() + "):\r\n" +
+                "\tGeisha: " + getGeisha().getName().toString() + "\r\n" +
+                "\tHand:\r\n" + hand.toString() +
+                "\tAdvertisers:\r\n" + advs.toString() +
+                "\tGuests:\r\n" + guests.toString() +
+                "\tScore: " + getScore();
+    }
 }

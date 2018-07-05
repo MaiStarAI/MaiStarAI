@@ -1,394 +1,343 @@
-import java.util.HashMap;
+class Card {
 
-/**
- * Class card contain information about current card
- */
+    enum Name {
+        Monk, Doctor, Shogun, Actor, Okaasan, Sumo_Wrestler, Emissary, Samurai,
+        Daimyo, Ronin, District_Kanryou, Thief, Yakuza, Courtier, Merchant, Scholar
+    }
 
-public class Card {
-    CardsNames name;
-    Colors color;
-    int requirement;
-    int guestReward;
-    HashMap<Colors, Integer> advReward;
-    boolean known;
+    enum Color {
+        RED, BLUE, GREEN, BLACK
+    }
 
-    /**
-     * Main constructor for card
-     * @param cardName: name of a card
-     * @param color: color of a card
-     * @param requirement: number which determine requirement which need to play this card
-     * @param guestReward: number which added to the player's score when he plays it as a guest
-     * @param advReward: array with numbers which are added  to geisha's abilities when this card played as an advertiser
-     */
+    private Name name;
+    private Color color;
+    private Reputation bonus;
+    private Reputation req; // Requirement
+    private int reward;
+    int usages = 0; // For Momiji effect with Ronins
 
-    Card(CardsNames cardName, Colors color, int requirement, int guestReward, HashMap<Colors, Integer> advReward) {
-        this.name = cardName;
+    // For ISMCTS
+    boolean is_known = false;
+
+    /** Constructor for creation of the new card */
+    Card (Name name, Color color) {
+        this.name = name;
         this.color = color;
-        this.requirement = requirement;
-        this.guestReward = guestReward;
-        this.advReward = advReward;
-        this.known = false;
-    }
-
-    /**
-     * Constructor to crate copies of cards
-     * @param anotherCard: card which new object need to create
-     */
-
-    Card(Card anotherCard) {
-        this.name = anotherCard.name;
-        this.color = anotherCard.color;
-        this.requirement = anotherCard.requirement;
-        this.guestReward = anotherCard.guestReward;
-        this.advReward = new HashMap<>(anotherCard.advReward);
-        this.known = anotherCard.known;
-    }
-
-    /**
-     * Method to check applicability of this card's effect
-     * @param state: game's state for which we apply effect
-     * @param card: card which we use for effect
-     * @param targetPlayer: player on which we apply effect
-     * @return true if we can apply such effect
-     */
-
-    public boolean isApplicableEffect(State state, Card card, int targetPlayer) {
         switch (name) {
-            case Ronin: { return true; }
-            case Courtier: { return card.color == this.color &&
-                    card.requirement <= state.players.get(state.turnPlayerIndex).geisha.abilities.get(card.color); }
-            case Doctor: { return state.players.get(state.turnPlayerIndex).hand.size() > 0; }
-            case Emissary: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
-            case Merchant: { return state.drawDeck > 1; }
-            case Yakuza: { return !state.players.get(targetPlayer).advertisers.isEmpty(); }
-            case Okaasan: { return true; }
-            case Scholar: { return state.drawDeck > 0; }
-            case Sumo_Wrestler: { return true; }
-            case Thief: { return !state.players.get(targetPlayer).guests.isEmpty(); }
-            case Actor: { return true; }
-            case Daimyo: { return true; }
-            case Samurai: { return !state.players.get(targetPlayer).guests.isEmpty(); }
-            case Monk: { return true; }
-            case Shogun: { return true; }
-            default: { return false; }
-        }
-    }
-
-    /**
-     * Method to apply effect
-     * @param state: game's state for which we apply effect
-     * @param card: card which we use for effect
-     * @param targetPlayer: player on which we apply effect
-     * @param withEffect: apply effect of card which we use for effect
-     * @return new state after applying effect
-     */
-
-    public State applyEffect(State state, Card card, int targetPlayer, boolean withEffect) {
-        state.turnPlayerIndex = state.getPreviousPlayer();
-
-        switch (this.name) {
-            case Monk:
-                return this.MonkEffect(state);
-            case Doctor:
-                return this.DoctorEffect(state);
-            case Shogun:
-                return this.ShogunEffect(state);
-            case Okaasan:
-                return this.OkaasanEffect(state, card);
-            case Sumo_Wrestler:
-                return this.SumoWrestlerEffect(state, targetPlayer, card);
-            case Emissary:
-                return this.EmissaryEffect(state, targetPlayer);
-            case Samurai:
-                return this.SamuraiEffect(state, targetPlayer);
-            case Daimyo:
-                return this.DaimyoEffect(state);
-            case Ronin:
-                return this.RoninEffect(state);
-            case Thief:
-                return this.ThiefEffect(state, targetPlayer);
-            case Yakuza:
-                return this.YakuzaEffect(state, targetPlayer);
-            case Courtier:
-                return this.CourtierEffect(state, card, targetPlayer, withEffect);
-            case Merchant:
-                return this.MerchantEffect(state, targetPlayer);
-            case Scholar:
-                return this.ScholarEffect(state, targetPlayer);
-            default:
-                //System.out.println("Error: no such name of card with effect");
-                return null;
-        }
-    }
-
-    /**
-     * Apply effect of card Monk
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State MonkEffect(State currentState) {
-        State state = new State(currentState);
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        state.discardedCards.addAll(turnPlayer.hand);
-        turnPlayer.hand.clear();
-        state.turnPlayerIndex = state.getNextPlayer();
-        return state;
-    }
-
-    /**
-     * Apply effect of card Doctor
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State DoctorEffect(State currentState) {
-        State state = new State(currentState);
-        state.turnPlayerIndex = state.getPreviousPlayer();
-        return state;
-    }
-
-    /**
-     * Apply effect of card Shogun
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-
-    private State ShogunEffect(State currentState) {
-        State state = new State(currentState);
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        for (int i = 0; i < turnPlayer.hand.size(); i++) {
-            turnPlayer.guests.add(turnPlayer.hand.get(i));
-            turnPlayer.score += turnPlayer.hand.get(i).guestReward;
-        }
-        turnPlayer.hand.clear();
-        state.turnPlayerIndex = state.getNextPlayer();
-        return state;
-    }
-
-    /**
-     * Apply effect of card Okaasan
-     * @param state: game's state for which we apply effect
-     * @param card: card which we use for this effect (as an advertiser)
-     * @return new state after applying effect
-     */
-
-    private State OkaasanEffect(State state, Card card) {
-        Action action = new Action(card);
-        State newState = action.applyAction(state);
-
-        newState.parent = state.parent;
-        state.children.remove(newState);
-        newState.turnPlayerIndex = state.turnPlayerIndex;
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
-    }
-
-    /**
-     * Apply effect of card Sumo-Wrestler
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @param card: card which we remove
-     * @return new state after applying effect
-     */
-
-    private State SumoWrestlerEffect(State state, int targetPlayer, Card card) {
-        State newState = new State(state);
-        for (int i = 0; i < newState.players.get(targetPlayer).hand.size(); i++) {
-            newState.players.get(targetPlayer).hand.get(i).known = true;
-        }
-
-        for (Card c : newState.players.get(targetPlayer).hand) {
-            if (Main.equalCards(c, card)) {
-                newState.players.get(targetPlayer).hand.remove(c);
+            case Ronin: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(2, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 2, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 2);
+                        break;
+                    }
+                }
+                reward =  2;
+                break;
+            }
+            case Monk: {
+                bonus = new Reputation(1, 1, 1);
+                req =  new Reputation(0, 0, 0, 9);
+                reward = 10;
+                break;
+            }
+            case Actor: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 1, 1);
+                        req =  new Reputation(5, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(1, 1, 1);
+                        req =  new Reputation(0, 5, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(1, 1, 1);
+                        req =  new Reputation(0, 0, 5);
+                        break;
+                    }
+                }
+                reward =  5;
+                break;
+            }
+            case Thief: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(4, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 4, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 4);
+                        break;
+                    }
+                }
+                reward =  4;
+                break;
+            }
+            case Daimyo: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(9, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 9, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 9);
+                        break;
+                    }
+                }
+                reward = 10;
+                break;
+            }
+            case Doctor: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(7, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 7, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 7);
+                        break;
+                    }
+                }
+                reward = 6;
+                break;
+            }
+            case Shogun: {
+                bonus = new Reputation(1, 1, 1);
+                req =  new Reputation(0, 0, 0, 10);
+                reward = 10;
+                break;
+            }
+            case Courtier: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(3, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 3, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 3);
+                        break;
+                    }
+                }
+                reward = 0;
+                break;
+            }
+            case Yakuza: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(3, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 3, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 3);
+                        break;
+                    }
+                }
+                reward = 3;
+                break;
+            }
+            case Okaasan: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(2, 0, 0);
+                        req =  new Reputation(2, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 2, 0);
+                        req =  new Reputation(0, 2, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 2);
+                        req =  new Reputation(0, 0, 2);
+                        break;
+                    }
+                }
+                reward = 1;
+                break;
+            }
+            case Samurai: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(8, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 8, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 8);
+                        break;
+                    }
+                }
+                reward = 8;
+                break;
+            }
+            case Scholar: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(1, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 1, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 1);
+                        break;
+                    }
+                }
+                reward = 2;
+                break;
+            }
+            case Emissary: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(6, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 6, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 6);
+                        break;
+                    }
+                }
+                reward = 5;
+                break;
+            }
+            case Merchant: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(4, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 4, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 4);
+                        break;
+                    }
+                }
+                reward = 4;
+                break;
+            }
+            case Sumo_Wrestler: {
+                switch (color) {
+                    case RED: {
+                        bonus = new Reputation(1, 0, 0);
+                        req =  new Reputation(5, 0, 0);
+                        break;
+                    }
+                    case BLUE: {
+                        bonus = new Reputation(0, 1, 0);
+                        req =  new Reputation(0, 5, 0);
+                        break;
+                    }
+                    case GREEN: {
+                        bonus = new Reputation(0, 0, 1);
+                        req =  new Reputation(0, 0, 5);
+                        break;
+                    }
+                }
+                reward = 3;
+                break;
+            }
+            case District_Kanryou: {
+                bonus = new Reputation(1, 1, 1);
+                req =  new Reputation(0, 0, 0, 0);
+                reward = 0;
                 break;
             }
         }
-
-        newState.discardedCards.add(card);
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
     }
 
-    /**
-     * Apply effect of card Emissary
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
-
-    private State EmissaryEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        Card removed = newState.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
-
-        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
-        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
-        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
-
-        Action action = new Action(removed);
-        newState = action.applyAction(newState);
-
-        newState.parent = state.parent;
-        if (state.children != null) state.children.remove(newState);
-        newState.turnPlayerIndex = state.turnPlayerIndex;
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
+    /** Copy constructor */
+    Card (Card another) {
+        this(another.name, another.color);
+        is_known = another.is_known;
     }
 
-    /**
-     * Apply effect of card Samurai
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
+    Name getName() { return name; }
+    Color getColor() { return color; }
 
-    private State SamuraiEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        Card removed = newState.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
-        newState.players.get(targetPlayer).score -= removed.guestReward;
+    int getReward () { return reward; }
+    Reputation getBonus () { return bonus; }
+    Reputation getReq ()  { return req; }
 
-        Action action = new Action(removed, false);
-        newState = action.applyAction(newState);
-
-        newState.parent = state.parent;
-        if (state.children != null) state.children.remove(newState);
-        newState.turnPlayerIndex = state.turnPlayerIndex;
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
+    boolean equals (Card another) {
+        return another != null && name == another.getName() &&
+                color ==  another.getColor();
     }
 
-    /**
-     * Apply effect of card Daimyo
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State DaimyoEffect(State currentState) {
-        State state = new State(currentState);
-        Player turnPlayer = state.players.get(state.turnPlayerIndex);
-        for (int i = 0; i < turnPlayer.advertisers.size(); i++) {
-            if (turnPlayer.advertisers.get(i).color == this.color) {
-                Card removed = turnPlayer.advertisers.remove(i);
-                turnPlayer.guests.add(removed);
-                turnPlayer.score += removed.guestReward;
-            }
-        }
-        state.turnPlayerIndex = state.getNextPlayer();
-        return state;
-    }
-
-    /**
-     * Apply effect of card Ronin
-     * @param currentState: game's state for which we apply effect
-     * @return new state after applying effect
-     */
-
-    private State RoninEffect(State currentState) {
-        State state = new State(currentState);
-        state.players.get(state.turnPlayerIndex).specialEffects.add(CardsNames.Ronin);
-        state.turnPlayerIndex = state.getNextPlayer();
-        return state;
-    }
-
-    /**
-     * Apply effect of card Thief
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
-
-    private State ThiefEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        Card removed = state.players.get(targetPlayer).guests.remove(newState.players.get(targetPlayer).guests.size() - 1);
-        newState.discardedCards.add(removed);
-        newState.players.get(targetPlayer).score -= removed.guestReward;
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
-    }
-
-    /**
-     * Apply effect of card Yakuza
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
-
-    private State YakuzaEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        Card removed = state.players.get(targetPlayer).advertisers.remove(newState.players.get(targetPlayer).advertisers.size() - 1);
-        newState.discardedCards.add(removed);
-
-        int red = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Red);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Red, red - removed.advReward.get(Colors.Red));
-        int blue = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Blue);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Blue, blue - removed.advReward.get(Colors.Blue));
-        int green = newState.players.get(targetPlayer).geisha.abilities.get(Colors.Green);
-        newState.players.get(targetPlayer).geisha.abilities.put(Colors.Green, green - removed.advReward.get(Colors.Green));
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
-    }
-
-    /**
-     * Apply effect of card Courtier
-     * @param state: game's state for which we apply effect
-     * @param card: card which we use for this effect (as a new guest)
-     * @param targetPlayer: player on which we apply effect of card which we use for this effect (as a new guest)
-     * @param withEffect: apply effect of card which we use for effect (as a new guest)
-     * @return new state after applying effect
-     */
-
-    private State CourtierEffect(State state, Card card, int targetPlayer, boolean withEffect) {
-        State newState = null;
-        Action action = new Action(card);
-        if (card.color == this.color && action.isApplicableAction(state)) {
-            newState = action.applyAction(state);
-            if (withEffect) {
-                newState = action.applyEffect(newState, card, targetPlayer, true);
-            }
-        }
-        if (newState != null) newState.turnPlayerIndex = newState.getNextPlayer();
-        return newState;
-    }
-
-    /**
-     * Apply effect of card Merchant
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
-
-    private State MerchantEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
-        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
-    }
-
-    /**
-     * Apply effect of card Scholar
-     * @param state: game's state for which we apply effect
-     * @param targetPlayer: player on which we apply this effect
-     * @return new state after applying effect
-     */
-
-    private State ScholarEffect(State state, int targetPlayer) {
-        State newState = new State(state);
-        newState.players.get(targetPlayer).hand.add(newState.getRandomCard());
-        newState.turnPlayerIndex = newState.getNextPlayer();
-
-        return newState;
+    public String toString () {
+        return getName().toString() + " " + getColor().toString();
     }
 
 }

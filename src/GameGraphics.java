@@ -1,5 +1,3 @@
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.geometry.HPos;
@@ -11,10 +9,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
-import javafx.scene.effect.Bloom;
 import javafx.scene.effect.Effect;
-import javafx.scene.effect.GaussianBlur;
-import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
@@ -28,7 +23,6 @@ import javafx.stage.Stage;
 import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -71,17 +65,16 @@ public class GameGraphics {
 
     private boolean actionTaken;
 
-    /** Automatically accessed on successful .fxml load */
-    @FXML
+    /** Accessed on successful .fxml load */
     public void initialize() {
         showCaseCardDefault = showcaseCard.getImage();
 
-        currentTableIndex = GameView.playerIndex;
+        currentTableIndex = Main.playerIndex;
 
         selection = new ArrayList<>();
 
-        if (GameView.state.players.get(GameView.playerIndex).geisha.name.toString().equals("Oboro")
-                || GameView.state.players.get(GameView.playerIndex).geisha.name.toString().equals("Harukaze")) {
+        if (Main.mainPlayer.getGeisha().getName().toString().equals("Oboro")
+                || Main.mainPlayer.getGeisha().getName().toString().equals("Harukaze")) {
             geishaButton.setManaged(false);
             geishaButton.setVisible(false);
         }
@@ -107,14 +100,14 @@ public class GameGraphics {
 
     /** Creates and updates player tables, access only once */
     private void createTables() {
-        tables = new GridPane[GameView.state.players.size()];
-        cardCounts = new Label[GameView.state.players.size()];
-        scoreCounts = new Label[GameView.state.players.size()];
+        tables = new GridPane[Main.state.players.size()];
+        cardCounts = new Label[Main.state.players.size()];
+        scoreCounts = new Label[Main.state.players.size()];
 
-        guestCount = new int[GameView.state.players.size()];
-        advertiserCount = new int[GameView.state.players.size()];
+        guestCount = new int[Main.state.players.size()];
+        advertiserCount = new int[Main.state.players.size()];
 
-        for (int i = 0; i < GameView.state.players.size(); i++) {
+        for (int i = 0; i < Main.state.players.size(); i++) {
             tables[i] = new GridPane();
             tables[i].setPadding(new Insets(5, 25, 5, 5));
             tables[i].getStyleClass().add("table");
@@ -139,7 +132,7 @@ public class GameGraphics {
             ccg.setHalignment(HPos.CENTER); //null
             tables[i].getColumnConstraints().add(ccg);
 
-            Label playerLabel = new Label(GameView.state.players.get(i).name); //players.get(i).name
+            Label playerLabel = new Label(Main.state.players.get(i).getName()); //players.get(i).name
             playerLabel.getStyleClass().add("player1Label");
             playerLabel.setAlignment(Pos.CENTER);
             playerLabel.setMnemonicParsing(true);
@@ -147,31 +140,31 @@ public class GameGraphics {
             playerLabel.setWrapText(true);
             tables[i].add(playerLabel, 0, 0);
 
-            addToTable(tables[i], GameView.state.players.get(i).geisha); //GameView.players.get(i).geisha
+            addToTable(tables[i], Main.state.players.get(i).getGeisha()); //GameView.players.get(i).geisha
 
             guestCount[i] = 0;
             advertiserCount[i] = 0;
 
             ((Label)((VBox)playerGrid.getChildren().get(i))
                     .getChildren().get(1))
-                    .setText(i != currentTableIndex ? GameView.state.players.get(i).name : GameView.state.players.get(i).name.concat(" (you)")); //.name
+                    .setText(i != currentTableIndex ? Main.state.players.get(i).getName() : Main.state.players.get(i).getName().concat(" (you)")); //.name
 
-            cardCounts[i] = new Label(GameView.state.players.get(i).hand.size()+""); // GameView.players.hand.size()
+            cardCounts[i] = new Label(Main.state.players.get(i).getHand().size()+""); // GameView.players.hand.size()
             cardCounts[i].setAlignment(Pos.CENTER);
             cardCounts[i].getStyleClass().add("statLabel");
             ((GridPane)((VBox)playerGrid.getChildren().get(i))
                     .getChildren().get(2))
                         .add(cardCounts[i], 0, 1);
 
-            scoreCounts[i] = new Label(GameView.state.players.get(i).score+""); // GameView.players.score
+            scoreCounts[i] = new Label(Main.state.players.get(i).getScore()+""); // GameView.players.score
             scoreCounts[i].setAlignment(Pos.CENTER);
             scoreCounts[i].getStyleClass().add("statLabel");
             ((GridPane)((VBox)playerGrid.getChildren().get(i))
                     .getChildren().get(2))
                     .add(scoreCounts[i], 1, 1);
         }
-        playerGrid.getChildren().remove(GameView.state.players.size(), 6);
-        playerGrid.getColumnConstraints().remove(GameView.state.players.size(), 6);
+        playerGrid.getChildren().remove(Main.state.players.size(), 6);
+        playerGrid.getColumnConstraints().remove(Main.state.players.size(), 6);
 
         table.getChildren().set(0, tables[currentTableIndex]);
 
@@ -203,15 +196,15 @@ public class GameGraphics {
     }
 
     private void fillTables() {
-        for (int i = 0; i < GameView.state.players.size(); i++) {
+        for (int i = 0; i < Main.state.players.size(); i++) {
             guestCount[i] = 0;
             advertiserCount[i] = 0;
             tables[i].getChildren().remove(2, tables[i].getChildren().size());
-            for (int j = 0; j < GameView.state.players.get(i).guests.size(); j++) {
-                addToTable(tables[i], i, GameView.state.players.get(i).guests.get(j), true);
+            for (int j = 0; j < Main.state.players.get(i).getGuests().size(); j++) {
+                addToTable(tables[i], i, Main.state.players.get(i).getGuests().get(j), true);
             }
-            for (int j = 0; j < GameView.state.players.get(i).advertisers.size(); j++) {
-                addToTable(tables[i], i, GameView.state.players.get(i).advertisers.get(j), false);
+            for (int j = 0; j < Main.state.players.get(i).getAdverts().size(); j++) {
+                addToTable(tables[i], i, Main.state.players.get(i).getAdverts().get(j), false);
             }
         }
     }
@@ -219,8 +212,8 @@ public class GameGraphics {
     /** Reload the player hand grid contents */
     private void fillHand() {
         handGrid.getChildren().clear();
-        for (int i = 0; i < GameView.state.players.get(GameView.playerIndex).hand.size(); i++) {
-            Card card = GameView.state.players.get(GameView.playerIndex).hand.get(i);
+        for (int i = 0; i < Main.state.players.get(Main.playerIndex).getHand().size(); i++) {
+            Card card = Main.state.players.get(Main.playerIndex).getHand().get(i);
             addToTable(handGrid, -1, card, true);
         }
 
@@ -237,17 +230,17 @@ public class GameGraphics {
 
     /** Update the number on the Deck */
     public void updateDeck() {
-        deckLabel.setText(GameView.state.drawDeck + "");
+        deckLabel.setText(Main.state.draw_deck.size() + "");
     }
 
     /** Update the number on the Discard Pile */
     public void updateDiscard() {
-        heapLabel.setText(GameView.state.discardedCards.size() + "");
+        //heapLabel.setText(Main.state.discardedCards.size() + "");
     }
 
     /** Update the number on the Score Sheet button */
     public void updateScore() {
-        scoreLabel.setText(GameView.state.players.get(GameView.playerIndex).score + "");
+        scoreLabel.setText(Main.state.players.get(Main.playerIndex).getScore() + "");
     }
 
     public void updateLastAction() {
@@ -266,9 +259,9 @@ public class GameGraphics {
 
     /** Update scores and hand numbers of players on the Player Card grid */
     public void updatePlayerGrid() {
-        for (int i = 0; i < GameView.state.players.size(); i++) {
-            cardCounts[i].setText(GameView.state.players.get(i).hand.size()+"");
-            scoreCounts[i].setText(GameView.state.players.get(i).score+"");
+        for (int i = 0; i < Main.state.players.size(); i++) {
+            cardCounts[i].setText(Main.state.players.get(i).getHand().size()+"");
+            scoreCounts[i].setText(Main.state.players.get(i).getScore()+"");
         }
 
         updateScore();
@@ -308,7 +301,7 @@ public class GameGraphics {
         //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
 
         //turnCount = GameView.playerIndex; //todo delete
-        if (GameView.state.turnPlayerIndex == GameView.playerIndex) {
+        if (Main.state.turning_player == Main.mainPlayer) {
 
             /* geisha */
             isGeishaApplicable(null);
@@ -324,7 +317,7 @@ public class GameGraphics {
             }
 
             /* search */
-            if (GameView.state.drawDeck > 0) {
+            if (Main.state.draw_deck.size() > 0) {
                 searchButton.setDisable(false);
                 searchButton.setOnAction(e -> executeAction(new Action())); // todo
             }
@@ -415,12 +408,12 @@ public class GameGraphics {
 
         //if (card == null && GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momiji)) return;
 
-        if (GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(
-                GameView.state, card, actionTaken)) {
+        /*if (Main.mainPlayer.getGeisha().isApplicableEffect(
+                Main.state, card, actionTaken)) {*/
             geishaButton.setDisable(false);
             geishaButton.setOnAction(e -> {
                 //GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(GameView.state, card, actionTaken);
-                useGeishaWindow(GameView.state.players.get(GameView.playerIndex).geisha);
+                useGeishaWindow(Main.state.players.get(Main.playerIndex).getGeisha());
                 if (effectAnswer == -1) return;
                 System.out.println(effectAnswer);
                 //todo
@@ -428,12 +421,12 @@ public class GameGraphics {
                 // Akenohoshi - new window, select one of the three reputations
                 // Harukaze - when taken advertisement action, select two cards from new hand
             });
-        }
+        //}
     }
 
     private void executeAction(Action action) {
-        GameView.state = new State(action.applyAction(GameView.state));
-        GameView.state.turnPlayerIndex = GameView.state.getPreviousPlayer(); //todo
+        //Main.state = new State(action.applyAction(Main.state));
+        //Main.state.turnPlayerIndex = Main.state.getPreviousPlayer(); //todo
         actionTaken = true;
         clearSelection();
         fillHand();
@@ -447,7 +440,7 @@ public class GameGraphics {
         //todo target, ok, do not use effect, cancel
         effectAnswer = -1;
 
-        switch (card.name) {
+        switch (card.getName()) {
             case Courtier: //return; // pick your card
             case Okaasan:
             case Doctor:
@@ -475,7 +468,7 @@ public class GameGraphics {
             case Sumo_Wrestler:
                 targetEffect();
                 int targetPlayer = effectAnswer;
-                if (targetPlayer == -1 || targetPlayer == GameView.state.players.size()) return;
+                if (targetPlayer == -1 || targetPlayer == Main.state.players.size()) return;
 
                 sumoEffect(card);
                 int targetCard = effectAnswer;
@@ -499,7 +492,7 @@ public class GameGraphics {
     private void useGeishaWindow(Geisha geisha) {
         effectAnswer = -1;
 
-        switch (geisha.name) {
+        switch (geisha.getName()) {
             case Akenohoshi:
                 akenohoshiEffect();
                 //todo
@@ -622,7 +615,7 @@ public class GameGraphics {
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER_LEFT);
 
-        Label message = new Label(GameView.state.players.get(GameView.state.turnPlayerIndex).name + " wants to use their effect on you."); //todo
+        Label message = new Label(Main.mainPlayer.getName() + " wants to use their effect on you."); //todo
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
@@ -679,7 +672,7 @@ public class GameGraphics {
         Stage window = new Stage();
         //window.setResizable(false);
         window.setMinWidth(720);
-        window.setMinHeight(210 + 70 * (GameView.state.players.size() > 3 ? 1 : 0));
+        window.setMinHeight(210 + 70 * (Main.state.players.size() > 3 ? 1 : 0));
         window.initModality(Modality.APPLICATION_MODAL);
         window.setTitle("Pick Target for Effect");
 
@@ -694,9 +687,9 @@ public class GameGraphics {
         GridPane playerGrid = new GridPane();
         playerGrid.setAlignment(Pos.CENTER);
         playerGrid.getRowConstraints().add(new RowConstraints(70));
-        if (GameView.state.players.size() > 3) playerGrid.getRowConstraints().add(new RowConstraints(70));
+        if (Main.state.players.size() > 3) playerGrid.getRowConstraints().add(new RowConstraints(70));
 
-        Button[] player = new Button[GameView.state.players.size()];
+        Button[] player = new Button[Main.state.players.size()];
 
         for (int j = 0; j < 3; j++) {
             ColumnConstraints ccRounds = new ColumnConstraints(200);
@@ -705,8 +698,8 @@ public class GameGraphics {
 
             for (int i = 0; i < 2; i++) {
                 int k = j+i*3;
-                if (k >= GameView.state.players.size()) break;
-                player[k] = new Button(GameView.state.players.get(k).name);
+                if (k >= Main.state.players.size()) break;
+                player[k] = new Button(Main.state.players.get(k).getName());
                 player[k].getStyleClass().add("menuButton");
                 player[k].setMinWidth(190);
                 player[k].setMaxWidth(190);
@@ -738,7 +731,7 @@ public class GameGraphics {
         //button2.setManaged(false); todo if has the card in hand
         buttonNo.getStyleClass().add("actionButton");
         buttonNo.setOnAction(e -> {
-            effectAnswer = GameView.state.players.size();
+            effectAnswer = Main.state.players.size();
             window.close();
         });
 
@@ -780,7 +773,7 @@ public class GameGraphics {
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER);
 
-        Label message = new Label("Pick a card to discard from " + GameView.state.players.get(effectAnswer).name); //todo
+        Label message = new Label("Pick a card to discard from " + Main.state.players.get(effectAnswer).getName()); //todo
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
@@ -796,10 +789,10 @@ public class GameGraphics {
 
         int forbidden = -1;
 
-        for (int i = 0; i < GameView.state.players.get(effectAnswer).hand.size(); i++) {
-            Card cardCard = GameView.state.players.get(effectAnswer).hand.get(i);
+        for (int i = 0; i < Main.state.players.get(effectAnswer).getHand().size(); i++) {
+            Card cardCard = Main.state.players.get(effectAnswer).getHand().get(i);
 
-            ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
+            ImageView img = getCardImage(cardCard.getColor() + "_" + cardCard.getName().toString().replace(" ", "_"));
             img.setFitWidth(220);
             img.setFitHeight(300);
             img.setPickOnBounds(true);
@@ -973,11 +966,11 @@ public class GameGraphics {
         playerGrid.setPrefHeight(300.0);
         playerGrid.setPrefWidth(600.0);
 
-        for (int i = 0; i < GameView.state.players.get(GameView.playerIndex).hand.size(); i++) {
-            Card cardCard = GameView.state.players.get(GameView.playerIndex).hand.get(i);
+        for (int i = 0; i < Main.mainPlayer.getHand().size(); i++) {
+            Card cardCard = Main.mainPlayer.getHand().get(i);
 
 
-            ImageView img = getCardImage(cardCard.color + "_" + cardCard.name.toString().replace(" ", "_"));
+            ImageView img = getCardImage(cardCard.getColor() + "_" + cardCard.getName().toString().replace(" ", "_"));
             img.setFitWidth(220);
             img.setFitHeight(300);
             img.setPickOnBounds(true);
@@ -1052,9 +1045,9 @@ public class GameGraphics {
 
     //todo
     private void finishTurn() {
-        GameView.state.turnPlayerIndex = GameView.state.getNextPlayer();
+        //GameView.state.turnPlayerIndex = GameView.state.getNextPlayer();
         updateAllGraphics();
-        Main.loop();
+        //Main.loop();
     }
 
     public void openLoadingScreen() {
@@ -1097,7 +1090,7 @@ public class GameGraphics {
      * @param geisha just an object of class Geisha
      */
     public void addToTable(GridPane table, Geisha geisha) {
-        String cardName = geisha.name.toString();
+        String cardName = geisha.getName().toString();
 
         addToTable(table, cardName, -1, false);
     }
@@ -1110,7 +1103,7 @@ public class GameGraphics {
      * @param isGuest add this card as a Guest, meaning it will add the card to the higher row, so it should always be true for the handGrid
      */
     public void addToTable(GridPane table, int tableIndex, Card card, boolean isGuest) {
-        String cardName = card.color + "_" + card.name.toString().replace(" ", "_");
+        String cardName = card.getColor() + "_" + card.getName().toString().replace(" ", "_");
 
         int index = tableIndex == -1 ? handGrid.getChildren().size() :
                 (isGuest ? guestCount[tableIndex]++ : advertiserCount[tableIndex]++);
@@ -1135,7 +1128,7 @@ public class GameGraphics {
         card.getChildren().add(img);
         card.getStyleClass().add("card");
 
-        if (index != -1 && (isHandGrid || table.equals(tables[GameView.playerIndex]) && !isGuest))
+        if (index != -1 && (isHandGrid || table.equals(tables[Main.playerIndex]) && !isGuest))
             card.setOnMouseClicked(e -> onSelection(card));
 
         card.setOnMouseEntered(ev -> setShowcaseCard(ev));
@@ -1187,9 +1180,9 @@ public class GameGraphics {
 
         int aci = GridPane.getColumnIndex(advertiser);
         int cci = GridPane.getColumnIndex(changer);
-        int gi = tables[GameView.playerIndex].getChildren().indexOf(advertiser);//((GridPane)advertiser.getParent()).getChildren().indexOf(advertiser);
+        int gi = tables[Main.playerIndex].getChildren().indexOf(advertiser);//((GridPane)advertiser.getParent()).getChildren().indexOf(advertiser);
 
-        tables[GameView.playerIndex].add(changer, aci, 1);
+        tables[Main.playerIndex].add(changer, aci, 1);
 
         handGrid.add(advertiser, cci, 0);
         //System.out.println(handGrid.getChildren().indexOf(advertiser));
@@ -1217,8 +1210,8 @@ public class GameGraphics {
                 label.setMnemonicParsing(true);
                 label.setAlignment(Pos.CENTER);
                 label.setFont(Font.font("", new Random().nextBoolean() ? FontWeight.BOLD : null, new Random().nextBoolean() ? FontPosture.ITALIC : null, new Random().nextInt(20)+12));
-                label.setLayoutX((1.5*new Random().nextDouble()-0.5)*GameView.windowWidth);
-                label.setLayoutY(new Random().nextDouble()*GameView.windowHeight);
+                label.setLayoutX((1.5*new Random().nextDouble()-0.5)*Main.windowWidth);
+                label.setLayoutY(new Random().nextDouble()*Main.windowHeight);
                 anchor.getChildren().add(label);
             }
         //advertiser.getChildren().add(changer.getChildren().remove(0));
@@ -1259,22 +1252,22 @@ public class GameGraphics {
     @FXML
     public void shiftPlayerGrid() {
         //for (int i = 0; i < playerTurn - current; i++) todo
-        GridPane.setColumnIndex(playerGrid.getChildren().get(turnCount), GameView.state.players.size()-1);
+        GridPane.setColumnIndex(playerGrid.getChildren().get(turnCount), Main.state.players.size()-1);
         //playerGrid.getChildren().get(turnCount).getStyleClass().remove("selected");
 
-        ((VBox)((VBox)playerGrid.getChildren().get((turnCount + 1) % GameView.state.players.size()))
+        ((VBox)((VBox)playerGrid.getChildren().get((turnCount + 1) % Main.state.players.size()))
                 .getChildren().get(0)).getChildren().add(0,
                 ((VBox)((VBox)playerGrid.getChildren().get(turnCount)).getChildren().get(0)).getChildren().remove(0)
         );
 
-        for (int i = 0; i < GameView.state.players.size(); i++) {
+        for (int i = 0; i < Main.state.players.size(); i++) {
             if (i != turnCount) {
                 GridPane.setColumnIndex(playerGrid.getChildren().get(i), GridPane.getColumnIndex(playerGrid.getChildren().get(i)) - 1);
             }
         }
 
         turnCount++;
-        if (turnCount == GameView.state.players.size()) turnCount = 0;//todo delete, turnCount is dealt with in the state node
+        if (turnCount == Main.state.players.size()) turnCount = 0;//todo delete, turnCount is dealt with in the state node
         //playerGrid.getChildren().get(turnCount).getStyleClass().add("selected");
     }
 
@@ -1312,7 +1305,7 @@ public class GameGraphics {
         log.setEditable(false);
         log.setFocusTraversable(false);
         for (int i = 0; i < 100; i++) { //todo replace
-            log.getItems().add(i + ": Player " + i % GameView.state.players.size() + " decided he is too good for this game. This player has been eliminated.");
+            log.getItems().add(i + ": Player " + i % Main.state.players.size() + " decided he is too good for this game. This player has been eliminated.");
         }
 
         Button resumeButton = new Button("OK");
@@ -1354,7 +1347,7 @@ public class GameGraphics {
         Label message = new Label("Round has ended - deck has been exhausted."); //todo GameView.state.round == 3 ? "Game" : "Round", player.name has exhausted their hand
         message.setFont(Font.font("", FontWeight.BOLD, 14));
 
-        Label messageWinner = new Label(GameView.state.players.get(GameView.playerIndex).name + " won."); //todo winner player, or check if draw, consult the rules
+        Label messageWinner = new Label(Main.state.players.get(Main.playerIndex).getName() + " won."); //todo winner player, or check if draw, consult the rules
         messageWinner.setFont(Font.font("", FontWeight.BOLD, 14));
 
         Button restartButton = new Button("Restart");
@@ -1362,7 +1355,8 @@ public class GameGraphics {
         restartButton.setMinWidth(50);
         restartButton.setOnAction(e -> {
             window.close();
-            GameView gameView = new GameView();
+            Main.setGraphics();
+            //todo GameView gameView = new GameView();
         });
 
         Button quitToMenuButton = new Button("Quit to Main Menu");
@@ -1382,7 +1376,7 @@ public class GameGraphics {
         quitButton.getStyleClass().add("actionButton");
         quitButton.setMinWidth(50);
         quitButton.setOnAction(e -> {
-            GameView.window.close();
+            Main.window.close();
             window.close();
         });
 
@@ -1424,8 +1418,8 @@ public class GameGraphics {
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
                 window.close();
-
-                GameView gameView = new GameView();
+                Main.setGraphics();
+                //todo GameView gameView = new GameView();
             }
         });
 
@@ -1463,7 +1457,7 @@ public class GameGraphics {
                     ButtonType.YES, ButtonType.NO);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
-                GameView.window.close();
+                Main.window.close();
                 window.close();
             }
         });
@@ -1487,7 +1481,7 @@ public class GameGraphics {
         window.initModality(Modality.APPLICATION_MODAL);
         window.setTitle("Score Sheet");
         //window.getIcons().add(Window.icon);
-        window.setMinWidth(550 + 135 * (GameView.state.players.size()-3));
+        window.setMinWidth(550 + 135 * (Main.state.players.size()-3));
         window.setMinHeight(305);
 
         Button resumeButton = new Button("Resume");
@@ -1523,26 +1517,29 @@ public class GameGraphics {
         ccRounds.setHalignment(HPos.CENTER);
         scoreSheet.getColumnConstraints().add(ccRounds);
 
-        for (int j = 0; j < 3; j++) {
+        for (int j = 0; j <= Main.state.getRound(); j++) {
             Label labelRound = new Label("Round " + (j+1));
-            labelRound.setFont(Font.font("", FontWeight.BOLD, 12)); //todo underscore current round
+            labelRound.setFont(Font.font("", FontWeight.BOLD, 12));
             scoreSheet.add(labelRound, 0, j+1);
         }
+        scoreSheet.getChildren().get(scoreSheet.getChildren().size()-1).setStyle("-fx-underline: true");
 
-        for (int i = 0; i < GameView.state.players.size(); i++) {
+        for (int i = 0; i < Main.state.players.size(); i++) {
             ColumnConstraints cc = new ColumnConstraints(135);
             cc.setHalignment(HPos.CENTER);
             scoreSheet.getColumnConstraints().add(cc);
 
-            Label label = new Label(GameView.state.players.get(i).name);
+            Label label = new Label(Main.state.players.get(i).getName());
             label.setFont(Font.font("", FontWeight.BOLD, 12));
             scoreSheet.add(label, i+1, 0);
 
-            for (int j = 0; j < 1/*round count*/; j++) {
-                Label score = new Label(GameView.state.players.get(i).score+"");
+            for (int j = 0; j <= Main.state.getRound(); j++) {
+                Label score = new Label(Main.score[i][j]+"");
                 score.setFont(Font.font("", FontWeight.BOLD, 16));
-                scoreSheet.add(score, i+1, j+1);//score[i][j]); //todo fill scores
+                scoreSheet.add(score, i+1, j+1);
             }
+            ((Label) scoreSheet.getChildren().get(scoreSheet.getChildren().size()-1)).setText(Main.state.players.get(i).getScore()+"");
+
         }
 
         return scoreSheet;
@@ -1624,7 +1621,7 @@ public class GameGraphics {
         window.setMinWidth(940);
         window.setMinHeight(660);
 
-        ArrayList<Card> heap = GameView.state.discardedCards;
+        ArrayList<Card> heap = Main.state.discarded;
 
         GridPane discardGrid = new GridPane();
         discardGrid.setPadding(new Insets(25));
@@ -1641,7 +1638,7 @@ public class GameGraphics {
         for (int i = 0; i < Math.ceil(1.0 * heap.size() / row); i++) { //actual heap.size()
             discardGrid.getRowConstraints().add(new RowConstraints(210));
             for (int j = 0; j < row && j+i*row < heap.size(); j++) {
-                String cardName = heap.get(i*row+j).color + "_" + heap.get(i*row+j).name.toString().replace(" ", "_");
+                String cardName = heap.get(i*row+j).getColor() + "_" + heap.get(i*row+j).getName().toString().replace(" ", "_");
                 ImageView card = getCardImage(cardName);
 
                 card.setFitWidth(200);
