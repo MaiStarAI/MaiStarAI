@@ -658,7 +658,7 @@ class State {
         for (Player p : players) if (p.getHand().size() == 0) return true;
         return false;
     }
-    State nextTurn () throws IOException {
+    State nextTurn () {
 
         State new_state = new State(this);
         new_state.turn++;
@@ -682,7 +682,7 @@ class State {
         new_state.allowed_actions.clear();
         new_state.allowed_color =  null;
 
-        PrintWriter out_game = new PrintWriter(new FileWriter("game_logs/game_" + 1 +".log", true)); //todo
+        /*PrintWriter out_game = new PrintWriter(new FileWriter("game_logs/game_" + 1 +".log", true)); //todo
 
         // Print turn information
         out_game.println("--------------------------------------------");
@@ -694,7 +694,7 @@ class State {
             out_game.println(act.toString());
         }
 
-        out_game.close();
+        out_game.close();*/
 
         // Update applied actions
         new_state.applied_actions.clear();
@@ -705,6 +705,8 @@ class State {
 
     int getRound () { return round; }
     void setRound (int round) { this.round = round; }
+
+    Player getLastPlayer () { return last_player; }
 
     Player getTurnPlayer () { return turning_player; }
     void setTurnPlayer (Player player) {

@@ -60,16 +60,20 @@ public class GameGraphics {
 
     private int[] guestCount;
     private int[] advertiserCount;
+    public String lastActionDescription;
 
     public ArrayList</*ImageView*/StackPane > selection;
 
     private boolean actionTaken;
 
     /** Accessed on successful .fxml load */
+    @FXML
     public void initialize() {
         showCaseCardDefault = showcaseCard.getImage();
 
         currentTableIndex = Main.playerIndex;
+
+        lastActionDescription = "";
 
         selection = new ArrayList<>();
 
@@ -80,23 +84,15 @@ public class GameGraphics {
         }
 
         createTables();
+        resetActionTaken();
         updateTables();
         noButtonsWithoutRepresentation();
 
         menuButton.requestFocus();
     }
 
-    //todo action -> do actions multiple times
-    //todo disable all actions when its not players turn. Do not stop the game when it's not your turn? --thread? low priority
-    //todo turnNumber, roundNumber? --See round number in scoreSheet
-    //todo update every table as players take turns
-    //todo let player know what actions other players took
-    //todo AI progress
-    //todo dialogue panes - apply card effect, use ronin/kanryou, sumo wrestler hand-peek, target player
-    //todo use effect, play geisha, end turn
-    //todo variables for determinization - courtier, okaasan, doctor, geishas?, ronin?, district kanryou?
-    //todo dynamic update?
-    //todo win screen
+    //todo Momiji - select guest
+    //todo
 
     /** Creates and updates player tables, access only once */
     private void createTables() {
@@ -163,8 +159,9 @@ public class GameGraphics {
                     .getChildren().get(2))
                     .add(scoreCounts[i], 1, 1);
         }
-        playerGrid.getChildren().remove(Main.state.players.size(), 6);
-        playerGrid.getColumnConstraints().remove(Main.state.players.size(), 6);
+
+        playerGrid.getChildren().remove(Main.state.players.size(), playerGrid.getChildren().size());
+        playerGrid.getColumnConstraints().remove(Main.state.players.size(), playerGrid.getColumnConstraints().size());
 
         table.getChildren().set(0, tables[currentTableIndex]);
 
@@ -174,10 +171,13 @@ public class GameGraphics {
         playerGrid.getChildren().get(currentTableIndex).setStyle("");
     }
 
+    public void resetActionTaken() {
+        actionTaken = false; // todo leave if the Fill functions are called only once
+    }
+
     public void updateAllGraphics() {
         updateTables();
         shiftPlayerGrid();
-        actionTaken = false; // todo leave if the Fill functions are called only once
         noButtonsWithoutRepresentation();
     }
 
@@ -216,16 +216,6 @@ public class GameGraphics {
             Card card = Main.state.players.get(Main.playerIndex).getHand().get(i);
             addToTable(handGrid, -1, card, true);
         }
-
-        //todo delete this SHIT
-        /*for (int i = 0; i < 10; i++) {
-            Card shit = GameView.state.getRandomCard();
-            GameView.state.players.get(GameView.playerIndex).advertisers.add(shit);
-            addToTable(tables[GameView.playerIndex], GameView.playerIndex,
-                    shit, false);
-        }*/
-
-        //System.out.println(GameView.state.players.get(GameView.playerIndex).advertisers.size());
     }
 
     /** Update the number on the Deck */
@@ -235,7 +225,7 @@ public class GameGraphics {
 
     /** Update the number on the Discard Pile */
     public void updateDiscard() {
-        //heapLabel.setText(Main.state.discardedCards.size() + "");
+        heapLabel.setText(Main.state.discarded.size() + "");
     }
 
     /** Update the number on the Score Sheet button */
@@ -253,7 +243,7 @@ public class GameGraphics {
                 "AKENOHOSHI IS A SWEET NAME", "LEMONADE IS GOOD", "NATURAL SURVIVOR", "SIR RANDOM, ESQ.",
                 "KAMIKAZE SHOUTS: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA!!!"
         };
-        lastAction.setText("Last action: " + "");
+        lastAction.setText("Last action: " + lastActionDescription);
                 //vibes[new Random().nextInt(vibes.length)]);
     }
 
@@ -299,162 +289,159 @@ public class GameGraphics {
         endTurnButton.setDisable(true);
 
         //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
-
         //turnCount = GameView.playerIndex; //todo delete
-        if (Main.state.turning_player == Main.mainPlayer) {
+        if (Main.state.getTurnPlayer().getName().equals(Main.mainPlayer.getName())) {
+            /* end turn */
+            if (actionTaken) {
+                endTurnButton.setDisable(false);
+                endTurnButton.setOnAction(e -> finishTurn());
+                //return;
+            } else {
+                /* search */
+                setButtonAvailable(searchButton, new Action(Action.Name.Search,
+                        Main.state.turning_player,
+                        null, null, null, null));
+            }
 
             /* geisha */
             isGeishaApplicable(null);
 
-            /* end turn */
-            if (actionTaken) {
-                endTurnButton.setDisable(false);
-                endTurnButton.setOnAction(e -> {
-                    finishTurn();
-                    //todo
-                });
-                return;
-            }
-
-            /* search */
-            if (Main.state.draw_deck.size() > 0) {
-                searchButton.setDisable(false);
-                searchButton.setOnAction(e -> executeAction(new Action())); // todo
-            }
-
             if (selection.size() == 1) {
                 if (handGrid.getChildren().contains(selection.get(0))) {
                     /* play a guest */
-                    Action actionGuest = new Action(GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(0))), false);
-                    if (actionGuest.isApplicableAction(GameView.state)) {
+                    Action actionGuest = new Action(Action.Name.Guest,
+                            Main.state.turning_player, Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                            null, null, null);
+                    if (Main.state.isApplicableAction(actionGuest)) {
                         playGuestButton.setDisable(false);
                         playGuestButton.setOnAction(e -> {
-                            effectWindow(actionGuest.firstCard);
+
+                            effectWindow(actionGuest);
                             if (effectAnswer == -1) return;
 
-                            executeAction(actionGuest);
-                            //todo
                         });
                     }
 
                     /* advertise */
-                    Action actionAdvertise = new Action(GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(0))));
-                    if (actionAdvertise.isApplicableAction(GameView.state)) {
-                        advertiseButton.setDisable(false);
-                        advertiseButton.setOnAction(e -> {
-                            executeAction(actionAdvertise);
-                            // if (geisha.name == Harukaze) evoke selection window, select two cards from hand, discard todo
-                            //todo
-                        });
-                    }
+                    setButtonAvailable(advertiseButton, new Action(Action.Name.Advertiser,
+                            Main.state.turning_player, Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                            null, null, null));
 
-                    isGeishaApplicable(GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(0))));
                 }
+
+                /* geisha, again */
+                Card geishaCard;
+                if (Main.mainPlayer.getGeisha().getName() == Geisha.Name.Momiji
+                        && tables[Main.playerIndex].getChildren().contains(selection.get(0))) {
+                    geishaCard = Main.state.turning_player.getGuests().get(GridPane.getColumnIndex(selection.get(0)));
+                    isGeishaApplicable(geishaCard);
+                } else if (handGrid.getChildren().contains(selection.get(0))){
+                    geishaCard = Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0)));
+                    isGeishaApplicable(geishaCard);
+                }
+
             } else if (selection.size() == 2) {
                 /* introduce */
                 if (handGrid.getChildren().contains(selection.get(0)) && handGrid.getChildren().contains(selection.get(1))) {
-                    Action action = new Action(
-                            ActionsNames.Introduce,
-                            GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(0))),
-                            GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(1)))
+
+                    Action action = new Action(Action.Name.Introduce,
+                            Main.state.turning_player,
+                            Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                            Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(1))),
+                            null, null
                     );
 
-                    if (action.isApplicableAction(GameView.state)) {
-                        introduceButton.setDisable(false);
-                        introduceButton.setOnAction(e -> {
-                            executeAction(action);
-                            //todo
-                        });
-                    }
+
+                    setButtonAvailable(introduceButton, action);
                 }
-                else
-                /* exchange */
-                if (handGrid.getChildren().contains(selection.get(0)) && tables[GameView.playerIndex].getChildren().contains(selection.get(1))) {
-                    Action action = new Action(
-                            ActionsNames.Exchange,
-                            GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(0))),
-                            GameView.state.players.get(GameView.playerIndex).advertisers.get(GridPane.getColumnIndex(selection.get(1)) - 1)
-                    );
-                    if (action.isApplicableAction(GameView.state)) {
-                        exchangeButton.setDisable(false);
-                        exchangeButton.setOnAction(e -> {
-                            executeAction(action);
-                            //todo
-                        });
+                else {
+                    /* exchange */
+                    if (handGrid.getChildren().contains(selection.get(0)) && tables[Main.playerIndex].getChildren().contains(selection.get(1))) {
+
+                        Action action = new Action(Action.Name.Exchange,
+                                Main.state.turning_player,
+                                Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                                Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(1)) - 1),
+                                null, null
+                        );
+
+                        setButtonAvailable(exchangeButton, action);
+                    } else if (handGrid.getChildren().contains(selection.get(1)) && tables[Main.playerIndex].getChildren().contains(selection.get(0))) {
+
+                        Action action = new Action(Action.Name.Exchange,
+                                Main.state.turning_player,
+                                Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(0)) - 1),
+                                Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(1))),
+                                null, null
+                        );
+
+                        setButtonAvailable(exchangeButton, action);
                     }
-                    //exchangeCards(selection.get(0), selection.get(1));
-                } else if (handGrid.getChildren().contains(selection.get(1)) && tables[GameView.playerIndex].getChildren().contains(selection.get(0))) {
-                    Action action = new Action(
-                            ActionsNames.Exchange,
-                            GameView.state.players.get(GameView.playerIndex).advertisers.get(GridPane.getColumnIndex(selection.get(0)) - 1),
-                            GameView.state.players.get(GameView.playerIndex).hand.get(GridPane.getColumnIndex(selection.get(1)))
-                    );
-                    if (action.isApplicableAction(GameView.state)) {
-                        exchangeButton.setDisable(false);
-                        exchangeButton.setOnAction(e -> {
-                            executeAction(action);
-                            //todo
-                        });
-                    }
-                    //exchangeCards(selection.get(1), selection.get(0));
                 }
             }
         }
     }
 
-    /**  */
-    private void isGeishaApplicable(Card card) {
-        if (!geishaButton.isVisible()) return;
-
-        //if (card == null && GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momiji)) return;
-
-        /*if (Main.mainPlayer.getGeisha().isApplicableEffect(
-                Main.state, card, actionTaken)) {*/
-            geishaButton.setDisable(false);
-            geishaButton.setOnAction(e -> {
-                //GameView.state.players.get(GameView.playerIndex).geisha.isApplicableEffect(GameView.state, card, actionTaken);
-                useGeishaWindow(Main.state.players.get(Main.playerIndex).getGeisha());
-                if (effectAnswer == -1) return;
-                System.out.println(effectAnswer);
-                //todo
-                // Suzune, Natsumi, Momiji - click, play
-                // Akenohoshi - new window, select one of the three reputations
-                // Harukaze - when taken advertisement action, select two cards from new hand
+    private void setButtonAvailable(Button button, Action action) {
+        if (Main.state.isApplicableAction(action)) {
+            button.setDisable(false);
+            button.setOnAction(e -> {
+                actionTaken = true;
+                executeAction(action);
+                if (action.getName() == Action.Name.Advertiser && Main.mainPlayer.getGeisha().getName() == Geisha.Name.Harukaze) {
+                    useGeishaWindow(action);
+                }
             });
-        //}
+        }
     }
 
     private void executeAction(Action action) {
-        //Main.state = new State(action.applyAction(Main.state));
-        //Main.state.turnPlayerIndex = Main.state.getPreviousPlayer(); //todo
-        actionTaken = true;
-        clearSelection();
-        fillHand();
-        fillTables();
-        updateLightGraphics();
-        noButtonsWithoutRepresentation();
+        Main.state = Main.state.applyAction(action);
+        Main.addActionToLog(action);
+
+        Main.loop();
     }
     //todo endturn state.nextPlayer
 
-    private void effectWindow(Card card) {
+    //todo
+    private void finishTurn() {
+        Main.turnEnded = true;
+        Main.state = Main.changeStateAfterAction(Main.state);
+        Main.loop();
+    }
+
+    private void effectWindow(Action action) {
         //todo target, ok, do not use effect, cancel
         effectAnswer = -1;
 
+        Card card = action.getCard1();
         switch (card.getName()) {
             case Courtier: //return; // pick your card
             case Okaasan:
             case Doctor:
                 haveEffect();
                 if (effectAnswer == -1) return;
-                //todo
-                return; // take an action afterwards
+                executeAction(action);
+                actionTaken = true;
+
+                Action actionEffectTurn = new Action(Action.Name.GuestEffect,
+                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                        null, Main.state.players.get(effectAnswer),null);
+                executeAction(actionEffectTurn);
+                return;
             case Daimyo:
             case Monk:
             case Shogun:
                 confirmEffect();
                 if (effectAnswer == -1) return;
-                //todo
-                return; //do you want to use this guest's effect?
+                executeAction(action);
+                actionTaken = true;
+
+                Action actionEffectCall = new Action(Action.Name.GuestEffect,
+                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                        null, Main.state.players.get(effectAnswer),null);
+                executeAction(actionEffectCall);
+                return;
             case Merchant:
             case Scholar:
             case Thief:
@@ -463,44 +450,87 @@ public class GameGraphics {
             case Emissary:
                 targetEffect();
                 if (effectAnswer == -1) return;
-                //todo
-                return; // pick a target player
+                executeAction(action);
+                actionTaken = true;
+                if (effectAnswer == -2) return;
+
+                Action actionEffectTarget = new Action(Action.Name.GuestEffect,
+                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                        null, Main.state.players.get(effectAnswer),null);
+                executeAction(actionEffectTarget);
+                System.out.println(Main.state.players.get(effectAnswer).getName());
+                return;
             case Sumo_Wrestler:
                 targetEffect();
                 int targetPlayer = effectAnswer;
-                if (targetPlayer == -1 || targetPlayer == Main.state.players.size()) return;
+
+                if (targetPlayer == -1) return;
+                executeAction(action);
+                actionTaken = true;
+                if (effectAnswer == -2) return;
 
                 sumoEffect(card);
                 int targetCard = effectAnswer;
-                //todo
-                //GameView.state = new State(card.applyEffect());
-                //card.applyEffect()
-                return; // look at target player's hand and discard one card
-            case Actor: effectAnswer = 1; return;
 
-            //todo
-            case Ronin: cancelEffect(); return; // he protec
-            //District_Kanryou
-
-            //Akenohoshi - select reputation to add to
-            //Harukaze - select two cards to discard, use the same interface from Sumo Wrestler
-
-            //Natsumi, Suzune, Momiji - select card, click Use Geisha to play them / apply their effect the second time
+                Action actionEffectSumo = new Action(Action.Name.GuestEffect,
+                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
+                        Main.state.players.get(targetPlayer).getHand().get(targetCard), Main.state.players.get(targetPlayer),null);
+                executeAction(actionEffectSumo);
+                return;
+            default:
+                effectAnswer = 1;
+                executeAction(action);
+                actionTaken = true;
+                return;
         }
     }
 
-    private void useGeishaWindow(Geisha geisha) {
+    private void isGeishaApplicable(Card card) {
+        if (!geishaButton.isVisible()) return;
+
+        //if (card == null && GameView.state.players.get(GameView.playerIndex).geisha.name.equals(GeishasName.Momji)) return;
+
+        Action action = new Action(Action.Name.Geisha, Main.state.getTurnPlayer(),
+                card, null,null, null
+        );
+
+        if (Main.state.isApplicableAction(action)) {
+            geishaButton.setDisable(false);
+            geishaButton.setOnAction(e -> {
+                useGeishaWindow(action);
+                if (effectAnswer == -1) return;
+                //todo
+                // Suzune, Natsumi, Momiji - click, play
+                // Akenohoshi - new window, select one of the three reputations
+                // Harukaze - when taken advertisement action, select two cards from new hand
+            });
+        }
+    }
+
+    private void useGeishaWindow(Action action) {
         effectAnswer = -1;
 
-        switch (geisha.getName()) {
+        switch (action.getTargetPlayer().getGeisha().getName()) {
             case Akenohoshi:
                 akenohoshiEffect();
+                Action akenohoshiEffect = new Action(Action.Name.Geisha,  Main.state.getTurnPlayer(),
+                        null,null, null,
+                        new Reputation(effectAnswer == 0 ? 3 : 0, effectAnswer == 1 ? 3 : 0, effectAnswer == 2 ? 3 : 0));
+                executeAction(akenohoshiEffect);
+                System.out.println(Main.state.getTurnPlayer().getName() + " " + Main.state.getTurnPlayer().getReputation());
                 //todo
                 return;
             case Harukaze:
                 harukazeEffect();
+                Action harukazeEffect = new Action(Action.Name.HarukazeDiscard, Main.state.turning_player,
+                        Main.state.getTurnPlayer().getHand().get(harukazeSelection.get(0)),
+                        Main.state.getTurnPlayer().getHand().get(harukazeSelection.get(1)),
+                        null, null);
+                executeAction(harukazeEffect);
                 //todo
                 return;
+            default:
+                executeAction(action);
         }
     }
 
@@ -615,7 +645,7 @@ public class GameGraphics {
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER_LEFT);
 
-        Label message = new Label(Main.mainPlayer.getName() + " wants to use their effect on you."); //todo
+        Label message = new Label(Main.state.getLastPlayer().getName() + " wants to use their effect on you."); //todo
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
@@ -731,7 +761,7 @@ public class GameGraphics {
         //button2.setManaged(false); todo if has the card in hand
         buttonNo.getStyleClass().add("actionButton");
         buttonNo.setOnAction(e -> {
-            effectAnswer = Main.state.players.size();
+            effectAnswer = -2;
             window.close();
         });
 
@@ -938,7 +968,7 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    private ArrayList harukazeSelection = new ArrayList();
+    private ArrayList<Integer> harukazeSelection = new ArrayList<>();
     private void harukazeEffect() {
         //table.setDisable(true);
         //playerGrid.setDisable(true);
@@ -966,8 +996,8 @@ public class GameGraphics {
         playerGrid.setPrefHeight(300.0);
         playerGrid.setPrefWidth(600.0);
 
-        for (int i = 0; i < Main.mainPlayer.getHand().size(); i++) {
-            Card cardCard = Main.mainPlayer.getHand().get(i);
+        for (int i = 0; i < Main.state.turning_player.getHand().size(); i++) {
+            Card cardCard = Main.state.turning_player.getHand().get(i);
 
 
             ImageView img = getCardImage(cardCard.getColor() + "_" + cardCard.getName().toString().replace(" ", "_"));
@@ -1041,13 +1071,6 @@ public class GameGraphics {
         window.setScene(scene);
         window.showAndWait();
 
-    }
-
-    //todo
-    private void finishTurn() {
-        //GameView.state.turnPlayerIndex = GameView.state.getNextPlayer();
-        updateAllGraphics();
-        //Main.loop();
     }
 
     public void openLoadingScreen() {
@@ -1128,7 +1151,7 @@ public class GameGraphics {
         card.getChildren().add(img);
         card.getStyleClass().add("card");
 
-        if (index != -1 && (isHandGrid || table.equals(tables[Main.playerIndex]) && !isGuest))
+        if (index != -1 && (isHandGrid || table.equals(tables[Main.playerIndex])))
             card.setOnMouseClicked(e -> onSelection(card));
 
         card.setOnMouseEntered(ev -> setShowcaseCard(ev));
@@ -1180,12 +1203,11 @@ public class GameGraphics {
 
         int aci = GridPane.getColumnIndex(advertiser);
         int cci = GridPane.getColumnIndex(changer);
-        int gi = tables[Main.playerIndex].getChildren().indexOf(advertiser);//((GridPane)advertiser.getParent()).getChildren().indexOf(advertiser);
+        int gi = tables[Main.playerIndex].getChildren().indexOf(advertiser);
 
         tables[Main.playerIndex].add(changer, aci, 1);
 
         handGrid.add(advertiser, cci, 0);
-        //System.out.println(handGrid.getChildren().indexOf(advertiser));
 
         ((ImageView)changer.getChildren().get(0)).setFitHeight(130);
         ((ImageView)advertiser.getChildren().get(0)).setFitHeight(120);
@@ -1251,24 +1273,28 @@ public class GameGraphics {
     int turnCount = 0; // todo delete, make access to State turn count
     @FXML
     public void shiftPlayerGrid() {
-        //for (int i = 0; i < playerTurn - current; i++) todo
-        GridPane.setColumnIndex(playerGrid.getChildren().get(turnCount), Main.state.players.size()-1);
-        //playerGrid.getChildren().get(turnCount).getStyleClass().remove("selected");
-
-        ((VBox)((VBox)playerGrid.getChildren().get((turnCount + 1) % Main.state.players.size()))
-                .getChildren().get(0)).getChildren().add(0,
-                ((VBox)((VBox)playerGrid.getChildren().get(turnCount)).getChildren().get(0)).getChildren().remove(0)
-        );
-
-        for (int i = 0; i < Main.state.players.size(); i++) {
-            if (i != turnCount) {
-                GridPane.setColumnIndex(playerGrid.getChildren().get(i), GridPane.getColumnIndex(playerGrid.getChildren().get(i)) - 1);
-            }
+        int current = 0;
+        while (Main.state.getPlayers().get(current) != Main.state.turning_player) {
+            current++;
         }
 
-        turnCount++;
-        if (turnCount == Main.state.players.size()) turnCount = 0;//todo delete, turnCount is dealt with in the state node
-        //playerGrid.getChildren().get(turnCount).getStyleClass().add("selected");
+        while (turnCount != current) {
+            GridPane.setColumnIndex(playerGrid.getChildren().get(turnCount), Main.state.players.size() - 1);
+
+            ((VBox) ((VBox) playerGrid.getChildren().get((turnCount + 1) % Main.state.players.size()))
+                    .getChildren().get(0)).getChildren().add(0,
+                    ((VBox) ((VBox) playerGrid.getChildren().get(turnCount)).getChildren().get(0)).getChildren().remove(0)
+            );
+
+            for (int i = 0; i < Main.state.players.size(); i++) {
+                if (i != turnCount) {
+                    GridPane.setColumnIndex(playerGrid.getChildren().get(i), GridPane.getColumnIndex(playerGrid.getChildren().get(i)) - 1);
+                }
+            }
+
+            turnCount++;
+            if (turnCount == Main.state.players.size()) turnCount = 0;
+        }
     }
 
     @FXML
@@ -1304,8 +1330,8 @@ public class GameGraphics {
         //log.setPadding(new Insets(0, 0, 0, 10));
         log.setEditable(false);
         log.setFocusTraversable(false);
-        for (int i = 0; i < 100; i++) { //todo replace
-            log.getItems().add(i + ": Player " + i % Main.state.players.size() + " decided he is too good for this game. This player has been eliminated.");
+        for (int i = 0; i < Main.actions.size(); i++) {
+            log.getItems().add(Main.actions.get(i));
         }
 
         Button resumeButton = new Button("OK");
@@ -1335,34 +1361,68 @@ public class GameGraphics {
         Stage window = new Stage();
         window.setResizable(false);
         window.initModality(Modality.APPLICATION_MODAL);
-        window.setTitle("Game Results");
+        window.setTitle((Main.state.getRound() == 2 ? "Game" : "Round") + " Results");
 
         VBox layout = new VBox(20);
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER);
 
-        Label messageWin = new Label("YOU WON!"); //todo won or lost
+        int winnerIndex = -1;
+        Player winner = null;
+        String playerExhausted = null;
+        boolean draw = false;
+        for (int i = 0; i < Main.state.players.size(); i++) {
+            if (winner == null) {
+                winner = Main.state.players.get(i);
+                winnerIndex = i;
+            } else {
+                if (Main.score[i][Main.state.getRound()] > Main.score[winnerIndex][Main.state.getRound()]) {
+                    winner = Main.state.players.get(i);
+                    winnerIndex = i;
+                }
+            }
+            if (Main.state.players.get(i).getHand().size() == 0) playerExhausted = Main.state.players.get(i).getName();
+        }
+
+        for (int i = 0; i < Main.state.players.size(); i++)
+            if (Main.state.players.get(i) != winner && Main.score[i][Main.state.getRound()] == Main.score[winnerIndex][Main.state.getRound()]) draw = true;
+
+        Label messageWin = new Label((Main.mainPlayer.getName().equals(winner.getName()) ? "YOU" : winner.getName())
+                + (Main.state.getRound() == 2 ? " WON!" : (Main.mainPlayer.getName().equals(winner.getName()) ? " ARE" : " IS") + " WINNING!"));
+        if (draw) messageWin.setText("DRAW!");
         messageWin.setFont(Font.font("", FontWeight.BOLD, 24));
 
-        Label message = new Label("Round has ended - deck has been exhausted."); //todo GameView.state.round == 3 ? "Game" : "Round", player.name has exhausted their hand
+        Label message = new Label((Main.state.getRound() == 2 ? "Game" : "Round") + " has ended - "
+                + (playerExhausted == null ? "deck has been exhausted." : playerExhausted.concat(" has exhausted their hand.")));
         message.setFont(Font.font("", FontWeight.BOLD, 14));
 
-        Label messageWinner = new Label(Main.state.players.get(Main.playerIndex).getName() + " won."); //todo winner player, or check if draw, consult the rules
-        messageWinner.setFont(Font.font("", FontWeight.BOLD, 14));
+        /*Label messageWinner = new Label(Main.state.players.get(Main.playerIndex).getName() + " won."); //todo winner player, or check if draw, consult the rules
+        messageWinner.setFont(Font.font("", FontWeight.BOLD, 14));*/
 
         Button restartButton = new Button("Restart");
         restartButton.getStyleClass().add("actionButton");
         restartButton.setMinWidth(50);
         restartButton.setOnAction(e -> {
+            Main.stopRightThere = true;
             window.close();
             Main.setGraphics();
             //todo GameView gameView = new GameView();
+        });
+
+        Button continueButton = new Button("Continue");
+        continueButton.getStyleClass().add("actionButton");
+        continueButton.setMinWidth(50);
+        continueButton.setDefaultButton(true);
+        continueButton.setCancelButton(true);
+        continueButton.setOnAction(e -> {
+            window.close();
         });
 
         Button quitToMenuButton = new Button("Quit to Main Menu");
         quitToMenuButton.getStyleClass().add("actionButton");
         quitToMenuButton.setMinWidth(50);
         quitToMenuButton.setOnAction(e -> {
+            Main.stopRightThere = true;
             window.close();
             try {
                 SetupView setupView = new SetupView();
@@ -1376,15 +1436,16 @@ public class GameGraphics {
         quitButton.getStyleClass().add("actionButton");
         quitButton.setMinWidth(50);
         quitButton.setOnAction(e -> {
+            Main.stopRightThere = true;
             Main.window.close();
             window.close();
         });
 
         HBox buttons = new HBox(10);
         buttons.setAlignment(Pos.CENTER);
-        buttons.getChildren().addAll(restartButton, quitToMenuButton, quitButton);
+        buttons.getChildren().addAll((Main.state.getRound() != 2 ? continueButton : restartButton), quitToMenuButton, quitButton);
 
-        layout.getChildren().addAll(messageWin, message, messageWinner, loadScoreSheet(), buttons);
+        layout.getChildren().addAll(messageWin, message, getScoreSheet(), buttons);
 
         Scene scene = new Scene(layout, 540, 450);
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
@@ -1417,6 +1478,7 @@ public class GameGraphics {
                     ButtonType.YES, ButtonType.NO);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
+                Main.stopRightThere = true;
                 window.close();
                 Main.setGraphics();
                 //todo GameView gameView = new GameView();
@@ -1439,6 +1501,7 @@ public class GameGraphics {
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
                 window.close();
+                Main.stopRightThere = true;
 
                 try {
                     SetupView setupView = new SetupView();
@@ -1457,6 +1520,7 @@ public class GameGraphics {
                     ButtonType.YES, ButtonType.NO);
             alert.showAndWait();
             if (alert.getResult() == ButtonType.YES) {
+                Main.stopRightThere = true;
                 Main.window.close();
                 window.close();
             }
@@ -1495,7 +1559,7 @@ public class GameGraphics {
 
         VBox layout = new VBox(25);
         layout.getStyleClass().add("vBoxLayout");
-        layout.getChildren().addAll(loadScoreSheet(), resumeButton);
+        layout.getChildren().addAll(getScoreSheet(), resumeButton);
         layout.setAlignment(Pos.CENTER);
 
         Scene scene = new Scene(layout, window.getMinWidth(), window.getMinHeight());
@@ -1504,7 +1568,9 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    private GridPane loadScoreSheet() {
+    private GridPane getScoreSheet() {
+        Main.saveScores();
+
         GridPane scoreSheet = new GridPane();
         scoreSheet.setAlignment(Pos.CENTER);
         scoreSheet.setGridLinesVisible(true);
@@ -1534,11 +1600,12 @@ public class GameGraphics {
             scoreSheet.add(label, i+1, 0);
 
             for (int j = 0; j <= Main.state.getRound(); j++) {
-                Label score = new Label(Main.score[i][j]+"");
+                Label score = new Label("+" + (Main.score[i][j] - (j >= 1 ? Main.score[i][j-1] : 0)) + " / "
+                        + Main.score[i][j]);
                 score.setFont(Font.font("", FontWeight.BOLD, 16));
                 scoreSheet.add(score, i+1, j+1);
             }
-            ((Label) scoreSheet.getChildren().get(scoreSheet.getChildren().size()-1)).setText(Main.state.players.get(i).getScore()+"");
+            //((Label) scoreSheet.getChildren().get(scoreSheet.getChildren().size()-1)).setText(Main.state.players.get(i).getScore()+"");
 
         }
 

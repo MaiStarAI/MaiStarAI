@@ -1,13 +1,18 @@
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
+import javafx.concurrent.Service;
+import javafx.concurrent.Task;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.*;
 
 public class Main {
 
@@ -17,11 +22,17 @@ public class Main {
     public static final int windowWidth = 1040;
     public static final int windowHeight = 690;
 
+    public static boolean stopRightThere;
+
+    public static State state;
     public static int playerIndex;
     public static Player mainPlayer;
     public static GameGraphics gg;
-    public static State state;
     public static int[][] score;
+    public static ArrayList<String> actions;
+    public static int round;
+
+    public static boolean turnEnded;
 
     public static void setGraphics() {
         window = SetupView.window;
@@ -37,25 +48,27 @@ public class Main {
             e.consume();
         });
 
+        //gg.playGuestButton.fireEvent(new ActionEvent());
+
+        window.setMinWidth(windowWidth);
+        window.setWidth(windowWidth);
+        window.setMinHeight(windowHeight);
+        window.setHeight(windowHeight);
+
+        window.show();
+
+        Platform.runLater(() -> main(new String[0]));
+    }
+
+    private static void loadGraphics() {
         try {
             FXMLLoader loader = new FXMLLoader(Main.class.getResource("gameGraphics.fxml"));
             root = loader.load();
             gg = loader.getController();
-            //gg.playGuestButton.fireEvent(new ActionEvent());
-
-            window.setMinWidth(windowWidth);
-            window.setWidth(windowWidth);
-            window.setMinHeight(windowHeight);
-            window.setHeight(windowHeight);
-
             window.setScene(new Scene(root, windowWidth, windowHeight));
         } catch (IOException e) {
-            System.out.println(e + "\nERROR: couldn't load 'gameGraphics.fxml'");
+            System.out.println(e + "\nERROR: failed to load 'gameGraphics.fxml'");
         }
-
-        window.show();
-
-        main(new String[0]);
     }
 
     public static void main(String[] args) {
@@ -63,50 +76,70 @@ public class Main {
 
         score = new int[SetupView.players.size()][3];
 
-        /* Round management */
-        for (int round = 0; round < 3; round++) {
+        actions = new ArrayList<>();
 
-            /* Initialization of the round */
-            state = new State();
+        round = 0;
 
-            state.fillDrawDeck(getAllCards()); // Fill the draw deck with the initial cards
-            state.setRound(round);
+        stopRightThere = false;
 
-            for (int i = 0; i < SetupView.players.size(); i++) {
-                state.players.add(
-                        new Player(
-                                SetupView.aiType[i] == 0 ? Player.Type.Human : (SetupView.aiType[i] == 1 ? Player.Type.ISMCTS : Player.Type.Random),
-                                SetupView.players.get(i), new Geisha(Geisha.Name.valueOf(SetupView.playerGeishas.get(i))))
-                );
+        turnEnded = false;
 
-                if (round == 0) {
-                    for (String j : SetupView.playerCards.get(i)) {//int j = 0; j < SetupView.playerCards.get(i).size(); j++) {
-                        state.players.get(i).addCard(state.removeCard(
-                                Card.Name.valueOf(SetupView.getCardName(j).replace(" ", "_")),
-                                Card.Color.valueOf(SetupView.getCardColor(j))
-                        ));
-                    }
-                } else {
-                    for (int j = 0; j < 5 + round; ++j) { // 5, 6, 7 cards
-                        state.players.get(i).addCard(state.getRandomCard());
-                    }
+        nextRound();
+    }
+
+    public static void nextRound() {
+        /* Initialization of the round */
+        state = new State();
+
+        state.fillDrawDeck(getAllCards()); // Fill the draw deck with the initial cards
+        state.setRound(round);
+
+        for (int i = 0; i < SetupView.players.size(); i++) {
+            state.players.add(
+                    new Player(
+                            SetupView.aiType[i] == 0 ? Player.Type.Human : (SetupView.aiType[i] == 1 ? Player.Type.ISMCTS : Player.Type.Random),
+                            SetupView.players.get(i), new Geisha(Geisha.Name.valueOf(SetupView.playerGeishas.get(i))))
+            );
+
+            if (round == 0) {
+                for (String j : SetupView.playerCards.get(i)) {
+                    state.players.get(i).addCard(state.removeCard(
+                            Card.Name.valueOf(SetupView.getCardName(j).replace(" ", "_")),
+                            Card.Color.valueOf(SetupView.getCardColor(j))
+                    ));
                 }
-
-                /* Oboro geisha (+2 cards when the round starts) */
-                if (state.players.get(i).getGeisha().getName() == Geisha.Name.Oboro) {
-                    state.players.get(i).addCard(state.getRandomCard());
+            } else {
+                for (int j = 0; j < 5 + round; ++j) { // 5, 6, 7 cards
                     state.players.get(i).addCard(state.getRandomCard());
                 }
             }
 
-            mainPlayer = state.players.get(playerIndex);
-            state.setTurnPlayer(state.players.get(0));
-            state.setRound(round);
-
-            gg.initialize();
-
-            Platform.runLater(() -> loop());
+            /* Oboro geisha (+2 cards when the round starts) */
+            if (state.players.get(i).getGeisha().getName() == Geisha.Name.Oboro) {
+                state.players.get(i).addCard(state.getRandomCard());
+                state.players.get(i).addCard(state.getRandomCard());
+            }
         }
+
+        mainPlayer = state.players.get(playerIndex);
+        state.setTurnPlayer(state.players.get(0));
+        state.setRound(round);
+
+        loadGraphics();
+
+        Service<Void> service = new Service<>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        Platform.runLater(() -> Main.loop());
+                        return null;
+                    }
+                };
+            }
+        };
+        service.start();
     }
 
     public static void loop () {
@@ -116,28 +149,47 @@ public class Main {
         // Run the game loop
         while (!state.isTerminal()) {
 
+            gg.updateAllGraphics();
+
+            Action action;
+
             /* Makes a decision how to move */
             switch (state.getTurnPlayer().getType()) {
                 case ISMCTS: {
-                    state = state.applyAction(ISMCTS.getAction(state));
+                    action = ISMCTS.getAction(state);
+                    state = state.applyAction(action);
+                    addActionToLog(action);
                     break;
                 }
                 case Random: {
-                    state = state.applyAction(RANDOM.getAction(state));
+                    action = RANDOM.getAction(state);
+                    state = state.applyAction(action);
+                    addActionToLog(action);
                     break;
                 }
                 case Human: {
+                    System.out.println(Main.state.allowed_actions);
+                    if (Main.state.allowed_actions.contains(Action.Name.AllowEffect)) {
+                        gg.cancelEffect();
+                        break;
+                    }
+
+                    if (!turnEnded) return;
+                    state = state.applyAction(new Action(Action.Name.EndTurn, state.getTurnPlayer(), null, null, null, null));
+                    gg.resetActionTaken();
+                    turnEnded = false;
                     break;
                 }
             }
 
-            try {
-                state = changeStateAfterAction(state);
-            } catch (IOException e) {
-                System.out.println(e + "\nERROR: Failed to save data to the .log file.");
-            }
+            if (stopRightThere) return;
 
+            state = changeStateAfterAction(state);
         }
+
+        saveScores();
+
+        gg.winScreen();
 
         // Print turn information
         System.out.println("--------------------------------------------");
@@ -153,6 +205,84 @@ public class Main {
         System.out.println("--------------------------------------------");
         for (Player p : state.getPlayers()) {
             System.out.println(p.getName() + "'s score: " + p.getScore());
+        }
+
+        /* Round management */
+        if (round < 2) {
+            round++;
+            nextRound();
+        }
+    }
+
+    public static void addActionToLog(Action action) {
+        if (action.getName() == Action.Name.EndTurn
+                || action.getName() == Action.Name.HarukazeDiscard
+                || action.getName() == Action.Name.AllowEffect) return;
+
+        String description = describeAction(action);
+        actions.add((state.turn + 1) + ". " + description);
+        if (actions.size() > 100) actions.remove(0);
+        gg.lastActionDescription = description;
+
+        System.out.println(describeAction(action)); //todo remove
+    }
+
+    public static String describeAction(Action action) {
+        String description = "";
+                /*action.getName() + " by " + action.getPlayer().getName()
+                + " - " + (action.getCard1() == null ? "" : action.getCard1().getName())
+                + " " + (action.getTargetPlayer() == null ? "" : action.getTargetPlayer().getName());*/
+
+        description = description.concat(action.getPlayer().getName() + " ");
+
+        String color = action.getCard1() == null ? "" :
+                (action.getCard1().getColor() == Card.Color.BLACK ? "" : (action.getCard1().getColor().toString().toLowerCase() + " "));
+        String color2 = action.getCard2() == null ? "" :
+                (action.getCard2().getColor() == Card.Color.BLACK ? "" : (action.getCard2().getColor().toString().toLowerCase() + " "));
+
+        switch (action.getName()) {
+            case Guest:
+                description = description + "played " + color + action.getCard1().getName().toString().replace("_", " ") + " as a guest";
+                break;
+            case GuestEffect:
+                description = description + "used " + color + action.getCard1().getName().toString().replace("_", " ") + "'s effect"
+                        + (action.getTargetPlayer() == null ? "" : " on " + action.getTargetPlayer().getName());
+                break;
+            case Advertiser:
+                description = description + "played " + color + action.getCard1().getName().toString().replace("_", " ") + " as an advertiser";
+                break;
+            case Exchange:
+                description = description + "replaced advertiser " + color2 + action.getCard2().getName().toString().replace("_", " ") + " with "
+                        + color + action.getCard1().getName() + " from their hand";
+                break;
+            case Introduce:
+                description = description + "introduced " + color + action.getCard1().getName().toString().replace("_", " ")
+                        + " and " + color2 + action.getCard2().getName().toString().replace("_", " ");
+                break;
+            case Search:
+                description = description + "spent their turn searching for another patron";
+                break;
+            case CancelEffectRonin:
+                description = description + "used their Ronin to protect them from "
+                        + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
+                break;
+            case CancelEffectDistrict:
+                description = description + "used their District Kanryou to protect them from "
+                        + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
+                break;
+            case Geisha:
+                description = description + "used their Geisha's special effect";
+                break;
+        }
+
+        description += ".";
+
+        return description;
+    }
+
+    public static void saveScores() {
+        for (int i = 0; i < state.getPlayers().size(); i++) {
+            score[i][round] = state.players.get(i).getScore() + (round >= 1 ? score[i][round-1] : 0);
         }
     }
 
@@ -255,7 +385,7 @@ public class Main {
         return list;
     }
 
-    private static State changeStateAfterAction (State state) throws IOException {
+    public static State changeStateAfterAction (State state) {
 
         /* If someone used effect against another player */
         if (state.special_turn) {

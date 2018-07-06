@@ -307,7 +307,7 @@ public class SetupView extends Application {
 
         ChoiceBox<String> cardColor = new ChoiceBox<>();
         cardColor.setMinWidth(70);
-        cardColor.getItems().addAll("Red", "Blue", "Green"); //"Black"
+        cardColor.getItems().addAll("RED", "BLUE", "GREEN"); //"Black"
         cardColor.getSelectionModel().select(0);
 
         HBox setupCardButtons = new HBox(15);
@@ -370,12 +370,12 @@ public class SetupView extends Application {
             if (cardType.getValue() == null || cardColor.getValue() == null) return;
             if (cardType.getValue().equals("District Kanryou") || cardType.getValue().equals("Monk") || cardType.getValue().equals("Shogun")) {
                 cardColor.getItems().clear();
-                cardColor.getItems().add("Black");
+                cardColor.getItems().add("BLACK");
                 cardColor.getSelectionModel().select(0);
-            } else if (cardColor.getValue().equals("Black")
+            } else if (cardColor.getValue().equals("BLACK")
                     || cardColor.getValue().equals("Geisha") && cardType.getItems().size() > 6) {
                 cardColor.getItems().clear();
-                cardColor.getItems().addAll("Red", "Blue", "Green");
+                cardColor.getItems().addAll("RED", "BLUE", "GREEN");
                 cardColor.getSelectionModel().select(0);
             }
 
