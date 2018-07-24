@@ -172,7 +172,7 @@ public class GameGraphics {
     }
 
     public void resetActionTaken() {
-        actionTaken = false; // todo leave if the Fill functions are called only once
+        actionTaken = false;
     }
 
     public void updateAllGraphics() {
@@ -288,39 +288,27 @@ public class GameGraphics {
         geishaButton.setDisable(true);
         endTurnButton.setDisable(true);
 
-        //todo if (courtier in action) set guest true, make new determinization, if selection.size == 0
-        //turnCount = GameView.playerIndex; //todo delete
         if (Main.state.getTurnPlayer().getName().equals(Main.mainPlayer.getName())) {
             /* end turn */
-            if (actionTaken) {
+            if (Main.state.allowed_actions.contains(Action.Name.EndTurn)) {
                 endTurnButton.setDisable(false);
                 endTurnButton.setOnAction(e -> finishTurn());
-                //return;
-            } else {
-                /* search */
-                setButtonAvailable(searchButton, new Action(Action.Name.Search,
-                        Main.state.turning_player,
-                        null, null, null, null));
             }
 
             /* geisha */
             isGeishaApplicable(null);
 
+            /* search */
+            setButtonAvailable(searchButton, new Action(Action.Name.Search,
+                    Main.state.turning_player,
+                    null, null, null, null));
+
             if (selection.size() == 1) {
                 if (handGrid.getChildren().contains(selection.get(0))) {
                     /* play a guest */
-                    Action actionGuest = new Action(Action.Name.Guest,
+                    setButtonAvailable(playGuestButton, new Action(Action.Name.Guest,
                             Main.state.turning_player, Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(0))),
-                            null, null, null);
-                    if (Main.state.isApplicableAction(actionGuest)) {
-                        playGuestButton.setDisable(false);
-                        playGuestButton.setOnAction(e -> {
-
-                            effectWindow(actionGuest);
-                            if (effectAnswer == -1) return;
-
-                        });
-                    }
+                            null, null, null));
 
                     /* advertise */
                     setButtonAvailable(advertiseButton, new Action(Action.Name.Advertiser,
@@ -351,10 +339,8 @@ public class GameGraphics {
                             null, null
                     );
 
-
                     setButtonAvailable(introduceButton, action);
-                }
-                else {
+                } else {
                     /* exchange */
                     if (handGrid.getChildren().contains(selection.get(0)) && tables[Main.playerIndex].getChildren().contains(selection.get(1))) {
 
@@ -370,8 +356,8 @@ public class GameGraphics {
 
                         Action action = new Action(Action.Name.Exchange,
                                 Main.state.turning_player,
-                                Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(0)) - 1),
                                 Main.state.turning_player.getHand().get(GridPane.getColumnIndex(selection.get(1))),
+                                Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(0)) - 1),
                                 null, null
                         );
 
@@ -386,43 +372,49 @@ public class GameGraphics {
         if (Main.state.isApplicableAction(action)) {
             button.setDisable(false);
             button.setOnAction(e -> {
-                actionTaken = true;
-                executeAction(action);
-                if (action.getName() == Action.Name.Advertiser && Main.mainPlayer.getGeisha().getName() == Geisha.Name.Harukaze) {
-                    useGeishaWindow(action);
+                if (action.getName() == Action.Name.Guest) {
+                    effectWindow(action);
+                    if (effectAnswer == -1) return;
+                } else {
+                    actionTaken = true;
+                    executeAction(action);
+                    /*if (action.getName() == Action.Name.Advertiser && Main.mainPlayer.getGeisha().getName() == Geisha.Name.Harukaze) {
+                        useGeishaWindow(action);
+                    }*/
                 }
+                clearSelection();
             });
         }
     }
 
     private void executeAction(Action action) {
         Main.state = Main.state.applyAction(action);
+        changeStateAfterAction();
         Main.addActionToLog(action);
 
         Main.loop();
     }
-    //todo endturn state.nextPlayer
 
-    //todo
     private void finishTurn() {
+        clearSelection();
+        Main.state = Main.state.applyAction(new Action(Action.Name.EndTurn, Main.state.getTurnPlayer(), null, null, null, null));
+        resetActionTaken();
         Main.turnEnded = true;
-        Main.state = Main.changeStateAfterAction(Main.state);
+        if (Main.stopRightThere) return;
+        changeStateAfterAction();
         Main.loop();
     }
 
     private void effectWindow(Action action) {
-        //todo target, ok, do not use effect, cancel
         effectAnswer = -1;
 
         Card card = action.getCard1();
         switch (card.getName()) {
             case Courtier: //return; // pick your card
             case Okaasan:
-            case Doctor:
+            case Doctor: //todo probably change, make individual claims
                 haveEffect();
-                if (effectAnswer == -1) return;
-                executeAction(action);
-                actionTaken = true;
+                if (!checkAndExecute(action)) return;
 
                 Action actionEffectTurn = new Action(Action.Name.GuestEffect,
                         Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
@@ -433,9 +425,7 @@ public class GameGraphics {
             case Monk:
             case Shogun:
                 confirmEffect();
-                if (effectAnswer == -1) return;
-                executeAction(action);
-                actionTaken = true;
+                if (!checkAndExecute(action)) return;
 
                 Action actionEffectCall = new Action(Action.Name.GuestEffect,
                         Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
@@ -448,41 +438,285 @@ public class GameGraphics {
             case Yakuza:
             case Samurai:
             case Emissary:
+            case Sumo_Wrestler:
+
                 targetEffect();
-                if (effectAnswer == -1) return;
-                executeAction(action);
-                actionTaken = true;
+                if (!checkAndExecute(action)) return;
                 if (effectAnswer == -2) return;
+
+                Player targetPlayer = Main.state.players.get(effectAnswer);
+                Card targetCard = null;
+
+                if (card.getName() == Card.Name.Sumo_Wrestler) {
+                    //todo can't stop before looked at the cards. bullshit.
+                    sumoEffect(card);
+                    targetCard = targetPlayer.getHand().get(effectAnswer);
+                }
 
                 Action actionEffectTarget = new Action(Action.Name.GuestEffect,
-                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
-                        null, Main.state.players.get(effectAnswer),null);
+                        Main.state.getTurnPlayer(), card,
+                        targetCard, targetPlayer,null);
                 executeAction(actionEffectTarget);
-                System.out.println(Main.state.players.get(effectAnswer).getName());
                 return;
-            case Sumo_Wrestler:
-                targetEffect();
-                int targetPlayer = effectAnswer;
 
-                if (targetPlayer == -1) return;
-                executeAction(action);
-                actionTaken = true;
-                if (effectAnswer == -2) return;
-
-                sumoEffect(card);
-                int targetCard = effectAnswer;
-
-                Action actionEffectSumo = new Action(Action.Name.GuestEffect,
-                        Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
-                        Main.state.players.get(targetPlayer).getHand().get(targetCard), Main.state.players.get(targetPlayer),null);
-                executeAction(actionEffectSumo);
-                return;
             default:
                 effectAnswer = 1;
-                executeAction(action);
-                actionTaken = true;
-                return;
+                checkAndExecute(action);
         }
+    }
+
+    private boolean checkAndExecute(Action action) {
+        if (effectAnswer == -1) return false;
+        executeAction(action);
+        actionTaken = true;
+        return true;
+    }
+
+    public void changeStateAfterAction () {
+        State state = Main.state;
+
+        if (state.getLastAppliedAction() == null) return;
+
+        /* If someone used effect against another player
+        if (state.special_turn) {
+            return state;
+        }*/
+
+        switch (state.getLastAppliedAction().getName()) {
+            case GuestEffect: {
+
+                /* When a doctor effect was taken */
+                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Doctor) { //todo only on finish turn, include endturn automatically (don't use effect)
+                    String turning_player = state.getTurnPlayer().getName();
+                    state = state.nextTurn();
+                    for (Player p : state.getPlayers()) {
+                        if (p.getName().equals(turning_player)) {
+                            state.setTurnPlayer(p);
+                        }
+                    }
+                    //return state;
+                }
+
+                /* When an okaasan effect was taken */
+                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Okaasan) { //todo perhaps, select a card to play immediately
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.Advertiser);
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                }
+
+                /* When a courtier effect was taken */
+                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Courtier) { //todo perhaps, select a card to play immediately
+                    state.use_allowed_actions = true;
+                    state.allowed_color = state.getLastAppliedAction().getCard1().getColor();
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.Guest);
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                }
+
+                if (state.allowed_actions.contains(Action.Name.AllowEffect)) {
+                    return;
+                }
+
+                break;
+            }
+            /*case Guest: {
+
+                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Sumo_Wrestler) {
+                    Player target = state.getTurnPlayer();
+                    int max_cards = target.getHand().size();
+                    for (Player p : state.getPlayers()) {
+                        if (p.getHand().size() > max_cards) {
+                            max_cards = p.getHand().size();
+                            target = p;
+                        }
+                    }
+
+                    state.sumo_player = target;
+                    for (Card c : target.getHand()) c.is_known = true;
+
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.GuestEffect);
+                    return state;
+                } else {
+
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.GuestEffect);
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                    return state;
+                }
+            }*/
+            case Geisha: {
+
+                /* Akenohoshi */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
+                    return;
+                }
+
+                /* Suzune */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Suzune) { //todo Suzune is bugged
+                    /*state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.Advertiser);*/
+                    return;
+                }
+
+                /* Momiji */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji) {
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.GuestEffect);
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                    return;
+                }
+
+                /* Natsumi */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Natsumi) {
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.Guest);
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                    return;
+                }
+
+                break;
+            }
+            case Advertiser: {
+
+                /* Harukaze */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Harukaze) {
+                    switch (state.getDrawDeck().size()) {
+                        case 0: {
+                            state.allowed_color = Card.Color.RED;
+                            break;
+                        }
+                        case 1: {
+                            state.allowed_color = Card.Color.BLUE;
+                            state.getTurnPlayer().addCard(state.getRandomCard());
+                            break;
+                        }
+                        default: {
+                            state.allowed_color = Card.Color.GREEN;
+                            state.getTurnPlayer().addCard(state.getRandomCard());
+                            state.getTurnPlayer().addCard(state.getRandomCard());
+                            break;
+                        }
+                    }
+                    useGeishaWindow(null);
+                    state.use_allowed_actions = true;
+                    state.allowed_actions.clear();
+                    state.allowed_actions.add(Action.Name.EndTurn);
+                }
+
+                break;
+            }
+            case EndTurn:/* case HarukazeDiscard:*/ {
+
+                /* Natsumi
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Natsumi) {
+                    if (state.isApplicableAction(new Action(
+                            Action.Name.Geisha,
+                            state.getTurnPlayer(),
+                            state.getLastAppliedAction().getCard1(),
+                            null,
+                            null,
+                            null
+                    ))) {
+                        state.use_allowed_actions = true;
+                        state.allowed_actions.clear();
+                        state.allowed_color = Card.Color.BLUE;
+                        state.allowed_actions.add(Action.Name.Geisha);
+                        state.allowed_actions.add(Action.Name.EndTurn);
+                        return state;
+                    }
+                }*/
+
+                Main.state = state.nextTurn();
+                return;
+            }
+        }
+
+        /* Momiji */
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji) {
+            if (state.isApplicableAction(new Action(
+                    Action.Name.Geisha,
+                    state.getTurnPlayer(),
+                    state.getLastAppliedAction().getCard1(),
+                    null,
+                    null,
+                    null
+            ))) {
+                state.use_allowed_actions = true;
+                state.allowed_actions.clear();
+                state.allowed_color = Card.Color.RED;
+                state.allowed_actions.add(Action.Name.Geisha);
+                state.allowed_actions.add(Action.Name.EndTurn);
+                return;
+            }
+        }
+
+        /* Natsumi */
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Natsumi) {
+            if (state.isApplicableAction(new Action(
+                    Action.Name.Geisha,
+                    state.getTurnPlayer(),
+                    state.getLastAppliedAction().getCard1(),
+                    null,
+                    null,
+                    null
+            ))) {
+                state.use_allowed_actions = true;
+                state.allowed_actions.clear();
+                state.allowed_color = Card.Color.BLUE;
+                state.allowed_actions.add(Action.Name.Geisha);
+                state.allowed_actions.add(Action.Name.EndTurn);
+                return;
+            }
+        }
+
+        /* Suzune */
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Suzune) {
+            boolean geisha_was_used = false;
+            for (Action act : state.getAppliedActions()) {
+                if (act.getName() == Action.Name.Geisha) {
+                    geisha_was_used = true;
+                    break;
+                }
+            }
+            if (geisha_was_used) {
+                if (state.getAppliedActions().get(0).getName() == Action.Name.Geisha) {
+                    if (state.getAppliedActions().size() == 2) {
+                        state.use_allowed_actions = true;
+                        ArrayList<Action.Name> names = state.getAllActions();
+                        names.remove(Action.Name.Geisha);
+                        state.allowed_actions.clear();
+                        state.allowed_actions.addAll(names);
+                        return;
+                    }
+                }
+            } else {
+                state.use_allowed_actions = true;
+                state.allowed_actions.clear();
+                state.allowed_actions.add(Action.Name.Geisha);
+                state.allowed_actions.add(Action.Name.EndTurn);
+                return;
+            }
+        }
+
+        /* Delete Akenohoshi bonus
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
+            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
+            state = state.nextTurn();
+            return state;
+        }*/
+
+        /* Next turn as usual
+        state = state.nextTurn();*/
+        state.use_allowed_actions = true;
+        state.allowed_actions.clear();
+        state.allowed_actions.add(Action.Name.EndTurn);
     }
 
     private void isGeishaApplicable(Card card) {
@@ -510,27 +744,27 @@ public class GameGraphics {
     private void useGeishaWindow(Action action) {
         effectAnswer = -1;
 
-        switch (action.getTargetPlayer().getGeisha().getName()) {
+        switch (Main.state.getTurnPlayer().getGeisha().getName()) {
             case Akenohoshi:
                 akenohoshiEffect();
+                if (effectAnswer == -1) return;
                 Action akenohoshiEffect = new Action(Action.Name.Geisha,  Main.state.getTurnPlayer(),
                         null,null, null,
                         new Reputation(effectAnswer == 0 ? 3 : 0, effectAnswer == 1 ? 3 : 0, effectAnswer == 2 ? 3 : 0));
                 executeAction(akenohoshiEffect);
-                System.out.println(Main.state.getTurnPlayer().getName() + " " + Main.state.getTurnPlayer().getReputation());
-                //todo
                 return;
             case Harukaze:
+                //geisha action first, apparently, then popup
                 harukazeEffect();
                 Action harukazeEffect = new Action(Action.Name.HarukazeDiscard, Main.state.turning_player,
                         Main.state.getTurnPlayer().getHand().get(harukazeSelection.get(0)),
                         Main.state.getTurnPlayer().getHand().get(harukazeSelection.get(1)),
                         null, null);
                 executeAction(harukazeEffect);
-                //todo
                 return;
             default:
                 executeAction(action);
+                //todo
         }
     }
 
@@ -632,10 +866,7 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    //todo sourcePlayerName, cardName, effect
     public int cancelEffect() {
-        // todo check if the player has district kanryou OR ronin, then proceed
-
         Stage window = new Stage();
         window.setResizable(false);
         window.initModality(Modality.APPLICATION_MODAL);
@@ -649,39 +880,43 @@ public class GameGraphics {
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
+        Action useRonin = new Action(Action.Name.CancelEffectRonin, Main.state.getTurnPlayer(), null, null, null, null);
+        Action useKanryou = new Action(Action.Name.CancelEffectDistrict, Main.state.getTurnPlayer(), null, null, null, null);
+        Action allow = new Action(Action.Name.AllowEffect, Main.state.getTurnPlayer(), null, null, null, null);
+
         Button button1 = new Button("Use Ronin");
         button1.setMnemonicParsing(true);
-        //if (GameView.state.players.get(GameView.playerIndex).guests. has Ronin)
-        //button1.setManaged(false); todo if has the card on table
         button1.getStyleClass().add("actionButton");
         button1.setOnAction(e -> {
-            effectAnswer = 1;
-            //todo maybe remove from guests
             window.close();
+            executeAction(useRonin);
         });
+        if (!Main.state.isApplicableAction(useRonin)) {
+            button1.setManaged(false);
+        }
 
         Button button2 = new Button("Use District Kanryou");
         button2.setMnemonicParsing(true);
-        //if (GameView.state.players.get(GameView.playerIndex).hand. has District Kanryou)
-        //button2.setManaged(false); todo if has the card in hand
         button2.getStyleClass().add("actionButton");
         button2.setOnAction(e -> {
-            effectAnswer = 2;
-            //todo maybe remove from hand
             window.close();
+            executeAction(useKanryou);
         });
+        if (!Main.state.isApplicableAction(useKanryou)) {
+            button2.setManaged(false);
+        }
 
         Button buttonCancel = new Button("Do Nothing");
         buttonCancel.setMnemonicParsing(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
-            effectAnswer = 0;
             window.close();
+            executeAction(allow);
         });
 
         window.setOnCloseRequest(e -> {
-            effectAnswer = 0;
             window.close();
+            executeAction(allow);
         });
 
         ButtonBar buttons = new ButtonBar();
@@ -1333,6 +1568,7 @@ public class GameGraphics {
         for (int i = 0; i < Main.actions.size(); i++) {
             log.getItems().add(Main.actions.get(i));
         }
+        log.scrollTo(log.getItems().size()-1);
 
         Button resumeButton = new Button("OK");
         resumeButton.getStyleClass().add("actionButton");

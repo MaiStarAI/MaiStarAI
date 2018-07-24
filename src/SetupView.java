@@ -1249,7 +1249,7 @@ public class SetupView extends Application {
         }
 
         total.setText("Cards in the deck left: " + cardsRemaining.size());
-        instance.setText("This card : " + counter);
+        instance.setText("This card: " + counter);
     }
 
     public static String getCardName (String item) {

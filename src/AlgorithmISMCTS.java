@@ -702,7 +702,7 @@ class AlgorithmISMCTS {
 
         /* Delete Akenohoshi bonus */
         if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
-            state.getTurnPlayer().setAkenohoshiBonus(null);
+            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
             state = state.nextTurn();
             return state;
         }

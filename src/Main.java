@@ -32,6 +32,9 @@ public class Main {
     public static ArrayList<String> actions;
     public static int round;
 
+    private static AlgorithmISMCTS ISMCTS = new AlgorithmISMCTS();
+    private static AlgorithmRandom RANDOM = new AlgorithmRandom();
+
     public static boolean turnEnded;
 
     public static void setGraphics() {
@@ -79,6 +82,9 @@ public class Main {
         actions = new ArrayList<>();
 
         round = 0;
+
+        ISMCTS = new AlgorithmISMCTS();
+        RANDOM = new AlgorithmRandom();
 
         stopRightThere = false;
 
@@ -133,7 +139,7 @@ public class Main {
                 return new Task<>() {
                     @Override
                     protected Void call() throws Exception {
-                        Platform.runLater(() -> Main.loop());
+                        Platform.runLater(() -> loop());
                         return null;
                     }
                 };
@@ -143,12 +149,8 @@ public class Main {
     }
 
     public static void loop () {
-        AlgorithmISMCTS ISMCTS = new AlgorithmISMCTS();
-        AlgorithmRandom RANDOM = new AlgorithmRandom();
-
         // Run the game loop
         while (!state.isTerminal()) {
-
             gg.updateAllGraphics();
 
             Action action;
@@ -168,15 +170,13 @@ public class Main {
                     break;
                 }
                 case Human: {
-                    System.out.println(Main.state.allowed_actions);
-                    if (Main.state.allowed_actions.contains(Action.Name.AllowEffect)) {
+                    if (!state.allowed_actions.isEmpty()) System.out.println(state.allowed_actions);
+                    if (state.allowed_actions.contains(Action.Name.AllowEffect)) {
                         gg.cancelEffect();
-                        break;
+                        return;
                     }
 
                     if (!turnEnded) return;
-                    state = state.applyAction(new Action(Action.Name.EndTurn, state.getTurnPlayer(), null, null, null, null));
-                    gg.resetActionTaken();
                     turnEnded = false;
                     break;
                 }
@@ -184,7 +184,11 @@ public class Main {
 
             if (stopRightThere) return;
 
-            state = changeStateAfterAction(state);
+            if (state.getTurnPlayer().getType() != Player.Type.Human)
+                state = changeStateAfterAction(state);
+            else if (state.getLastAppliedAction() != null && state.getLastAppliedAction().getName() != Action.Name.EndTurn) {
+                gg.changeStateAfterAction();
+            }
         }
 
         saveScores();
@@ -220,7 +224,7 @@ public class Main {
                 || action.getName() == Action.Name.AllowEffect) return;
 
         String description = describeAction(action);
-        actions.add((state.turn + 1) + ". " + description);
+        actions.add("Turn " + (state.turn + 1) + ". " + description);
         if (actions.size() > 100) actions.remove(0);
         gg.lastActionDescription = description;
 
@@ -246,14 +250,14 @@ public class Main {
                 break;
             case GuestEffect:
                 description = description + "used " + color + action.getCard1().getName().toString().replace("_", " ") + "'s effect"
-                        + (action.getTargetPlayer() == null ? "" : " on " + action.getTargetPlayer().getName());
+                        + (action.getTargetPlayer() == null/* || action.getTargetPlayer().equals(action.getPlayer())*/ ? "" : " on " + action.getTargetPlayer().getName());
                 break;
             case Advertiser:
                 description = description + "played " + color + action.getCard1().getName().toString().replace("_", " ") + " as an advertiser";
                 break;
             case Exchange:
-                description = description + "replaced advertiser " + color2 + action.getCard2().getName().toString().replace("_", " ") + " with "
-                        + color + action.getCard1().getName() + " from their hand";
+                description = description + "exchanged their advertiser, " + color2 + action.getCard2().getName().toString().replace("_", " ") + " with "
+                        + color + action.getCard1().getName().toString().replace("_", " ")  + " from their hand";
                 break;
             case Introduce:
                 description = description + "introduced " + color + action.getCard1().getName().toString().replace("_", " ")
@@ -263,11 +267,11 @@ public class Main {
                 description = description + "spent their turn searching for another patron";
                 break;
             case CancelEffectRonin:
-                description = description + "used their Ronin to protect them from "
+                description = description + "used their Ronin to cancel "
                         + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
                 break;
             case CancelEffectDistrict:
-                description = description + "used their District Kanryou to protect them from "
+                description = description + "used their District Kanryou to cancel "
                         + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
                 break;
             case Geisha:
@@ -603,10 +607,10 @@ public class Main {
                         state.allowed_actions.addAll(names);
                         return state;
                     }
-                } else {
+                }/* else {
                     state = state.nextTurn();
                     return state;
-                }
+                }*/
             } else {
                 state.use_allowed_actions = true;
                 state.allowed_actions.clear();
@@ -618,12 +622,15 @@ public class Main {
 
         /* Delete Akenohoshi bonus */
         if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
-            state.getTurnPlayer().setAkenohoshiBonus(null);
-            state = state.nextTurn();
-            return state;
+            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
+            /*state = state.nextTurn();
+            return state;*/
         }
 
         /* Next turn as usual */
+        if (!state.getTurnPlayer().getName().equals(mainPlayer.getName())) {//test test, one two, one two three
+
+        }
         state = state.nextTurn();
         return state;
     }

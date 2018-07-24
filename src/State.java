@@ -115,19 +115,19 @@ class State {
                 switch (action.getCard1().getColor()) {
                     case RED: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.RED)) &&
-                                turning_player.getReputation().getRed() >= action.getCard1().getReq().getRed();
+                                turning_player.getReputation().getRed() + turning_player.getAkenohoshiBonus().getRed() >= action.getCard1().getReq().getRed();
                     }
                     case BLUE: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.BLUE)) &&
-                                turning_player.getReputation().getBlue() >= action.getCard1().getReq().getBlue();
+                                turning_player.getReputation().getBlue() + turning_player.getAkenohoshiBonus().getBlue() >= action.getCard1().getReq().getBlue();
                     }
                     case GREEN: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.GREEN)) &&
-                                turning_player.getReputation().getGreen() >= action.getCard1().getReq().getGreen();
+                                turning_player.getReputation().getGreen() + turning_player.getAkenohoshiBonus().getGreen() >= action.getCard1().getReq().getGreen();
                     }
                     case BLACK: {
                         return possible && action.getCard1().getName() != Card.Name.District_Kanryou &&
-                                turning_player.getReputation().getBlack() >= action.getCard1().getReq().getBlack();
+                                turning_player.getReputation().getBlack() + turning_player.getAkenohoshiBonus().getBlack() >= action.getCard1().getReq().getBlack();
                     }
                     default: {
                         return false;
@@ -440,7 +440,7 @@ class State {
                 return new_state;
             }
             case HarukazeDiscard: {
-                switch (action.getRep().getBlack()) {
+                switch (new_state.getDrawDeck().size()) {
                     case 0: {
                         return new_state;
                     }
@@ -450,7 +450,7 @@ class State {
                         new_state.getDrawDeck().add(card1);
                         return new_state;
                     }
-                    case 2: {
+                    default: {
                         new_state.getTurnPlayer().discardCard(action.getCard1());
                         new_state.getTurnPlayer().discardCard(action.getCard2());
                         Card card1 = new Card(action.getCard1()); card1.is_known = true;

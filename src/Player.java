@@ -23,6 +23,7 @@ class Player {
         this.name = name;
         this.geisha = geisha;
         geishaUsages = 0;
+        akenohoshi_bonus = new Reputation(0, 0, 0);
         hand = new ArrayList<>();
         a_line = new ArrayList<>();
         g_line = new ArrayList<>();
