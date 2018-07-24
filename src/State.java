@@ -160,7 +160,7 @@ class State {
                 return applied_actions.size() > 0 && (getLastAppliedAction().getName().equals(Action.Name.Guest) || (
                         getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
                                 getLastAppliedAction().getName() == Action.Name.Geisha
-                ))
+                        ))
                         && (allowed_color == null || (allowed_color == action.getCard1().getColor())) &&
                         (!use_allowed_actions || (allowed_actions.contains(Action.Name.GuestEffect))) &&
                         isApplicableEffect(action);
@@ -388,6 +388,7 @@ class State {
             }
             case GuestEffect: {
                 if (action.getTargetPlayer().getName().equals(turning_player.getName())) {
+                    new_state.last_player = getTurnPlayer();
                     new_state = applyEffect(action, new_state);
                     return new_state;
                 }
@@ -510,7 +511,6 @@ class State {
     private State applyEffect (Action action, State state) {
 
         state.special_turn = false;
-        state.last_player = null;
         state.last_effect = null;
         state.allowed_actions.clear();
         state.use_allowed_actions = false;
@@ -545,7 +545,8 @@ class State {
                 for (Player p : state.players) {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         Card card = new Card(p.getAdverts().get(p.getAdverts().size() - 1));
-                        state.turning_player.addAdv(card);
+                        state.last_player.addAdv(card);
+                        state.last_player = null;
                         p.discardAdv(p.getAdverts().size() - 1);
                     }
                 }
@@ -572,7 +573,8 @@ class State {
                 for (Player p : state.players) {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         Card card = new Card(p.getGuests().get(p.getGuests().size() - 1));
-                        state.turning_player.addGuest(card);
+                        state.last_player.addGuest(card);
+                        state.last_player = null;
                         p.discardGuest(p.getGuests().size() - 1);
                     }
                 }
