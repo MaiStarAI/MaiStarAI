@@ -21,6 +21,8 @@ class Action {
     private Card card1; // Guest, Advertiser, Guest effect, Geisha
     private Card card2; // Guest effect, Introduce, Exchange, Geisha
     private Reputation rep;
+    private int exchange_ind_1;
+    private int exchange_ind_2;
 
     Action(Name name, Player player, Card card1, Card card2, Player targetPlayer, Reputation rep) {
         this.name = name;
@@ -29,6 +31,8 @@ class Action {
         this.card2 = card2;
         this.targetPlayer = targetPlayer;
         this.rep = rep;
+        exchange_ind_1 = -1;
+        exchange_ind_2 = -1;
     }
 
     Name getName () { return name; }
@@ -36,9 +40,13 @@ class Action {
     Player getTargetPlayer () { return targetPlayer; }
     Card getCard1 () { return card1; }
     Card getCard2 () { return card2; }
-    Reputation getRep() {
+    Reputation getRep () {
         return rep;
     }
+    int get_exchange_ind_1 () { return exchange_ind_1; }
+    void set_exchange_ind_1 (int exchange_ind_1) { this.exchange_ind_1 = exchange_ind_1; }
+    int get_exchange_ind_2 () { return exchange_ind_2; }
+    void set_exchange_ind_2 (int exchange_ind_2) { this.exchange_ind_2 = exchange_ind_2; }
 
     boolean equals (Action another) {
         return another != null && getName() ==  another.getName() &&
@@ -47,9 +55,10 @@ class Action {
                 player.getName().equals(another.player.getName()) &&
                 ((targetPlayer == null || another.targetPlayer == null) ? targetPlayer == another.targetPlayer
                         : targetPlayer.getName().equals(another.targetPlayer.getName())) &&
-                ((rep == null || another.rep == null) ? rep == another.rep : rep.equals(another.rep));
+                ((rep == null || another.rep == null) ? rep == another.rep : rep.equals(another.rep)) &&
+                (exchange_ind_1 == another.exchange_ind_1) && (exchange_ind_2 == another.exchange_ind_2);
     }
-    public String toString() {
+    public String toString () {
         return getName().toString() + ":\r\n" +
                 "\tPlayer: " + player.getName() + " (Geisha: " + player.getGeisha().getName().toString() + ")\r\n" +
                 (card1 != null ?

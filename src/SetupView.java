@@ -874,7 +874,7 @@ public class SetupView extends Application {
                     files.add(fileEntry.getName());
             }
         } catch (NullPointerException e) {
-            System.out.println(e + "\nERROR: 'presets' folder could not be found.");
+            System.out.println(e + "\nERROR: '" + folder + "' folder could not be found.");
         }
         return files;
     }

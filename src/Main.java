@@ -10,8 +10,10 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Main {
@@ -22,7 +24,7 @@ public class Main {
     public static final int windowWidth = 1040;
     public static final int windowHeight = 690;
 
-    public static boolean stopRightThere;
+    public static int gameNumber = 0;
 
     public static State state;
     public static int playerIndex;
@@ -36,6 +38,7 @@ public class Main {
     private static AlgorithmRandom RANDOM = new AlgorithmRandom();
 
     public static boolean turnEnded;
+    public static boolean stopRightThere;
 
     public static void setGraphics() {
         window = SetupView.window;
@@ -82,6 +85,29 @@ public class Main {
         actions = new ArrayList<>();
 
         round = 0;
+
+        gameNumber = 0;
+
+        try {
+            File file = new File("logs");
+            if (!file.exists()) file.mkdir();
+
+            File file2 = new File("logs/statistics");
+            if (!file2.exists()) file2.mkdir();
+
+            for (final File fileEntry : file.listFiles()) {
+                if (fileEntry.isFile() && fileEntry.getName().startsWith("game") && fileEntry.getName().endsWith(".log"))
+                    try {
+                        gameNumber = Integer.parseInt(fileEntry.getName().substring(4, fileEntry.getName().lastIndexOf(".")));
+                    } catch (NumberFormatException e) {
+                        System.out.println(e.toString());
+                    }
+            }
+        } catch (NullPointerException e) {
+            System.out.println(e + "\nERROR: 'logs' folder could not be found.");
+        }
+
+        gameNumber++;
 
         ISMCTS = new AlgorithmISMCTS();
         RANDOM = new AlgorithmRandom();
@@ -191,30 +217,26 @@ public class Main {
             }
         }
 
+        gg.updateAllGraphics();
+
         saveScores();
 
+        state.recordTurn();
+        state.recordWin();
+        recordStatistics();
+
         gg.winScreen();
-
-        // Print turn information
-        System.out.println("--------------------------------------------");
-        System.out.println("Round " + (state.getRound() + 1) + ", turn " + (state.getTurn() + 1) + ":");
-        System.out.println();
-        System.out.println("Turn player: " + state.getTurnPlayer().toString());
-        System.out.println();
-        for (Action act : state.getAppliedActions()) {
-            System.out.println(act.toString());
-        }
-
-        // Get scores
-        System.out.println("--------------------------------------------");
-        for (Player p : state.getPlayers()) {
-            System.out.println(p.getName() + "'s score: " + p.getScore());
-        }
 
         /* Round management */
         if (round < 2) {
             round++;
             nextRound();
+        }
+    }
+
+    public static void saveScores() {
+        for (int i = 0; i < state.getPlayers().size(); i++) {
+            score[i][round] = state.players.get(i).getScore() + (round >= 1 ? score[i][round-1] : 0);
         }
     }
 
@@ -274,8 +296,18 @@ public class Main {
                 description = description + "used their District Kanryou to cancel "
                         + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
                 break;
+            case AllowEffect:
+                description = description + "allowed "
+                        + (state.getLastPlayer() != null ? state.getLastPlayer().getName() : "another player") + "'s effect";
+                break;
             case Geisha:
                 description = description + "used their Geisha's special effect";
+                break;
+            case HarukazeDiscard:
+                description = description + "discarded their cards";
+                break;
+            case EndTurn:
+                description = description + "ended their turn";
                 break;
         }
 
@@ -284,9 +316,89 @@ public class Main {
         return description;
     }
 
-    public static void saveScores() {
-        for (int i = 0; i < state.getPlayers().size(); i++) {
-            score[i][round] = state.players.get(i).getScore() + (round >= 1 ? score[i][round-1] : 0);
+    public static void recordStatistics() {
+        try {
+            PrintWriter stats = new PrintWriter(new FileWriter("logs/statistics/.log", true));
+
+            Scanner inStats = new Scanner(new FileReader("logs/statistics/.log"));
+
+            ArrayList<Integer> challengers = new ArrayList<>(5);
+            challengers.addAll(Arrays.asList(0, 0, 0, 0, 0));
+
+            while (inStats.hasNextLine()) {
+                String string = inStats.nextLine();
+                if (string.startsWith("-") || string.endsWith("-") || string.equals("")) continue;
+                try {
+                    if (string.startsWith("ISMCTS won: ")) {
+                        challengers.set(0, Integer.parseInt(string.split(" ")[2]));
+                    } else if (string.startsWith("Human won: ")) {
+                        challengers.set(1, Integer.parseInt(string.split(" ")[2]));
+                    } else if (string.startsWith("Random won: ")) {
+                        challengers.set(2, Integer.parseInt(string.split(" ")[2]));
+                    } else if (string.startsWith("Draws: ")) {
+                        challengers.set(3, Integer.parseInt(string.split(" ")[1]));
+                    } else if (string.startsWith("Total rounds played: ")) {
+                        challengers.set(4, Integer.parseInt(string.split(" ")[3]));
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+
+            inStats.close();
+
+            if (challengers.get(0) + challengers.get(1) + challengers.get(2) + challengers.get(3) != challengers.get(4)) {
+                String message = "ERROR: 'statistics' file had been damaged. Unable to read data. Starting next output from zero games played.";
+                System.out.println(message);
+                stats.println(message);
+                challengers.clear();
+                challengers.addAll(Arrays.asList(0, 0, 0, 0, 0));
+            }
+
+            int winnerIndex = 0;
+            boolean draw = false;
+
+            stats.println("Game " + gameNumber + " - Round " + (state.getRound() + 1));
+            stats.println();
+
+            for (int i = 0; i < state.players.size(); i++) {
+                if (score[i][state.getRound()] > score[winnerIndex][state.getRound()]) {
+                    winnerIndex = i;
+                    draw = false;
+                }
+
+                if (i != winnerIndex && score[i][state.getRound()] == score[winnerIndex][state.getRound()]) draw = true;
+
+                stats.println(state.getPlayers().get(i).getType().toString() + ": " + score[i][state.getRound()]);
+            }
+
+            if (draw)
+                challengers.set(3, challengers.get(3) + 1);
+            else {
+                switch (state.getPlayers().get(winnerIndex).getType()) {
+                    case ISMCTS:
+                        challengers.set(0, challengers.get(0) + 1);
+                        break;
+                    case Human:
+                        challengers.set(1, challengers.get(1) + 1);
+                        break;
+                    case Random:
+                        challengers.set(2, challengers.get(2) + 1);
+                        break;
+                }
+            }
+
+            challengers.set(4, challengers.get(4) + 1);
+
+            stats.println();
+            stats.println("ISMCTS won: " + challengers.get(0));
+            stats.println("Human won: " + challengers.get(1));
+            stats.println("Random won: " + challengers.get(2));
+            stats.println("Draws: " + challengers.get(3));
+            stats.println("Total rounds played: " + challengers.get(4));
+            stats.println("------------------------------------");
+
+            stats.close();
+        } catch (IOException e) {
+            System.out.println("ERROR: Failed to record game statistics.");
         }
     }
 
@@ -389,7 +501,7 @@ public class Main {
         return list;
     }
 
-    public static State changeStateAfterAction (State state) {
+    private static State changeStateAfterAction (State state) {
 
         /* If someone used effect against another player */
         if (state.special_turn) {
@@ -398,10 +510,23 @@ public class Main {
 
         switch (state.getLastAppliedAction().getName()) {
             case GuestEffect: {
-
                 /* When a doctor effect was taken */
                 if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Doctor) {
                     String turning_player = state.getTurnPlayer().getName();
+
+                    /* Delete Akenohoshi bonus */
+                    if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                            state.getTurnPlayer().getGeishaUsages() > 0) {
+                        state.getTurnPlayer().setAkenohoshiBonus(null);
+                        state = state.nextTurn();
+                        for (Player p : state.getPlayers()) {
+                            if (p.getName().equals(turning_player)) {
+                                state.setTurnPlayer(p);
+                            }
+                        }
+                        return state;
+                    }
+
                     state = state.nextTurn();
                     for (Player p : state.getPlayers()) {
                         if (p.getName().equals(turning_player)) {
@@ -433,10 +558,9 @@ public class Main {
                 break;
             }
             case Guest: {
-
                 if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Sumo_Wrestler) {
-                    Player target = state.getTurnPlayer();
-                    int max_cards = target.getHand().size();
+                    Player target = null;
+                    int max_cards = -1;
                     for (Player p : state.getPlayers()) {
                         if (p.getHand().size() > max_cards) {
                             max_cards = p.getHand().size();
@@ -452,7 +576,6 @@ public class Main {
                     state.allowed_actions.add(Action.Name.GuestEffect);
                     return state;
                 } else {
-
                     state.use_allowed_actions = true;
                     state.allowed_actions.clear();
                     state.allowed_actions.add(Action.Name.GuestEffect);
@@ -461,7 +584,6 @@ public class Main {
                 }
             }
             case Geisha: {
-
                 /* Akenohoshi */
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
                     return state;
@@ -477,11 +599,30 @@ public class Main {
 
                 /* Momiji */
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji) {
-                    state.use_allowed_actions = true;
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.GuestEffect);
-                    state.allowed_actions.add(Action.Name.EndTurn);
-                    return state;
+                    if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Sumo_Wrestler) {
+                        Player target = null;
+                        int max_cards = -1;
+                        for (Player p : state.getPlayers()) {
+                            if (p.getHand().size() > max_cards) {
+                                max_cards = p.getHand().size();
+                                target = p;
+                            }
+                        }
+
+                        state.sumo_player = target;
+                        for (Card c : target.getHand()) c.is_known = true;
+
+                        state.use_allowed_actions = true;
+                        state.allowed_actions.clear();
+                        state.allowed_actions.add(Action.Name.GuestEffect);
+                        return state;
+                    } else {
+                        state.use_allowed_actions = true;
+                        state.allowed_actions.clear();
+                        state.allowed_actions.add(Action.Name.GuestEffect);
+                        state.allowed_actions.add(Action.Name.EndTurn);
+                        return state;
+                    }
                 }
 
                 /* Natsumi */
@@ -496,7 +637,6 @@ public class Main {
                 break;
             }
             case Advertiser: {
-
                 /* Harukaze */
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Harukaze) {
                     state.use_allowed_actions = true;
@@ -525,7 +665,6 @@ public class Main {
                 break;
             }
             case EndTurn: case HarukazeDiscard: {
-
                 /* Natsumi */
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Natsumi) {
                     if (state.isApplicableAction(new Action(
@@ -543,6 +682,14 @@ public class Main {
                         state.allowed_actions.add(Action.Name.EndTurn);
                         return state;
                     }
+                }
+
+                /* Delete Akenohoshi bonus */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                        state.getTurnPlayer().getGeishaUsages() > 0) {
+                    state.getTurnPlayer().setAkenohoshiBonus(null);
+                    state = state.nextTurn();
+                    return state;
                 }
 
                 state = state.nextTurn();
@@ -607,10 +754,10 @@ public class Main {
                         state.allowed_actions.addAll(names);
                         return state;
                     }
-                }/* else {
+                } else {
                     state = state.nextTurn();
                     return state;
-                }*/
+                }
             } else {
                 state.use_allowed_actions = true;
                 state.allowed_actions.clear();
@@ -621,16 +768,14 @@ public class Main {
         }
 
         /* Delete Akenohoshi bonus */
-        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
-            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
-            /*state = state.nextTurn();
-            return state;*/
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                state.getTurnPlayer().getGeishaUsages() > 0) {
+            state.getTurnPlayer().setAkenohoshiBonus(null);
+            state = state.nextTurn();
+            return state;
         }
 
         /* Next turn as usual */
-        if (!state.getTurnPlayer().getName().equals(mainPlayer.getName())) {//test test, one two, one two three
-
-        }
         state = state.nextTurn();
         return state;
     }

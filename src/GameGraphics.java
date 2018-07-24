@@ -350,6 +350,8 @@ public class GameGraphics {
                                 Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(1)) - 1),
                                 null, null
                         );
+                        action.set_exchange_ind_1(GridPane.getColumnIndex(selection.get(0)));
+                        action.set_exchange_ind_2(GridPane.getColumnIndex(selection.get(1)) - 1);
 
                         setButtonAvailable(exchangeButton, action);
                     } else if (handGrid.getChildren().contains(selection.get(1)) && tables[Main.playerIndex].getChildren().contains(selection.get(0))) {
@@ -360,6 +362,8 @@ public class GameGraphics {
                                 Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(0)) - 1),
                                 null, null
                         );
+                        action.set_exchange_ind_1(GridPane.getColumnIndex(selection.get(0)) - 1);
+                        action.set_exchange_ind_2(GridPane.getColumnIndex(selection.get(1)));
 
                         setButtonAvailable(exchangeButton, action);
                     }
@@ -426,6 +430,7 @@ public class GameGraphics {
             case Shogun:
                 confirmEffect();
                 if (!checkAndExecute(action)) return;
+                if (effectAnswer == 0) return;
 
                 Action actionEffectCall = new Action(Action.Name.GuestEffect,
                         Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(GridPane.getColumnIndex(selection.get(0))),
@@ -788,16 +793,16 @@ public class GameGraphics {
         buttonOK.setDefaultButton(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
-            effectAnswer = 1;
             window.close();
+            effectAnswer = 1;
         });
 
         Button buttonNo = new Button("No");
         buttonNo.setMnemonicParsing(true);
         buttonNo.getStyleClass().add("actionButton");
         buttonNo.setOnAction(e -> {
-            effectAnswer = 0;
             window.close();
+            effectAnswer = 0;
         });
 
         Button buttonCancel = new Button("Cancel");
@@ -805,8 +810,14 @@ public class GameGraphics {
         buttonCancel.setCancelButton(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
-            effectAnswer = -1;
             window.close();
+            effectAnswer = -1;
+        });
+
+        window.setOnCloseRequest(e -> {
+            System.out.println("hi)");
+            window.close();
+            effectAnswer = -1;
         });
 
         ButtonBar buttons = new ButtonBar();
@@ -850,6 +861,11 @@ public class GameGraphics {
         buttonCancel.setMnemonicParsing(true);
         buttonCancel.getStyleClass().add("actionButton");
         buttonCancel.setOnAction(e -> {
+            effectAnswer = -1;
+            window.close();
+        });
+
+        window.setOnCloseRequest(e -> {
             effectAnswer = -1;
             window.close();
         });
@@ -1551,7 +1567,6 @@ public class GameGraphics {
         }
     }
 
-    //todo
     @FXML
     public void logScreen() {
         Stage window = new Stage();
@@ -1603,25 +1618,20 @@ public class GameGraphics {
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER);
 
-        int winnerIndex = -1;
-        Player winner = null;
+        int winnerIndex = 0;
+        Player winner = Main.state.players.get(0);
         String playerExhausted = null;
         boolean draw = false;
         for (int i = 0; i < Main.state.players.size(); i++) {
-            if (winner == null) {
+            if (Main.score[i][Main.state.getRound()] > Main.score[winnerIndex][Main.state.getRound()]) {
                 winner = Main.state.players.get(i);
                 winnerIndex = i;
-            } else {
-                if (Main.score[i][Main.state.getRound()] > Main.score[winnerIndex][Main.state.getRound()]) {
-                    winner = Main.state.players.get(i);
-                    winnerIndex = i;
-                }
+                draw = false;
             }
             if (Main.state.players.get(i).getHand().size() == 0) playerExhausted = Main.state.players.get(i).getName();
-        }
 
-        for (int i = 0; i < Main.state.players.size(); i++)
             if (Main.state.players.get(i) != winner && Main.score[i][Main.state.getRound()] == Main.score[winnerIndex][Main.state.getRound()]) draw = true;
+        }
 
         Label messageWin = new Label((Main.mainPlayer.getName().equals(winner.getName()) ? "YOU" : winner.getName())
                 + (Main.state.getRound() == 2 ? " WON!" : (Main.mainPlayer.getName().equals(winner.getName()) ? " ARE" : " IS") + " WINNING!"));

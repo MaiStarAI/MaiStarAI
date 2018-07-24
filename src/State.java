@@ -71,6 +71,8 @@ class State {
                     target_player,
                     act.getRep()
             ));
+            applied_actions.get(applied_actions.size() - 1).set_exchange_ind_1(act.get_exchange_ind_1());
+            applied_actions.get(applied_actions.size() - 1).set_exchange_ind_2(act.get_exchange_ind_2());
         }
 
         special_turn = another.special_turn;
@@ -102,6 +104,14 @@ class State {
             );
         }
 
+        if (another.sumo_player != null) {
+            for (Player p : getPlayers()) {
+                if (p.getName().equals(another.sumo_player.getName())) {
+                    sumo_player = p;
+                }
+            }
+        }
+
     }
 
     boolean isApplicableAction (Action action) {
@@ -115,19 +125,19 @@ class State {
                 switch (action.getCard1().getColor()) {
                     case RED: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.RED)) &&
-                                turning_player.getReputation().getRed() + turning_player.getAkenohoshiBonus().getRed() >= action.getCard1().getReq().getRed();
+                                turning_player.getReputation().getRed() >= action.getCard1().getReq().getRed();
                     }
                     case BLUE: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.BLUE)) &&
-                                turning_player.getReputation().getBlue() + turning_player.getAkenohoshiBonus().getBlue() >= action.getCard1().getReq().getBlue();
+                                turning_player.getReputation().getBlue() >= action.getCard1().getReq().getBlue();
                     }
                     case GREEN: {
                         return possible && (allowed_color == null || (allowed_color == Card.Color.GREEN)) &&
-                                turning_player.getReputation().getGreen() + turning_player.getAkenohoshiBonus().getGreen() >= action.getCard1().getReq().getGreen();
+                                turning_player.getReputation().getGreen() >= action.getCard1().getReq().getGreen();
                     }
                     case BLACK: {
                         return possible && action.getCard1().getName() != Card.Name.District_Kanryou &&
-                                turning_player.getReputation().getBlack() + turning_player.getAkenohoshiBonus().getBlack() >= action.getCard1().getReq().getBlack();
+                                turning_player.getReputation().getBlack() >= action.getCard1().getReq().getBlack();
                     }
                     default: {
                         return false;
@@ -183,6 +193,7 @@ class State {
             }
         }
     }
+
     private boolean isApplicableGeisha(Action action) {
         switch (turning_player.getGeisha().getName()) {
             case Oboro: {
@@ -226,6 +237,7 @@ class State {
             }
         }
     }
+
     private boolean isApplicableEffect (Action action) {
         switch (action.getCard1().getName()) {
             case Sumo_Wrestler: {
@@ -319,7 +331,8 @@ class State {
                         if (!(new_state.turning_player.getGeisha().getName() == Geisha.Name.Momiji &&
                                 new_state.turning_player.getGuests().get(i).getColor() == Card.Color.RED &&
                                 new_state.turning_player.getGuests().get(i).usages < 2)) {
-                            new_state.turning_player.discardGuest(new_state.turning_player.getGuests().get(i));
+                            new_state.discarded.add(new_state.turning_player.getGuests().get(i));
+                            new_state.turning_player.discardGuest(i);
                         }
                     }
                 }
@@ -338,15 +351,19 @@ class State {
             }
             case CancelEffectDistrict: {
 
-                for (int i = 0; i < new_state.turning_player.getHand().size(); ++i)
-                    if (new_state.turning_player.getHand().get(i).getName() == Card.Name.District_Kanryou)
-                        new_state.turning_player.discardCard(new_state.turning_player.getHand().get(i));
+                for (int i = 0; i < new_state.turning_player.getHand().size(); ++i) {
+                    if (new_state.turning_player.getHand().get(i).getName() == Card.Name.District_Kanryou) {
+                        new_state.discarded.add(new_state.turning_player.getHand().get(i));
+                        new_state.turning_player.discardCard(i);
+                    }
+                }
 
                 for (Player p : new_state.getPlayers()) {
                     if (p.getName().equals(last_player.getName())) {
                         new_state.turning_player = p;
                     }
                 }
+
                 new_state.special_turn = false;
                 new_state.last_player = null;
                 new_state.last_effect = null;
@@ -405,25 +422,36 @@ class State {
                 }
             }
             case Advertiser: {
+                int handIndex = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
                 new_state.getTurnPlayer().addAdv(action.getCard1());
-                new_state.getTurnPlayer().discardCard(action.getCard1());
+                new_state.getTurnPlayer().discardCard(handIndex);
                 new_state.getTurnPlayer().addCard(new_state.getRandomCard());
                 return new_state;
             }
             case Introduce: {
-                new_state.turning_player.discardCard(action.getCard1());
-                new_state.turning_player.discardCard(action.getCard2());
-                new_state.turning_player.addCard(new_state.getRandomCard());
-                new_state.turning_player.addCard(new_state.getRandomCard());
+                int index_1 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
+                int index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard2()).get(0);
+                if (index_1 == index_2) index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(1);
+                if (index_1 > index_2) {
+                    new_state.getTurnPlayer().discardCard(index_1);
+                    new_state.getTurnPlayer().discardCard(index_2);
+                } else {
+                    new_state.getTurnPlayer().discardCard(index_2);
+                    new_state.getTurnPlayer().discardCard(index_1);
+                }
+                new_state.getTurnPlayer().addCard(new_state.getRandomCard());
+                new_state.getTurnPlayer().addCard(new_state.getRandomCard());
                 new_state.addToDiscard(action.getCard1()); // To discard
                 new_state.addToDiscard(action.getCard2()); // To discard
                 return new_state;
             }
             case Exchange: {
-                new_state.getTurnPlayer().discardAdv(action.getCard2());
-                new_state.getTurnPlayer().addAdv(action.getCard1());
-                new_state.getTurnPlayer().discardCard(action.getCard1());
-                new_state.getTurnPlayer().addCard(action.getCard2());
+                int index_1 = action.get_exchange_ind_1(); // Hand old
+                int index_2 = action.get_exchange_ind_2(); // Adv old
+                new_state.getTurnPlayer().nullAdv(index_2);
+                new_state.getTurnPlayer().setAdv(index_2, action.getCard1());
+                new_state.getTurnPlayer().nullCard(index_1);
+                new_state.getTurnPlayer().setCard(index_1, action.getCard2());
                 return new_state;
             }
             case Search: {
@@ -431,8 +459,9 @@ class State {
                 return new_state;
             }
             case Guest: {
+                int index = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
                 new_state.getTurnPlayer().addGuest(action.getCard1());
-                new_state.getTurnPlayer().discardCard(action.getCard1());
+                new_state.getTurnPlayer().discardCard(index);
                 return new_state;
             }
             case Geisha: {
@@ -440,19 +469,28 @@ class State {
                 return new_state;
             }
             case HarukazeDiscard: {
-                switch (new_state.getDrawDeck().size()) {
+                switch (new_state.getDrawDeck().size()) { //action.getRep().getBlack()
                     case 0: {
                         return new_state;
                     }
                     case 1: {
-                        new_state.getTurnPlayer().discardCard(action.getCard1());
+                        int index = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
+                        new_state.getTurnPlayer().discardCard(index);
                         Card card1 = new Card(action.getCard1()); card1.is_known = true;
                         new_state.getDrawDeck().add(card1);
                         return new_state;
                     }
-                    default: {
-                        new_state.getTurnPlayer().discardCard(action.getCard1());
-                        new_state.getTurnPlayer().discardCard(action.getCard2());
+                    default: { //case 2
+                        int index_1 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
+                        int index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard2()).get(0);
+                        if (index_1 == index_2) index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(1);
+                        if (index_1 > index_2) {
+                            new_state.getTurnPlayer().discardCard(index_1);
+                            new_state.getTurnPlayer().discardCard(index_2);
+                        } else {
+                            new_state.getTurnPlayer().discardCard(index_2);
+                            new_state.getTurnPlayer().discardCard(index_1);
+                        }
                         Card card1 = new Card(action.getCard1()); card1.is_known = true;
                         Card card2 = new Card(action.getCard2()); card2.is_known = true;
                         new_state.getDrawDeck().add(card1);
@@ -481,13 +519,17 @@ class State {
             case Sumo_Wrestler: {
                 for (Player p : state.players) {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
-                        p.discardCard(action.getCard2());
+                        int index = 0;
+                        try {
+                            index = p.indexOfHand(action.getCard2()).get(0);
+                        } catch (IndexOutOfBoundsException e) {
+                            e.printStackTrace();
+                        }
+                        p.discardCard(index);
                         state.addToDiscard(action.getCard2());
                     }
                 }
-                if (!(getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
-                        getTurnPlayer().getGeishaUsages() == 0))
-                    state.sumo_player = null;
+                state.sumo_player = null;
                 return state;
             }
             case Merchant: {
@@ -504,8 +546,7 @@ class State {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         Card card = new Card(p.getAdverts().get(p.getAdverts().size() - 1));
                         state.turning_player.addAdv(card);
-                        p.discardAdv(card);
-                        state.addToDiscard(card);
+                        p.discardAdv(p.getAdverts().size() - 1);
                     }
                 }
                 return state;
@@ -514,7 +555,7 @@ class State {
                 for (Player p : state.players) {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         state.addToDiscard(p.getAdverts().get(p.getAdverts().size() - 1));
-                        p.discardAdv(p.getAdverts().get(p.getAdverts().size() - 1));
+                        p.discardAdv(p.getAdverts().size() - 1);
                     }
                 }
                 return state;
@@ -532,8 +573,7 @@ class State {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         Card card = new Card(p.getGuests().get(p.getGuests().size() - 1));
                         state.turning_player.addGuest(card);
-                        p.discardGuest(card);
-                        state.addToDiscard(card);
+                        p.discardGuest(p.getGuests().size() - 1);
                     }
                 }
                 return state;
@@ -542,7 +582,7 @@ class State {
                 for (Player p : state.players) {
                     if (p.getName().equals(action.getTargetPlayer().getName())) {
                         state.addToDiscard(p.getGuests().get(p.getGuests().size() - 1));
-                        p.discardGuest(p.getGuests().get(p.getGuests().size() - 1));
+                        p.discardGuest(p.getGuests().size() - 1);
                     }
                 }
                 return state;
@@ -553,7 +593,7 @@ class State {
             case Shogun: {
                 for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
                     state.getTurnPlayer().addGuest(state.getTurnPlayer().getHand().get(i));
-                    state.getTurnPlayer().discardCard(state.getTurnPlayer().getHand().get(i));
+                    state.getTurnPlayer().discardCard(i);
                 }
                 return state;
             }
@@ -564,25 +604,19 @@ class State {
                 for (int i = 0; i < state.getTurnPlayer().getAdverts().size(); ++i) {
                     if (state.getTurnPlayer().getAdverts().get(i).getColor() == action.getCard1().getColor()) {
                         state.getTurnPlayer().addGuest(state.getTurnPlayer().getAdverts().get(i));
-                        state.getTurnPlayer().discardAdv(state.getTurnPlayer().getAdverts().get(i));
+                        state.getTurnPlayer().discardAdv(i);
                     }
                 }
+                return state;
             }
             case Monk: {
                 for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
                     state.addToDiscard(state.getTurnPlayer().getHand().get(i));
-                    state.getTurnPlayer().discardCard(state.getTurnPlayer().getHand().get(i));
+                    state.getTurnPlayer().discardCard(i);
                 }
+                return state;
             }
             case Courtier: {
-                state.applyAction(new Action(
-                        Action.Name.Guest,
-                        action.getPlayer(),
-                        action.getCard2(),
-                        null,
-                        null,
-                        null
-                ));
                 return state;
             }
         }
@@ -672,7 +706,7 @@ class State {
         }
 
         // Updates geisha value
-        if (new_state.turning_player.getGeisha().getName() != Geisha.Name.Akenohoshi ||
+        if (new_state.turning_player.getGeisha().getName() != Geisha.Name.Akenohoshi &&
                 new_state.turning_player.getGeisha().getName() != Geisha.Name.Oboro) {
             new_state.turning_player.setGeishaUsages(0);
         }
@@ -682,19 +716,7 @@ class State {
         new_state.allowed_actions.clear();
         new_state.allowed_color =  null;
 
-        /*PrintWriter out_game = new PrintWriter(new FileWriter("game_logs/game_" + 1 +".log", true)); //todo
-
-        // Print turn information
-        out_game.println("--------------------------------------------");
-        out_game.println("Round " + (getRound() + 1) + ", turn " + (turn + 1) + ":");
-        out_game.println();
-        out_game.println("Turn player: " + getTurnPlayer().toString());
-        out_game.println();
-        for (Action act : applied_actions) {
-            out_game.println(act.toString());
-        }
-
-        out_game.close();*/
+        recordTurn();
 
         // Update applied actions
         new_state.applied_actions.clear();
@@ -706,8 +728,6 @@ class State {
     int getRound () { return round; }
     void setRound (int round) { this.round = round; }
 
-    Player getLastPlayer () { return last_player; }
-
     Player getTurnPlayer () { return turning_player; }
     void setTurnPlayer (Player player) {
         for (Player p : getPlayers()) {
@@ -717,6 +737,7 @@ class State {
             }
         }
     }
+    Player getLastPlayer () { return last_player; }
     ArrayList<Player> getPlayers () { return players; }
     ArrayList<Card> getDrawDeck () { return draw_deck; }
     ArrayList<Card> getDiscardedCards() { return discarded; }
@@ -740,6 +761,125 @@ class State {
         list.add(Action.Name.CancelEffectRonin);
         list.add(Action.Name.CancelEffectDistrict);
         return list;
+    }
+
+    void recordTurn () {
+        try {
+            PrintWriter out_game = new PrintWriter(new FileWriter("logs/game" + Main.gameNumber + ".log", true));
+
+            // Print turn information to the file
+            out_game.println("--------------------------------------------");
+            out_game.println("Round " + (getRound() + 1) + ", turn " + (turn + 1) + ":");
+            out_game.println();
+            out_game.println("Turn player: " + getTurnPlayer().toString());
+            out_game.println();
+            for (Action act : applied_actions) {
+                out_game.println(act.toString());
+            }
+
+            out_game.close();
+
+            // Print turn information to the console
+            /*System.out.println("--------------------------------------------");
+            System.out.println("Round " + (getRound() + 1) + ", turn " + (turn + 1) + ":");
+            System.out.println();
+            System.out.println("Turn player: " + getTurnPlayer().toString());
+            System.out.println();
+            for (Action act : applied_actions) {
+                System.out.println(act.toString());
+            }*/
+
+            switch (getTurnPlayer().getGeisha().getName()) {
+                case Momiji: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/momiji_5x1.log", true));
+                    break;
+                }
+                case Harukaze: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/harukaze_5x1.log", true));
+                    break;
+                }
+                case Suzune: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/suzune_5x1.log", true));
+                    break;
+                }
+                case Akenohoshi: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/akenohoshi_5x1.log", true));
+                    break;
+                }
+                case Natsumi: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/natsumi_5x1.log", true));
+                    break;
+                }
+                case Oboro: {
+                    out_game = new PrintWriter(new FileWriter("logs/statistics/oboro_5x1.log", true));
+                    break;
+                }
+            }
+
+            for (Action act : applied_actions) {
+                out_game.println(
+                        //Main.describeAction(action)
+                        act.getName().toString() + " " +
+                                (act.getCard1() != null ? act.getCard1().getName() + " " + act.getCard1().getColor() + " " : "") +
+                                (act.getCard2() != null ? act.getCard2().getName() + " " + act.getCard2().getColor() + " " : "") +
+                                (act.getTargetPlayer() != null ? act.getTargetPlayer().getGeisha().getName().toString() : "")
+                );
+            }
+
+            out_game.close();
+
+            out_game = new PrintWriter(new FileWriter("logs/statistics/general_5x1.log", true));
+
+            for (Action act : applied_actions) {
+                out_game.println(
+                        //Main.describeAction(action)
+                        act.getName().toString() + " " +
+                                (act.getCard1() != null ? act.getCard1().getName() + " " + act.getCard1().getColor() + " " : "") +
+                                (act.getCard2() != null ? act.getCard2().getName() + " " + act.getCard2().getColor() + " " : "") +
+                                (act.getTargetPlayer() != null ? act.getTargetPlayer().getGeisha().getName().toString() : "")
+                );
+            }
+
+            out_game.close();
+        } catch (IOException e) {
+            System.out.println("ERROR: Failed to record logs.");
+        }
+    }
+
+    void recordWin() {
+        try {
+            PrintWriter outGame = new PrintWriter(new FileWriter("logs/game" + Main.gameNumber + ".log", true));
+
+            int winnerIndex = 0;
+            boolean draw = false;
+
+            for (int i = 0; i < players.size(); i++) {
+                if (players.get(i).getScore() > players.get(winnerIndex).getScore()) {
+                    winnerIndex = i;
+                    draw = false;
+                }
+
+                if (i != winnerIndex && players.get(i).getScore() == players.get(winnerIndex).getScore()) draw = true;
+            }
+
+            outGame.println("--------------------------------------------");
+
+            if (draw)
+                outGame.println("Draw!\n");
+            else
+                outGame.println(players.get(winnerIndex).getName() + " won!\n");
+
+            outGame.println();
+
+            for (Player p : getPlayers()) {
+                outGame.println("\t" + p.getName() + ": " + p.getScore());
+            }
+
+            outGame.println();
+            outGame.close();
+        } catch (IOException e) {
+            System.out.println("ERROR: Failed to record win.");
+        }
     }
 
 }

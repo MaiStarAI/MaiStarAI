@@ -98,7 +98,7 @@ class AlgorithmISMCTS {
             if (children.size() == 0) {
                 return copy.isVictory(player) ? 1 : 0;
             } else {
-                int rand_i = rand.nextInt( children.size() );
+                int rand_i = rand.nextInt(children.size());
                 Action chosen = children.get(rand_i);
                 copy = new AIState(copy.applyAction(chosen));
                 copy = changeStateAfterAction(copy);
@@ -109,7 +109,17 @@ class AlgorithmISMCTS {
     private AIState backpropagation (AIState selected, int reward) {
         while (selected.getParent() != null) {
             selected.visits++;
-            selected.availability++;
+
+            ArrayList<Action> c_children = c(selected.getParent());
+            for (AIState sib_state : selected.getParent().getChildren()) {
+                for (Action act : c_children) {
+                    if (sib_state.applied.equals(act)) {
+                        sib_state.availability++;
+                        break;
+                    }
+                }
+            }
+
             selected.total_reward += reward;
             selected = selected.getParent();
         }
@@ -212,7 +222,41 @@ class AlgorithmISMCTS {
                         state.getLastAppliedAction().getName() == Action.Name.AllowEffect ||
                         (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
                                 state.getLastAppliedAction().getName() == Action.Name.Geisha))) {
-            if (state.sumo_player != null) {
+            if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
+                    state.getLastAppliedAction().getName() == Action.Name.Geisha) {
+
+                if (state.sumo_player != null) {
+                    for (Card c : state.sumo_player.getHand()) {
+                        Action guest_effect_action = new Action(
+                                Action.Name.GuestEffect,
+                                state.getTurnPlayer(),
+                                state.getLastAppliedAction().getCard1(),
+                                c,
+                                state.sumo_player,
+                                null
+                        );
+                        if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
+                    }
+                } else {
+                    Action last_effect = null;
+                    for (Action act : state.getAppliedActions())
+                        if (act.getName() == Action.Name.GuestEffect)
+                            last_effect = act;
+                    if (last_effect != null) {
+                        for (Player p : state.getPlayers()) {
+                            Action guest_effect_action = new Action(
+                                    Action.Name.GuestEffect,
+                                    state.getTurnPlayer(),
+                                    state.getLastAppliedAction().getCard1(),
+                                    last_effect.getCard1(),
+                                    p,
+                                    null
+                            );
+                            if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
+                        }
+                    }
+                }
+            } else if (state.sumo_player != null) {
                 for (Card c : state.sumo_player.getHand()) {
                     Action guest_effect_action = new Action(
                             Action.Name.GuestEffect,
@@ -223,25 +267,6 @@ class AlgorithmISMCTS {
                             null
                     );
                     if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
-                }
-            } else if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
-                    state.getLastAppliedAction().getName() == Action.Name.Geisha) {
-                Action last_effect = null;
-                for (Action act : state.getAppliedActions())
-                    if (act.getName() == Action.Name.GuestEffect)
-                        last_effect = act;
-                if (last_effect != null) {
-                    for (Player p : state.getPlayers()) {
-                        Action guest_effect_action = new Action(
-                                Action.Name.GuestEffect,
-                                state.getTurnPlayer(),
-                                state.getLastAppliedAction().getCard1(),
-                                last_effect.getCard1(),
-                                p,
-                                null
-                        );
-                        if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
-                    }
                 }
             } else {
                 for (Player p : state.getPlayers()) {
@@ -282,16 +307,18 @@ class AlgorithmISMCTS {
     private ArrayList<Action> check_exchange (AIState state) {
         ArrayList<Action> list = new ArrayList<>();
 
-        for (Card c1 : state.getTurnPlayer().getHand()) {
-            for (Card c2 : state.getTurnPlayer().getAdverts()) {
+        for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
+            for (int j = 0; j < state.getTurnPlayer().getAdverts().size(); ++j) {
                 Action exchange_action = new Action(
                         Action.Name.Exchange,
                         state.getTurnPlayer(),
-                        c1,
-                        c2,
+                        state.getTurnPlayer().getHand().get(i),
+                        state.getTurnPlayer().getAdverts().get(j),
                         null,
                         null
                 );
+                exchange_action.set_exchange_ind_1(i);
+                exchange_action.set_exchange_ind_2(j);
                 if (state.isApplicableAction(exchange_action)) list.add(exchange_action);
             }
         }
@@ -334,48 +361,65 @@ class AlgorithmISMCTS {
     }
     private ArrayList<Action> check_geisha (AIState state) {
         ArrayList<Action> list = new ArrayList<>();
-        for (Card c : state.getTurnPlayer().getHand()) {
-            Action geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(3, 0, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-            geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(0, 3, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-            geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(0, 0, 3, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-
-        }
-
-        if (state.getTurnPlayer().getGuests().size() > 0) {
-            /* Momiji */
-            Action geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    state.getTurnPlayer().getGuests().get(state.getTurnPlayer().getGuests().size() - 1),
-                    null,
-                    null,
-                    new Reputation(0, 0, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+        switch (state.getTurnPlayer().getGeisha().getName()) {
+            case Momiji: {
+                if (state.getTurnPlayer().getGuests().size()  > 0) {
+                    Action geisha_action = new Action(
+                            Action.Name.Geisha,
+                            state.getTurnPlayer(),
+                            state.getTurnPlayer().getGuests().get(state.getTurnPlayer().getGuests().size() - 1),
+                            null,
+                            null,
+                            null
+                    );
+                    if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+                }
+                break;
+            }
+            case Akenohoshi: {
+                Action geisha_action_1 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(3, 0, 0, 0)
+                );
+                Action geisha_action_2 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(0, 3, 0, 0)
+                );
+                Action geisha_action_3 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(0, 0, 3, 0)
+                );
+                if (state.isApplicableAction(geisha_action_1)) list.add(geisha_action_1);
+                if (state.isApplicableAction(geisha_action_2)) list.add(geisha_action_2);
+                if (state.isApplicableAction(geisha_action_3)) list.add(geisha_action_3);
+                break;
+            }
+            case Suzune: case Natsumi: {
+                for (Card c : state.getTurnPlayer().getHand()) {
+                    Action geisha_action = new Action(
+                            Action.Name.Geisha,
+                            state.getTurnPlayer(),
+                            c,
+                            null,
+                            null,
+                            null
+                    );
+                    if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+                }
+                break;
+            }
         }
 
         return list;
@@ -482,6 +526,20 @@ class AlgorithmISMCTS {
                 /* When a doctor effect was taken */
                 if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Doctor) {
                     String turning_player = state.getTurnPlayer().getName();
+
+                    /* Delete Akenohoshi bonus */
+                    if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                            state.getTurnPlayer().getGeishaUsages() > 0) {
+                        state.getTurnPlayer().setAkenohoshiBonus(null);
+                        state = state.nextTurn();
+                        for (Player p : state.getPlayers()) {
+                            if (p.getName().equals(turning_player)) {
+                                state.setTurnPlayer(p);
+                            }
+                        }
+                        return state;
+                    }
+
                     state = state.nextTurn();
                     for (Player p : state.getPlayers()) {
                         if (p.getName().equals(turning_player)) {
@@ -513,10 +571,9 @@ class AlgorithmISMCTS {
                 break;
             }
             case Guest: {
-
                 if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Sumo_Wrestler) {
-                    Player target = state.getTurnPlayer();
-                    int max_cards = target.getHand().size();
+                    Player target = null;
+                    int max_cards = -1;
                     for (Player p : state.getPlayers()) {
                         if (p.getHand().size() > max_cards) {
                             max_cards = p.getHand().size();
@@ -538,7 +595,6 @@ class AlgorithmISMCTS {
                     state.allowed_actions.add(Action.Name.EndTurn);
                     return state;
                 }
-
             }
             case Geisha: {
 
@@ -557,11 +613,31 @@ class AlgorithmISMCTS {
 
                 /* Momiji */
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji) {
-                    state.use_allowed_actions = true;
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.GuestEffect);
-                    state.allowed_actions.add(Action.Name.EndTurn);
-                    return state;
+                    if (state.getAppliedActions().get(state.getAppliedActions().size() - 2).getCard1().getName()
+                            == Card.Name.Sumo_Wrestler) {
+                        Player target = null;
+                        int max_cards = -1;
+                        for (Player p : state.getPlayers()) {
+                            if (p.getHand().size() > max_cards) {
+                                max_cards = p.getHand().size();
+                                target = p;
+                            }
+                        }
+
+                        state.sumo_player = target;
+                        for (Card c : target.getHand()) c.is_known = true;
+
+                        state.use_allowed_actions = true;
+                        state.allowed_actions.clear();
+                        state.allowed_actions.add(Action.Name.GuestEffect);
+                        return state;
+                    } else {
+                        state.use_allowed_actions = true;
+                        state.allowed_actions.clear();
+                        state.allowed_actions.add(Action.Name.GuestEffect);
+                        state.allowed_actions.add(Action.Name.EndTurn);
+                        return state;
+                    }
                 }
 
                 /* Natsumi */
@@ -623,6 +699,14 @@ class AlgorithmISMCTS {
                         state.allowed_actions.add(Action.Name.EndTurn);
                         return state;
                     }
+                }
+
+                /* Delete Akenohoshi bonus */
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                        state.getTurnPlayer().getGeishaUsages() > 0) {
+                    state.getTurnPlayer().setAkenohoshiBonus(null);
+                    state = state.nextTurn();
+                    return state;
                 }
 
                 state = state.nextTurn();
@@ -701,8 +785,9 @@ class AlgorithmISMCTS {
         }
 
         /* Delete Akenohoshi bonus */
-        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
-            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
+        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                state.getTurnPlayer().getGeishaUsages() > 0) {
+            state.getTurnPlayer().setAkenohoshiBonus(null);
             state = state.nextTurn();
             return state;
         }

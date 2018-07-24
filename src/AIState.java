@@ -52,6 +52,8 @@ class AIState extends State {
                     target_player,
                     another.applied.getRep()
             );
+            applied.set_exchange_ind_1(another.applied.get_exchange_ind_1());
+            applied.set_exchange_ind_2(another.applied.get_exchange_ind_2());
         } else {
             applied = null;
         }
@@ -125,6 +127,8 @@ class AIState extends State {
                 target_player,
                 applied.getRep()
         );
+        this.applied.set_exchange_ind_1(applied.get_exchange_ind_1());
+        this.applied.set_exchange_ind_2(applied.get_exchange_ind_2());
     }
 
     AIState nextTurn () {

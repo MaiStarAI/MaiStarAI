@@ -38,13 +38,13 @@ class AlgorithmRandom {
                 list.addAll(check_harukaze(state));
             if (state.allowed_actions.contains(Action.Name.EndTurn))
                 list.add(new Action(
-                    Action.Name.EndTurn,
-                    state.getTurnPlayer(),
+                        Action.Name.EndTurn,
+                        state.getTurnPlayer(),
                         null,
-                    null,
-                    null,
-                    null
-            ));
+                        null,
+                        null,
+                        null
+                ));
         } else {
             list.addAll(check_guests(state));
             list.addAll(check_guests_effects(state));
@@ -86,7 +86,42 @@ class AlgorithmRandom {
                         state.getLastAppliedAction().getName() == Action.Name.AllowEffect ||
                         (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
                                 state.getLastAppliedAction().getName() == Action.Name.Geisha))) {
-            if (state.sumo_player != null) {
+            if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
+                    state.getLastAppliedAction().getName() == Action.Name.Geisha) {
+
+                if (state.sumo_player != null) {
+                    for (Card c : state.sumo_player.getHand()) {
+                        Action guest_effect_action = new Action(
+                                Action.Name.GuestEffect,
+                                state.getTurnPlayer(),
+                                state.getLastAppliedAction().getCard1(),
+                                c,
+                                state.sumo_player,
+                                null
+                        );
+                        if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
+                    }
+                } else {
+                    Action last_effect = null;
+                    for (Action act : state.getAppliedActions())
+                        if (act.getName() == Action.Name.GuestEffect)
+                            last_effect = act;
+                    if (last_effect != null) {
+                        for (Player p : state.getPlayers()) {
+                            Action guest_effect_action = new Action(
+                                    Action.Name.GuestEffect,
+                                    state.getTurnPlayer(),
+                                    state.getLastAppliedAction().getCard1(),
+                                    last_effect.getCard1(),
+                                    p,
+                                    null
+                            );
+                            guest_effect_action.set_exchange_ind_1(-27);
+                            if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
+                        }
+                    }
+                }
+            } else if (state.sumo_player != null) {
                 for (Card c : state.sumo_player.getHand()) {
                     Action guest_effect_action = new Action(
                             Action.Name.GuestEffect,
@@ -97,25 +132,6 @@ class AlgorithmRandom {
                             null
                     );
                     if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
-                }
-            } else if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji &&
-                    state.getLastAppliedAction().getName() == Action.Name.Geisha) {
-                Action last_effect = null;
-                for (Action act : state.getAppliedActions())
-                    if (act.getName() == Action.Name.GuestEffect)
-                        last_effect = act;
-                if (last_effect != null) {
-                    for (Player p : state.getPlayers()) {
-                        Action guest_effect_action = new Action(
-                                Action.Name.GuestEffect,
-                                state.getTurnPlayer(),
-                                state.getLastAppliedAction().getCard1(),
-                                last_effect.getCard1(),
-                                p,
-                                null
-                        );
-                        if (state.isApplicableAction(guest_effect_action)) list.add(guest_effect_action);
-                    }
                 }
             } else {
                 for (Player p : state.getPlayers()) {
@@ -156,16 +172,18 @@ class AlgorithmRandom {
     private ArrayList<Action> check_exchange (AIState state) {
         ArrayList<Action> list = new ArrayList<>();
 
-        for (Card c1 : state.getTurnPlayer().getHand()) {
-            for (Card c2 : state.getTurnPlayer().getAdverts()) {
+        for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
+            for (int j = 0; j < state.getTurnPlayer().getAdverts().size(); ++j) {
                 Action exchange_action = new Action(
                         Action.Name.Exchange,
                         state.getTurnPlayer(),
-                        c1,
-                        c2,
+                        state.getTurnPlayer().getHand().get(i),
+                        state.getTurnPlayer().getAdverts().get(j),
                         null,
                         null
                 );
+                exchange_action.set_exchange_ind_1(i);
+                exchange_action.set_exchange_ind_2(j);
                 if (state.isApplicableAction(exchange_action)) list.add(exchange_action);
             }
         }
@@ -208,48 +226,65 @@ class AlgorithmRandom {
     }
     private ArrayList<Action> check_geisha (AIState state) {
         ArrayList<Action> list = new ArrayList<>();
-        for (Card c : state.getTurnPlayer().getHand()) {
-            Action geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(3, 0, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-            geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(0, 3, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-            geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    c,
-                    null,
-                    null,
-                    new Reputation(0, 0, 3, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
-
-        }
-
-        if (state.getTurnPlayer().getGuests().size() > 0) {
-            /* Momiji */
-            Action geisha_action = new Action(
-                    Action.Name.Geisha,
-                    state.getTurnPlayer(),
-                    state.getTurnPlayer().getGuests().get(state.getTurnPlayer().getGuests().size() - 1),
-                    null,
-                    null,
-                    new Reputation(0, 0, 0, 0)
-            );
-            if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+        switch (state.getTurnPlayer().getGeisha().getName()) {
+            case Momiji: {
+                if (state.getTurnPlayer().getGuests().size()  > 0) {
+                    Action geisha_action = new Action(
+                            Action.Name.Geisha,
+                            state.getTurnPlayer(),
+                            state.getTurnPlayer().getGuests().get(state.getTurnPlayer().getGuests().size() - 1),
+                            null,
+                            null,
+                            null
+                    );
+                    if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+                }
+                break;
+            }
+            case Akenohoshi: {
+                Action geisha_action_1 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(3, 0, 0, 0)
+                );
+                Action geisha_action_2 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(0, 3, 0, 0)
+                );
+                Action geisha_action_3 = new Action(
+                        Action.Name.Geisha,
+                        state.getTurnPlayer(),
+                        null,
+                        null,
+                        null,
+                        new Reputation(0, 0, 3, 0)
+                );
+                if (state.isApplicableAction(geisha_action_1)) list.add(geisha_action_1);
+                if (state.isApplicableAction(geisha_action_2)) list.add(geisha_action_2);
+                if (state.isApplicableAction(geisha_action_3)) list.add(geisha_action_3);
+                break;
+            }
+            case Suzune: case Natsumi: {
+                for (Card c : state.getTurnPlayer().getHand()) {
+                    Action geisha_action = new Action(
+                            Action.Name.Geisha,
+                            state.getTurnPlayer(),
+                            c,
+                            null,
+                            null,
+                            null
+                    );
+                    if (state.isApplicableAction(geisha_action)) list.add(geisha_action);
+                }
+                break;
+            }
         }
 
         return list;

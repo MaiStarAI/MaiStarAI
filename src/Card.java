@@ -333,7 +333,7 @@ class Card {
 
     boolean equals (Card another) {
         return another != null && name == another.getName() &&
-                color ==  another.getColor();
+                color == another.getColor();
     }
 
     public String toString () {

@@ -23,7 +23,6 @@ class Player {
         this.name = name;
         this.geisha = geisha;
         geishaUsages = 0;
-        akenohoshi_bonus = new Reputation(0, 0, 0);
         hand = new ArrayList<>();
         a_line = new ArrayList<>();
         g_line = new ArrayList<>();
@@ -36,6 +35,7 @@ class Player {
         for (Card c : another.getHand()) addCard(c); // New instances
         for (Card c : another.getGuests()) g_line.add(new Card(c));
         for (Card c : another.getAdverts()) a_line.add(new Card(c));
+        akenohoshi_bonus = another.getAkenohoshiBonus();
 
     }
 
@@ -46,12 +46,36 @@ class Player {
     void addAdv (Card card) { a_line.add(new Card(card)); }
     void addGuest (Card card) { g_line.add(new Card(card)); }
 
-    /** Discards one of the cards of given type and color */
-    void discardCard (Card card) {
-        hand.removeIf(c -> c.equals(card));
+    /** Adds new card instance to the hand */
+    void setCard (int i, Card card) { hand.set(i, new Card(card)); }
+    void setAdv (int i, Card card) { a_line.set(i, new Card(card)); }
+    void setGuest (int i, Card card) { g_line.set(i, new Card(card)); }
+
+    /** Returns index of the given card */
+    ArrayList<Integer> indexOfHand (Card card) {
+        ArrayList<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < hand.size(); ++i) {
+            if (hand.get(i).equals(card))
+                indices.add(i);
+        }
+        return indices;
     }
-    void discardAdv (Card card) { a_line.removeIf(c -> c.equals(card)); }
-    void discardGuest (Card card) { g_line.removeIf(c -> c.equals(card)); }
+    ArrayList<Integer> indexOfAdv (Card card) {
+        ArrayList<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < a_line.size(); ++i) {
+            if (a_line.get(i).equals(card))
+                indices.add(i);
+        }
+        return indices;
+    }
+    ArrayList<Integer> indexOfGuest (Card card) {
+        ArrayList<Integer> indices = new ArrayList<>();
+        for (int i = 0; i < g_line.size(); ++i) {
+            if (g_line.get(i).equals(card))
+                indices.add(i);
+        }
+        return indices;
+    }
 
     /** Discards the i'th card */
     void discardCard (int i) {
@@ -59,6 +83,13 @@ class Player {
     }
     void discardAdv (int i) { a_line.remove(i); }
     void discardGuest (int i) { g_line.remove(i); }
+
+    /** Discards the i'th card but does not change array's size */
+    void nullCard (int i) {
+        hand.set(i, null);
+    }
+    void nullAdv (int i) { a_line.set(i, null); }
+    void nullGuest (int i) { g_line.set(i, null); }
 
     /** Returns the score based on current guests */
     int getScore () {
@@ -79,6 +110,12 @@ class Player {
             red += c.getBonus().getRed();
             blue += c.getBonus().getBlue();
             green += c.getBonus().getGreen();
+        }
+
+        if (akenohoshi_bonus != null) {
+            red += akenohoshi_bonus.getRed();
+            blue += akenohoshi_bonus.getBlue();
+            green += akenohoshi_bonus.getGreen();
         }
 
         black = Math.max(Math.max(red, blue), green);
@@ -116,7 +153,7 @@ class Player {
         for (Card c : getAdverts()) advs.append("\t\t").append(c.toString()).append("\r\n");
         for (Card c : getGuests()) guests.append("\t\t").append(c.toString()).append("\r\n");
 
-        return getName() + "(" + getType().toString() + "):\r\n" +
+        return getName() + " (" + getType().toString() + "):\r\n" +
                 "\tGeisha: " + getGeisha().getName().toString() + "\r\n" +
                 "\tHand:\r\n" + hand.toString() +
                 "\tAdvertisers:\r\n" + advs.toString() +
