@@ -121,28 +121,7 @@ class State {
                         isApplicableGeisha(action);
             }
             case Guest: {
-                boolean possible = (!use_allowed_actions || (allowed_actions.contains(Action.Name.Guest)));
-                switch (action.getCard1().getColor()) {
-                    case RED: {
-                        return possible && (allowed_color == null || (allowed_color == Card.Color.RED)) &&
-                                turning_player.getReputation().getRed() >= action.getCard1().getReq().getRed();
-                    }
-                    case BLUE: {
-                        return possible && (allowed_color == null || (allowed_color == Card.Color.BLUE)) &&
-                                turning_player.getReputation().getBlue() >= action.getCard1().getReq().getBlue();
-                    }
-                    case GREEN: {
-                        return possible && (allowed_color == null || (allowed_color == Card.Color.GREEN)) &&
-                                turning_player.getReputation().getGreen() >= action.getCard1().getReq().getGreen();
-                    }
-                    case BLACK: {
-                        return possible && action.getCard1().getName() != Card.Name.District_Kanryou &&
-                                turning_player.getReputation().getBlack() >= action.getCard1().getReq().getBlack();
-                    }
-                    default: {
-                        return false;
-                    }
-                }
+                return (!use_allowed_actions || (allowed_actions.contains(Action.Name.Guest))) && colorRequirement(action);
             }
             case Exchange: {
                 return (!use_allowed_actions || (allowed_actions.contains(Action.Name.Exchange))) &&
@@ -238,7 +217,7 @@ class State {
         }
     }
 
-    private boolean isApplicableEffect (Action action) {
+    public boolean isApplicableEffect (Action action) {
         switch (action.getCard1().getName()) {
             case Sumo_Wrestler: {
                 return true;
@@ -380,7 +359,6 @@ class State {
                 }
 
                 new_state.special_turn = false;
-                new_state.last_player = null;
                 new_state.last_effect = null;
                 new_state.allowed_actions.clear();
                 new_state.use_allowed_actions = false;
@@ -388,7 +366,7 @@ class State {
             }
             case GuestEffect: {
                 if (action.getTargetPlayer().getName().equals(turning_player.getName())) {
-                    new_state.last_player = getTurnPlayer();
+                    if (new_state.last_player == null) new_state.last_player = getTurnPlayer();
                     new_state = applyEffect(action, new_state);
                     return new_state;
                 }
@@ -470,7 +448,7 @@ class State {
                 return new_state;
             }
             case HarukazeDiscard: {
-                switch (new_state.getDrawDeck().size()) { //action.getRep().getBlack()
+                switch (action.getRep().getBlack()) { //action.getRep().getBlack()
                     case 0: {
                         return new_state;
                     }
@@ -481,7 +459,7 @@ class State {
                         new_state.getDrawDeck().add(card1);
                         return new_state;
                     }
-                    default: { //case 2
+                    case 2: { //case 2
                         int index_1 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(0);
                         int index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard2()).get(0);
                         if (index_1 == index_2) index_2 = new_state.getTurnPlayer().indexOfHand(action.getCard1()).get(1);
@@ -593,7 +571,7 @@ class State {
                 return state;
             }
             case Shogun: {
-                for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
+                for (int i = state.getTurnPlayer().getHand().size() - 1; i >= 0; i--) {
                     state.getTurnPlayer().addGuest(state.getTurnPlayer().getHand().get(i));
                     state.getTurnPlayer().discardCard(i);
                 }
@@ -607,12 +585,13 @@ class State {
                     if (state.getTurnPlayer().getAdverts().get(i).getColor() == action.getCard1().getColor()) {
                         state.getTurnPlayer().addGuest(state.getTurnPlayer().getAdverts().get(i));
                         state.getTurnPlayer().discardAdv(i);
+                        i--;
                     }
                 }
                 return state;
             }
             case Monk: {
-                for (int i = 0; i < state.getTurnPlayer().getHand().size(); ++i) {
+                for (int i = state.getTurnPlayer().getHand().size() - 1; i >= 0; i--) {
                     state.addToDiscard(state.getTurnPlayer().getHand().get(i));
                     state.getTurnPlayer().discardCard(i);
                 }
@@ -763,6 +742,30 @@ class State {
         list.add(Action.Name.CancelEffectRonin);
         list.add(Action.Name.CancelEffectDistrict);
         return list;
+    }
+
+    boolean colorRequirement (Action action) {
+        switch (action.getCard1().getColor()) {
+            case RED: {
+                return (allowed_color == null || (allowed_color == Card.Color.RED)) &&
+                        turning_player.getReputation().getRed() >= action.getCard1().getReq().getRed();
+            }
+            case BLUE: {
+                return (allowed_color == null || (allowed_color == Card.Color.BLUE)) &&
+                        turning_player.getReputation().getBlue() >= action.getCard1().getReq().getBlue();
+            }
+            case GREEN: {
+                return (allowed_color == null || (allowed_color == Card.Color.GREEN)) &&
+                        turning_player.getReputation().getGreen() >= action.getCard1().getReq().getGreen();
+            }
+            case BLACK: {
+                return action.getCard1().getName() != Card.Name.District_Kanryou &&
+                        turning_player.getReputation().getBlack() >= action.getCard1().getReq().getBlack();
+            }
+            default: {
+                return false;
+            }
+        }
     }
 
     void recordTurn () {

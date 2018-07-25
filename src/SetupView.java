@@ -27,7 +27,8 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * SetupView - it is just graphics, it doesn't connect in any way to the backend
+ * SetupView - it is just graphics, it doesn't connect in any way to the backend, such as state and algorithms.
+ * However, it sets up the scene for later import to state through Main, which it launches.
  */
 public class SetupView extends Application {
 
@@ -123,8 +124,6 @@ public class SetupView extends Application {
         window.show();
 
         setScene1();
-
-        //play();
     }
 
     private void setScene1 () {
@@ -192,7 +191,7 @@ public class SetupView extends Application {
                     if (k != j && playerType[k].getValue().equals("Human"))
                         playerType[k].getSelectionModel().select("ISMCTS");
                 }
-            });/**/
+            });
         }
         playerNamesBoxesBox.getChildren().addAll(playerNamesBox[0], playerNamesBox[1]);
         box.getChildren().addAll(new Separator(), playerNamesBoxesBox);
@@ -398,10 +397,6 @@ public class SetupView extends Application {
         HBox centerBox = new HBox(20);
         centerBox.getChildren().add(cardSetupBox);
 
-        //Add 'Disable Oboro's special ability on start' checkbox
-        //Currently Editing: Player 1
-        //Heap
-
         VBox[] handBox = new VBox[6];
         HBox[] playerHandBox = new HBox[6];
         Label[] playerName = new Label[6];
@@ -522,10 +517,6 @@ public class SetupView extends Application {
 
                                         setDeckLabels(cardsLeft, typeCardsLeft, cardColor.getValue().concat("_".concat(cardType.getValue())));
                                     }
-                                    /*System.out.println(cardsRemaining.size() + "\n" +
-                                            cardColor.getValue().concat("_").concat(cardType.getValue()) + "\n" +
-                                            cardsRemaining.contains(cardColor.getValue().concat("_").concat(cardType.getValue()))
-                                    );*/
                                 });
                             }
                         }
@@ -599,11 +590,9 @@ public class SetupView extends Application {
             });
         }
         nestHandsInInput();
-        //if (players.size() <= 3) playerHandsBoxes[1].setManaged(false);
 
         playerHandsBoxesBox.getChildren().addAll(playerHandsBoxes);
 
-        //VBox rightBox = new VBox(20);
         centerBox.getChildren().addAll(playerHandsBoxesBox);
         box.getChildren().add(centerBox);
 
@@ -625,11 +614,6 @@ public class SetupView extends Application {
             for (int i = 0; i < players.size(); i++) {
                 if (playerCards.get(i).size() == 0) { //todo change, just load random cards, leave geishas
                     randomizeHands(i, true);
-                    /*Alert alert = new Alert(Alert.AlertType.ERROR,
-                            "You cannot have empty hands for players! That would violate the rules of the game." +
-                                    "\n\nPlease, ensure you have at least one card apart from Geisha in each of your hands.");
-                    alert.showAndWait();
-                    return;*/
                 }
             }
             loadHandsToArrays();
@@ -717,7 +701,7 @@ public class SetupView extends Application {
     }
 
     //private void setupPhase3 ()
-    // assume phase 2 is but a starting state, then phase 3 is full-detail mid-game state. To-do later, expand phase 2 to phase 3 and limit phase 2
+    // assume phase 2 is but a starting state, then phase 3 is full-detail mid-game state.
 
     /** Restore the deck fully and put a random geisha and random 5 cards into the hand of each player,
      * starting from the last */
@@ -1190,13 +1174,10 @@ public class SetupView extends Application {
                             "-fx-wrap-text: true;" +
                             "-fx-opacity: 1.5;"
                     );
-                    //todo
 
                     card.setDisable(true);
                     card.getChildren().add(playerName);
                     card.getChildren().get(0).setOpacity(0.33);
-                } else {
-                    //card.setFocusTraversable(true); todo
                 }
             }
         }
@@ -1217,7 +1198,6 @@ public class SetupView extends Application {
         });
 
         window.setOnCloseRequest(e -> {
-            //selectedGeisha = null;
             if (selectedGeisha == null) {
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to quit?",
                         ButtonType.YES, ButtonType.NO);
@@ -1287,7 +1267,6 @@ public class SetupView extends Application {
             img = new ImageView(new Image("file:cards/card.png"));
 
         img.setPreserveRatio(true);
-        //img.fitWidthProperty().bind(window.widthProperty().divide(5).add(20));
         img.fitHeightProperty().bind(window.heightProperty().add(-40).divide(2));
         img.setSmooth(true);
         img.setCache(true);
@@ -1372,6 +1351,5 @@ public class SetupView extends Application {
         }
 
         Main.setGraphics();
-        //TODO GameView game = new GameView();
     }
 }

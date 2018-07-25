@@ -1,4 +1,3 @@
-import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -8,13 +7,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
-import javafx.util.Duration;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner;
-import java.util.concurrent.*;
 
 public class Main {
 
@@ -54,8 +50,6 @@ public class Main {
             e.consume();
         });
 
-        //gg.playGuestButton.fireEvent(new ActionEvent());
-
         window.setMinWidth(windowWidth);
         window.setWidth(windowWidth);
         window.setMinHeight(windowHeight);
@@ -88,6 +82,7 @@ public class Main {
 
         gameNumber = 0;
 
+        /* Set up logs files, create directories, record the number of the game judging by the largest number in the file names */
         try {
             File file = new File("logs");
             if (!file.exists()) file.mkdir();
@@ -98,7 +93,8 @@ public class Main {
             for (final File fileEntry : file.listFiles()) {
                 if (fileEntry.isFile() && fileEntry.getName().startsWith("game") && fileEntry.getName().endsWith(".log"))
                     try {
-                        gameNumber = Integer.parseInt(fileEntry.getName().substring(4, fileEntry.getName().lastIndexOf(".")));
+                        if (Integer.parseInt(fileEntry.getName().substring(4, fileEntry.getName().lastIndexOf("."))) > gameNumber)
+                            gameNumber = Integer.parseInt(fileEntry.getName().substring(4, fileEntry.getName().lastIndexOf(".")));
                     } catch (NumberFormatException e) {
                         System.out.println(e.toString());
                     }
@@ -123,7 +119,7 @@ public class Main {
         /* Initialization of the round */
         state = new State();
 
-        state.fillDrawDeck(getAllCards()); // Fill the draw deck with the initial cards
+        state.fillDrawDeck(getAllCards());
         state.setRound(round);
 
         for (int i = 0; i < SetupView.players.size(); i++) {
@@ -157,6 +153,7 @@ public class Main {
         state.setTurnPlayer(state.players.get(0));
         state.setRound(round);
 
+        /* Load graphics and only later launch loop, so that the graphics have time to load up fully */
         loadGraphics();
 
         Service<Void> service = new Service<>() {
@@ -175,7 +172,7 @@ public class Main {
     }
 
     public static void loop () {
-        // Run the game loop
+        /* Run the game loop */
         while (!state.isTerminal()) {
             gg.updateAllGraphics();
 
@@ -196,7 +193,6 @@ public class Main {
                     break;
                 }
                 case Human: {
-                    if (!state.allowed_actions.isEmpty()) System.out.println(state.allowed_actions);
                     if (state.allowed_actions.contains(Action.Name.AllowEffect)) {
                         gg.cancelEffect();
                         return;
@@ -221,6 +217,7 @@ public class Main {
 
         saveScores();
 
+        /* Record information on log files */
         state.recordTurn();
         state.recordWin();
         recordStatistics();
@@ -250,14 +247,11 @@ public class Main {
         if (actions.size() > 100) actions.remove(0);
         gg.lastActionDescription = description;
 
-        System.out.println(describeAction(action)); //todo remove
+        //System.out.println(describeAction(action));
     }
 
     public static String describeAction(Action action) {
         String description = "";
-                /*action.getName() + " by " + action.getPlayer().getName()
-                + " - " + (action.getCard1() == null ? "" : action.getCard1().getName())
-                + " " + (action.getTargetPlayer() == null ? "" : action.getTargetPlayer().getName());*/
 
         description = description.concat(action.getPlayer().getName() + " ");
 
