@@ -91,9 +91,6 @@ public class GameGraphics {
         menuButton.requestFocus();
     }
 
-    //todo Momiji - select guest
-    //todo
-
     /** Creates and updates player tables, access only once */
     private void createTables() {
         tables = new GridPane[Main.state.players.size()];
@@ -542,83 +539,16 @@ public class GameGraphics {
 
         if (state.getLastAppliedAction() == null) return;
 
-        /* If someone used effect against another player
-        if (state.special_turn) {
-            return state;
-        }*/
-
         switch (state.getLastAppliedAction().getName()) {
             case GuestEffect: {
 
                 /* When a doctor effect was taken */
-                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Doctor) {
-                    playerDoctorUsages++;
-                    /*String turning_player = state.getTurnPlayer().getName();
-                    state = state.nextTurn();
-                    for (Player p : state.getPlayers()) {
-                        if (p.getName().equals(turning_player)) {
-                            state.setTurnPlayer(p);
-                        }
-                    }*/
-                    //return state;
-                }
+                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Doctor) playerDoctorUsages++;
 
-                /* When an okaasan effect was taken */
-                /*if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Okaasan) {
-                    state.use_allowed_actions = true;
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.Advertiser);
-                    state.allowed_actions.add(Action.Name.EndTurn);*/
-                    /*Action actionEffectExtra = new Action(card.getName() == Card.Name.Okaasan ? Action.Name.Advertiser : Action.Name.Guest,
-                            Main.state.getTurnPlayer(), Main.state.getTurnPlayer().getHand().get(effectAnswer),
-                            null, null,null);
-                    if (action.getName() == Action.Name.Guest) effectWindow(action);
-                    else executeAction(actionEffectExtra);
-                }*/
-
-                /* When a courtier effect was taken */
-                /*if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Courtier) {
-                    state.use_allowed_actions = true;
-                    state.allowed_color = state.getLastAppliedAction().getCard1().getColor();
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.Guest);
-                    state.allowed_actions.add(Action.Name.EndTurn);
-                }*/
-
-                if (state.allowed_actions.contains(Action.Name.AllowEffect)) {
-                    return;
-                }
+                if (state.allowed_actions.contains(Action.Name.AllowEffect)) return;
 
                 break;
             }
-            /*case Guest: {
-
-                if (state.getLastAppliedAction().getCard1().getName() == Card.Name.Sumo_Wrestler) {
-                    Player target = state.getTurnPlayer();
-                    int max_cards = target.getHand().size();
-                    for (Player p : state.getPlayers()) {
-                        if (p.getHand().size() > max_cards) {
-                            max_cards = p.getHand().size();
-                            target = p;
-                        }
-                    }
-
-                    state.sumo_player = target;
-                    for (Card c : target.getHand()) c.is_known = true;
-
-                    state.use_allowed_actions = true;
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.GuestEffect);
-                    return state;
-                } else {
-
-                    state.use_allowed_actions = true;
-                    state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.GuestEffect);
-                    state.allowed_actions.add(Action.Name.EndTurn);
-                    return state;
-                }
-            }*/
             case Geisha: {
 
                 /* Akenohoshi */
@@ -630,7 +560,6 @@ public class GameGraphics {
                 if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Suzune) {
                     state.use_allowed_actions = true;
                     state.allowed_actions.clear();
-                    //state.allowed_actions.add(Action.Name.Advertiser);
                     state.allowed_actions.add(Action.Name.EndTurn);
                     return;
                 }
@@ -684,26 +613,7 @@ public class GameGraphics {
 
                 break;
             }
-            case EndTurn:/* case HarukazeDiscard:*/ {
-
-                /* Natsumi
-                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Natsumi) {
-                    if (state.isApplicableAction(new Action(
-                            Action.Name.Geisha,
-                            state.getTurnPlayer(),
-                            state.getLastAppliedAction().getCard1(),
-                            null,
-                            null,
-                            null
-                    ))) {
-                        state.use_allowed_actions = true;
-                        state.allowed_actions.clear();
-                        state.allowed_color = Card.Color.BLUE;
-                        state.allowed_actions.add(Action.Name.Geisha);
-                        state.allowed_actions.add(Action.Name.EndTurn);
-                        return state;
-                    }
-                }*/
+            case EndTurn: {
 
                 if (playerDoctorUsages > 0) {
                     playerDoctorUsages--;
@@ -715,19 +625,12 @@ public class GameGraphics {
                             break;
                         }
                     }
-                    /*state.allowed_actions.clear();
-                    state.allowed_actions.add(Action.Name.EndTurn);*/
                 } else {
                     Main.state = state.nextTurn();
                 }
                 return;
             }
         }
-
-        /*Action trueLastAction = state.getLastAppliedAction().getName() == Action.Name.AllowEffect
-                || state.getLastAppliedAction().getName() == Action.Name.CancelEffectDistrict
-                || state.getLastAppliedAction().getName() == Action.Name.CancelEffectRonin
-                ? state.applied_actions.get(state.applied_actions.size() - 2) : state.getLastAppliedAction();*/
 
         /* Momiji */
         if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Momiji) {
@@ -793,15 +696,6 @@ public class GameGraphics {
             }
         }
 
-        /* Delete Akenohoshi bonus
-        if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi) {
-            state.getTurnPlayer().setAkenohoshiBonus(new Reputation(0, 0, 0));
-            state = state.nextTurn();
-            return state;
-        }*/
-
-        /* Next turn as usual
-        state = state.nextTurn();*/
         state.use_allowed_actions = true;
         state.allowed_actions.clear();
         state.allowed_actions.add(Action.Name.EndTurn);
@@ -865,7 +759,6 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    //todo make a variable for checking additional turn
     private void haveEffect() {
         Stage window = new Stage();
         window.setResizable(false);
@@ -915,7 +808,7 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    public int cancelEffect() {
+    public void cancelEffect() {
         Stage window = new Stage();
         window.setResizable(false);
         window.initModality(Modality.APPLICATION_MODAL);
@@ -978,8 +871,6 @@ public class GameGraphics {
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
-
-        return effectAnswer;
     }
 
     private void targetEffect() {
@@ -1036,13 +927,11 @@ public class GameGraphics {
         buttonOK.setDefaultButton(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
-            //effectAnswer = ; todo
             window.close();
         });
 
         Button buttonNo = new Button("Do Not Apply");
         buttonNo.setMnemonicParsing(true);
-        //button2.setManaged(false); todo if has the card in hand
         buttonNo.getStyleClass().add("actionButton");
         buttonNo.setOnAction(e -> {
             effectAnswer = -2;
@@ -1092,9 +981,7 @@ public class GameGraphics {
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
-        //fitHeight="300.0" fitWidth="225.0" preserveRatio
         GridPane playerGrid = new GridPane();
-        //playerGrid.setPrefTileHeight(300);
         playerGrid.getRowConstraints().add(new RowConstraints(300));
         playerGrid.setPadding(new Insets(10, 30, 10, 30));
         playerGrid.getStyleClass().add("table");
@@ -1285,10 +1172,7 @@ public class GameGraphics {
 
     private ArrayList<Integer> harukazeSelection = new ArrayList<>();
     private void harukazeEffect() {
-        //table.setDisable(true);
-        //playerGrid.setDisable(true);
         Stage window = new Stage();
-        //window.setResizable(false);
         window.setMinWidth(860);
         window.setMinHeight(420);
         window.initModality(Modality.APPLICATION_MODAL);
@@ -1301,9 +1185,7 @@ public class GameGraphics {
         Label message = new Label("Pick 2 cards to discard from your hand.");
         message.setFont(Font.font("", FontWeight.BOLD, 14));
 
-        //fitHeight="300.0" fitWidth="225.0" preserveRatio
         GridPane playerGrid = new GridPane();
-        //playerGrid.setPrefTileHeight(300);
         playerGrid.getRowConstraints().add(new RowConstraints(300));
         playerGrid.setPadding(new Insets(10, 30, 10, 30));
         playerGrid.getStyleClass().add("table");
@@ -1313,7 +1195,6 @@ public class GameGraphics {
 
         for (int i = 0; i < Main.state.turning_player.getHand().size(); i++) {
             Card cardCard = Main.state.turning_player.getHand().get(i);
-
 
             ImageView img = getCardImage(cardCard.getColor() + "_" + cardCard.getName().toString().replace(" ", "_"));
             img.setFitWidth(220);
@@ -1359,8 +1240,6 @@ public class GameGraphics {
         playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setMinWidth(200);
         playerGrid.getColumnConstraints().get(playerGrid.getColumnCount() - 1).setHgrow(Priority.NEVER);
 
-        //effectAnswer = 0;
-        //playerGrid.getChildren().get(effectAnswer).getStyleClass().add("target");
         harukazeSelection.clear();
         harukazeSelection.add(0);
         harukazeSelection.add(1);
@@ -1371,7 +1250,6 @@ public class GameGraphics {
         buttonOK.setMnemonicParsing(true);
         buttonOK.getStyleClass().add("actionButton");
         buttonOK.setOnAction(e -> {
-            //effectAnswer = ; todo
             window.close();
         });
 
@@ -1385,7 +1263,6 @@ public class GameGraphics {
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
-
     }
 
     public void openLoadingScreen() {
@@ -1427,7 +1304,7 @@ public class GameGraphics {
      * @param table GridPane, one of the player tables
      * @param geisha just an object of class Geisha
      */
-    public void addToTable(GridPane table, Geisha geisha) {
+    private void addToTable(GridPane table, Geisha geisha) {
         String cardName = geisha.getName().toString();
 
         addToTable(table, cardName, -1, false);
@@ -1440,7 +1317,7 @@ public class GameGraphics {
      * @param card just an object of class Card
      * @param isGuest add this card as a Guest, meaning it will add the card to the higher row, so it should always be true for the handGrid
      */
-    public void addToTable(GridPane table, int tableIndex, Card card, boolean isGuest) {
+    private void addToTable(GridPane table, int tableIndex, Card card, boolean isGuest) {
         String cardName = card.getColor() + "_" + card.getName().toString().replace(" ", "_");
 
         int index = tableIndex == -1 ? handGrid.getChildren().size() :
@@ -1487,11 +1364,11 @@ public class GameGraphics {
             table.getColumnConstraints().add(cc);
         }
 
-        table.add(card, index + (isHandGrid ? 0 : 1), isGuest ? 0 : 1); //GameView.players.advertisers / guests .size()
+        table.add(card, index + (isHandGrid ? 0 : 1), isGuest ? 0 : 1);
     }
 
     /** Remove card from a GridPane */
-    public StackPane removeFromTable(GridPane table, StackPane card) {
+    private StackPane removeFromTable(GridPane table, StackPane card) {
         int row = GridPane.getRowIndex(card);
 
         int index = GridPane.getColumnIndex(card);
@@ -1512,7 +1389,7 @@ public class GameGraphics {
     }
 
     /** Use only on swapping cards when using Exchange action */
-    @FXML AnchorPane anchor; //todo delete
+    @FXML AnchorPane anchor;
     private void exchangeCards(StackPane changer, StackPane advertiser) {
         clearSelection();
 
@@ -1551,11 +1428,9 @@ public class GameGraphics {
                 label.setLayoutY(new Random().nextDouble()*Main.windowHeight);
                 anchor.getChildren().add(label);
             }
-        //advertiser.getChildren().add(changer.getChildren().remove(0));
-        //changer.getChildren().add(advertiser.getChildren().remove(0));
     }
 
-    public void clearSelection() {
+    private void clearSelection() {
         for (int i = selection.size() - 1; i >= 0; i--) {
             selection.remove(i).getStyleClass().remove("selected");
         }
@@ -1585,7 +1460,7 @@ public class GameGraphics {
         showcaseCard.setImage(showCaseCardDefault);
     }
 
-    int turnCount = 0; // todo delete, make access to State turn count
+    private int turnCount = 0;
     @FXML
     public void shiftPlayerGrid() {
         int current = 0;
@@ -1617,8 +1492,6 @@ public class GameGraphics {
         int newIndex = playerGrid.getChildren().indexOf(e.getSource());
         boolean needsChange = newIndex != currentTableIndex;
         if (needsChange) {
-            //boolean isThePlayer = newIndex == GameView.playerIndex/*playerIndex*/;
-
             Effect effect = playerGrid.getChildren().get(currentTableIndex).getEffect();
             playerGrid.getChildren().get(currentTableIndex).setStyle("-fx-effect: null;");
 
@@ -1640,8 +1513,7 @@ public class GameGraphics {
         window.setMinWidth(660);
         window.setMinHeight(450);
 
-        ListView<String> log = new ListView();
-        //log.setPadding(new Insets(0, 0, 0, 10));
+        ListView<String> log = new ListView<>();
         log.setEditable(false);
         log.setFocusTraversable(false);
         for (int i = 0; i < Main.actions.size(); i++) {
@@ -1671,7 +1543,6 @@ public class GameGraphics {
         window.showAndWait();
     }
 
-    //todo
     public void winScreen() {
         Stage window = new Stage();
         window.setResizable(false);
@@ -1787,7 +1658,6 @@ public class GameGraphics {
                 Main.stopRightThere = true;
                 window.close();
                 Main.setGraphics();
-                //todo GameView gameView = new GameView();
             }
         });
 
@@ -1911,8 +1781,6 @@ public class GameGraphics {
                 score.setFont(Font.font("", FontWeight.BOLD, 16));
                 scoreSheet.add(score, i+1, j+1);
             }
-            //((Label) scoreSheet.getChildren().get(scoreSheet.getChildren().size()-1)).setText(Main.state.players.get(i).getScore()+"");
-
         }
 
         return scoreSheet;
@@ -2008,7 +1876,7 @@ public class GameGraphics {
             discardGrid.getColumnConstraints().add(ccRounds);
         }
 
-        for (int i = 0; i < Math.ceil(1.0 * heap.size() / row); i++) { //actual heap.size()
+        for (int i = 0; i < Math.ceil(1.0 * heap.size() / row); i++) {
             discardGrid.getRowConstraints().add(new RowConstraints(210));
             for (int j = 0; j < row && j+i*row < heap.size(); j++) {
                 String cardName = heap.get(i*row+j).getColor() + "_" + heap.get(i*row+j).getName().toString().replace(" ", "_");
@@ -2018,14 +1886,12 @@ public class GameGraphics {
                 card.setFitHeight(200);
                 card.setPickOnBounds(true);
                 card.setPreserveRatio(true);
-                //card.getStyleClass().add("card");
 
                 discardGrid.add(card, j, i);
             }
         }
 
         ScrollPane discardPane = new ScrollPane();
-        //discardPane.fitToHeightProperty().bind();
         discardPane.setFitToWidth(true);
         discardPane.setFitToHeight(true);
         discardPane.setContent(discardGrid);
