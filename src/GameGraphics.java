@@ -846,7 +846,7 @@ public class GameGraphics {
         Label message = new Label(Main.state.getLastPlayer().getName() + " wants to use their " +
                 cardCard.getName().toString().replace("_", " ") + "'s effect on you");
         if (cardCard.getName() == Card.Name.Sumo_Wrestler) message.setText(message.getText().concat(" and discard your " +
-                Main.state.getLastAppliedAction().getCard2().getColor().toString().toLowerCase() +
+                Main.state.getLastAppliedAction().getCard2().getColor().toString().toLowerCase() + " " +
                 Main.state.getLastAppliedAction().getCard2().getName().toString().replace("_", " ")
                 + " from your hand."));
         else message.setText(message.getText().concat("."));
@@ -900,7 +900,7 @@ public class GameGraphics {
         layout.setAlignment(Pos.CENTER);
         layout.getChildren().addAll(card, message, buttons);
 
-        Scene scene = new Scene(layout, 500, 410);
+        Scene scene = new Scene(layout, 500, 415);
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
