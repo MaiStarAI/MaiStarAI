@@ -156,13 +156,17 @@ public class Main {
         /* Load graphics and only later launch loop, so that the graphics have time to load up fully */
         loadGraphics();
 
+        loop();
+    }
+
+    public static void loop () {
         Service<Void> service = new Service<>() {
             @Override
             protected Task<Void> createTask() {
                 return new Task<>() {
                     @Override
                     protected Void call() throws Exception {
-                        Platform.runLater(() -> loop());
+                        Platform.runLater(() -> loopWithoutPause());
                         return null;
                     }
                 };
@@ -171,9 +175,9 @@ public class Main {
         service.start();
     }
 
-    public static void loop () {
+    private static void loopWithoutPause () {
         /* Run the game loop */
-        while (!state.isTerminal()) {
+        if (!state.isTerminal()) {
             gg.updateAllGraphics();
 
             Action action;
@@ -211,6 +215,9 @@ public class Main {
             else if (state.getLastAppliedAction() != null && state.getLastAppliedAction().getName() != Action.Name.EndTurn) {
                 gg.changeStateAfterAction();
             }
+
+            loop();
+            return;
         }
 
         gg.updateAllGraphics();

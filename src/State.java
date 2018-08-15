@@ -678,18 +678,18 @@ class State {
         State new_state = new State(this);
         new_state.turn++;
 
+        // Updates geisha value
+        if (new_state.turning_player.getGeisha().getName() != Geisha.Name.Akenohoshi &&
+                new_state.turning_player.getGeisha().getName() != Geisha.Name.Oboro) {
+            new_state.turning_player.setGeishaUsages(0);
+        }
+
         // Changes turning player (reference)
         int index = new_state.players.indexOf(new_state.turning_player);
         if (index == new_state.players.size() - 1) {
             new_state.turning_player = new_state.players.get(0);
         } else {
             new_state.turning_player = new_state.players.get(index + 1);
-        }
-
-        // Updates geisha value
-        if (new_state.turning_player.getGeisha().getName() != Geisha.Name.Akenohoshi &&
-                new_state.turning_player.getGeisha().getName() != Geisha.Name.Oboro) {
-            new_state.turning_player.setGeishaUsages(0);
         }
 
         // Restore allowed actions variables

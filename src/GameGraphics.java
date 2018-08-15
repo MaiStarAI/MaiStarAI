@@ -358,8 +358,8 @@ public class GameGraphics {
                                 Main.state.turning_player.getAdverts().get(GridPane.getColumnIndex(selection.get(0)) - 1),
                                 null, null
                         );
-                        action.set_exchange_ind_1(GridPane.getColumnIndex(selection.get(0)) - 1);
-                        action.set_exchange_ind_2(GridPane.getColumnIndex(selection.get(1)));
+                        action.set_exchange_ind_1(GridPane.getColumnIndex(selection.get(1)));
+                        action.set_exchange_ind_2(GridPane.getColumnIndex(selection.get(0)) - 1);
 
                         setButtonAvailable(exchangeButton, action);
                     }
@@ -615,6 +615,10 @@ public class GameGraphics {
             }
             case EndTurn: {
 
+                if (state.getTurnPlayer().getGeisha().getName() == Geisha.Name.Akenohoshi &&
+                        state.getTurnPlayer().getGeishaUsages() > 0)
+                    state.getTurnPlayer().setAkenohoshiBonus(null);
+
                 if (playerDoctorUsages > 0) {
                     playerDoctorUsages--;
                     String turning_player = state.getTurnPlayer().getName();
@@ -818,7 +822,35 @@ public class GameGraphics {
         layout.getStyleClass().add("vBoxLayout");
         layout.setAlignment(Pos.CENTER_LEFT);
 
-        Label message = new Label(Main.state.getLastPlayer().getName() + " wants to use their effect on you."); //todo
+        Card cardCard = Main.state.getLastAppliedAction().getCard1();
+
+        ImageView img = getCardImage(cardCard.getColor() + "_" + cardCard.getName().toString().replace(" ", "_"));
+        img.setFitWidth(220);
+        img.setFitHeight(300);
+        img.setPickOnBounds(true);
+        img.setPreserveRatio(true);
+
+        StackPane card = new StackPane();
+        card.setMaxHeight(img.getFitHeight());
+        card.setMaxWidth(img.getFitHeight() * 0.7114);
+        card.getChildren().add(img);
+        card.getStyleClass().add("card");
+
+        /*ColumnConstraints cc = new ColumnConstraints();
+        cc.setHgrow(Priority.SOMETIMES);
+        cc.setHalignment(HPos.LEFT);
+        cc.setMaxWidth(220);
+        cc.setMinWidth(5);
+        playerGrid.getColumnConstraints().add(cc);*/
+
+        Label message = new Label(Main.state.getLastPlayer().getName() + " wants to use their " +
+                cardCard.getName().toString().replace("_", " ") + "'s effect on you");
+        if (cardCard.getName() == Card.Name.Sumo_Wrestler) message.setText(message.getText().concat(" and discard your " +
+                Main.state.getLastAppliedAction().getCard2().getColor().toString().toLowerCase() +
+                Main.state.getLastAppliedAction().getCard2().getName().toString().replace("_", " ")
+                + " from your hand."));
+        else message.setText(message.getText().concat("."));
+        message.setWrapText(true);
         message.setFont(Font.font("", FontWeight.BOLD, 14));
         message.setPadding(new Insets(0, 0, 0, 20));
 
@@ -865,9 +897,10 @@ public class GameGraphics {
         buttons.setPadding(new Insets(0, 20,0,0));
         buttons.getButtons().addAll(button1, button2, buttonCancel);
 
-        layout.getChildren().addAll(message, buttons);
+        layout.setAlignment(Pos.CENTER);
+        layout.getChildren().addAll(card, message, buttons);
 
-        Scene scene = new Scene(layout, 500, 130);
+        Scene scene = new Scene(layout, 500, 410);
         scene.getStylesheets().add(this.getClass().getResource("graphics.css").toExternalForm());
         window.setScene(scene);
         window.showAndWait();
