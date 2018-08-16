@@ -70,7 +70,7 @@ public class SetupView extends Application {
     @Override
     public void start (Stage primaryStage) throws Exception {
         window = primaryStage;
-        window.setTitle("Mai-Star");
+        window.setTitle("Mai-Star" + " " + Main.version);
 
         window.setMinWidth(windowWidth);
         window.setWidth(windowWidth);

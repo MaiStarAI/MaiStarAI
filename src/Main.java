@@ -14,6 +14,8 @@ import java.util.Scanner;
 
 public class Main {
 
+    public static String version = "v1.0.3";
+
     public static Stage window;
     public static Parent root;
 
@@ -38,7 +40,7 @@ public class Main {
 
     public static void setGraphics() {
         window = SetupView.window;
-        window.setTitle("Mai-Star");
+        window.setTitle("Mai-Star" + " " + Main.version);
 
         window.setOnCloseRequest(e -> {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to quit?",

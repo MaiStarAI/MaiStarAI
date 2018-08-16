@@ -398,6 +398,7 @@ public class GameGraphics {
         Main.turnEnded = true;
         if (Main.stopRightThere) return;
         changeStateAfterAction();
+        updateAllGraphics();
         Main.loop();
     }
 
